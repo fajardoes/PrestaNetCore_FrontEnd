@@ -18,10 +18,10 @@ export const HomePage = () => {
             Conocer la plataforma
           </Link>
           <Link
-            to="/dashboard"
+            to="/auth/login"
             className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow transition hover:bg-primary/90"
           >
-            Ir al dashboard
+            Ir al acceso
           </Link>
         </div>
       </section>

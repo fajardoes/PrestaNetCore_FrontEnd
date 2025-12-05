@@ -10,6 +10,7 @@ import {
 import { authApiEvents } from '@/infrastructure/api/httpClient'
 import { tokenStorage } from '@/infrastructure/api/tokenStorage'
 import { authService } from '@/infrastructure/services/AuthService'
+import { loginAction } from '@/core/actions/auth/login.action'
 import type { AuthUser, LoginCredentials } from '@/types/auth'
 import { jwtDecode } from 'jwt-decode'
 import type { JwtPayload } from 'jwt-decode'
@@ -29,6 +30,7 @@ interface AuthContextValue {
   login(credentials: LoginCredentials): Promise<void>
   logout(): Promise<void>
   refreshSession(): Promise<void>
+  setUserFromSession(user: AuthUser | null): void
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -155,38 +157,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = useCallback(async (credentials: LoginCredentials) => {
     setIsProcessing(true)
     try {
-      const result = await authService.login(credentials)
-      if (result.mustChangePassword) {
-        throw new ForcedPasswordChangeError(
-          credentials.email,
-          credentials.password,
-          Boolean(credentials.rememberMe),
-          result.failureReason ??
-            'Debes actualizar tu contraseña antes de continuar en el prestanet.',
-        )
-      }
-      if (!result.succeeded) {
+      const result = await loginAction(credentials)
+      if (!result.success) {
+        tokenStorage.clearTokens()
+        if (result.data?.mustChangePassword) {
+          throw new ForcedPasswordChangeError(
+            credentials.email,
+            credentials.password,
+            Boolean(credentials.rememberMe),
+            result.error,
+          )
+        }
         throw new Error(
-          result.failureReason ??
+          result.error ??
+            result.data?.failureReason ??
             'No fue posible autenticar tus credenciales en el prestanet.',
         )
       }
-      const accessToken = result.accessToken?.token
-      if (!accessToken) {
-        throw new Error('El servidor no entregó un token de acceso válido.')
-      }
-      const remember = Boolean(credentials.rememberMe)
-      tokenStorage.setTokens({ accessToken }, remember)
-      let nextUser: AuthUser | null = null
-      try {
-        nextUser = await authService.getProfile()
-      } catch {
-        nextUser = deriveUserFromToken(accessToken)
-      }
-      if (!nextUser) {
-        throw new Error('No fue posible obtener la información del usuario.')
-      }
-      setUser(nextUser)
+      setUser(result.data.user)
     } catch (error) {
       tokenStorage.clearTokens()
       if (error instanceof ForcedPasswordChangeError) {
@@ -230,6 +218,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [])
 
+  const setUserFromSession = useCallback((nextUser: AuthUser | null) => {
+    setUser(nextUser)
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -239,8 +231,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       login,
       logout,
       refreshSession,
+      setUserFromSession,
     }),
-    [user, isInitializing, isProcessing, login, logout, refreshSession],
+    [
+      user,
+      isInitializing,
+      isProcessing,
+      login,
+      logout,
+      refreshSession,
+      setUserFromSession,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

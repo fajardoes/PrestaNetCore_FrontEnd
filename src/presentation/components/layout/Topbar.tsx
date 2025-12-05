@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { ThemeToggle } from '@/presentation/components/theme/ThemeToggle'
 import type { AuthUser } from '@/types/auth'
-import { LoginDropdown } from '../auth/LoginDropdown'
 
 interface TopbarProps {
   onLogoutClick: () => void
@@ -31,24 +31,22 @@ export const Topbar = ({
   onToggleSidebar,
   isSidebarCollapsed,
 }: TopbarProps) => {
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
+  const navigate = useNavigate()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (user) {
-      setIsLoginOpen(false)
-    } else {
+    if (!user) {
       setIsUserMenuOpen(false)
     }
   }, [user])
 
   useEffect(() => {
     if (loginPromptId) {
-      setIsLoginOpen(true)
+      navigate('/auth/login')
       onLoginPromptConsumed?.()
     }
-  }, [loginPromptId, onLoginPromptConsumed])
+  }, [loginPromptId, navigate, onLoginPromptConsumed])
 
   useEffect(() => {
     if (!isUserMenuOpen) {
@@ -140,6 +138,11 @@ export const Topbar = ({
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {user.email}
                     </p>
+                    {user.agencyName ? (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {user.agencyCode ?? ''} {user.agencyName}
+                      </p>
+                    ) : null}
                   </div>
                   <button
                     type="button"
@@ -157,7 +160,13 @@ export const Topbar = ({
               ) : null}
             </div>
           ) : (
-            <LoginDropdown open={isLoginOpen} onOpenChange={setIsLoginOpen} />
+            <Link
+              to="/auth/login"
+              className="btn-primary shadow"
+              onClick={() => setIsUserMenuOpen(false)}
+            >
+              Iniciar sesión
+            </Link>
           )}
         </div>
       </div>

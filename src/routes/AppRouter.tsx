@@ -1,19 +1,30 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { LayoutShell } from '@/presentation/components/layout/LayoutShell'
 import { AboutPage } from '@/presentation/pages/AboutPage'
-import { DashboardPage } from '@/presentation/pages/DashboardPage'
 import { HomePage } from '@/presentation/pages/HomePage'
+import { ForceChangePasswordPage } from '@/presentation/features/auth/pages/force-change-password-page'
+import { LoginPage } from '@/presentation/features/auth/pages/login-page'
+import { ResetPasswordPage } from '@/presentation/features/auth/pages/reset-password-page'
+import { SecurityRoutes } from './security-routes'
+import { OrganizationRoutes } from './organization-routes'
 import { ProtectedRoute } from './ProtectedRoute'
 
 export const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/auth/login" element={<LoginPage />} />
+        <Route
+          path="/auth/force-change-password"
+          element={<ForceChangePasswordPage />}
+        />
+        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
         <Route element={<LayoutShell />}>
           <Route index element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
+            {SecurityRoutes()}
+            {OrganizationRoutes()}
           </Route>
         </Route>
       </Routes>

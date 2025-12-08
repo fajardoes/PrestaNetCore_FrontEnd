@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 
 interface SidebarProps {
@@ -74,14 +74,56 @@ const OrganizationIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const ClientsIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+  </svg>
+)
+
+const CatalogsIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M5 4h14" />
+    <path d="M5 8h14" />
+    <path d="M5 12h14" />
+    <path d="M5 16h14" />
+    <path d="M5 20h14" />
+  </svg>
+)
+
 export const Sidebar = ({ collapsed }: SidebarProps) => {
   const { user } = useAuth()
+  const location = useLocation()
   const sidebarWidth = collapsed ? 'w-20' : 'w-64'
-  const [isSecurityOpen, setIsSecurityOpen] = useState(true)
-  const [isOrganizationOpen, setIsOrganizationOpen] = useState(true)
+  const [isSecurityOpen, setIsSecurityOpen] = useState(false)
+  const [isOrganizationOpen, setIsOrganizationOpen] = useState(false)
+  const [isClientsOpen, setIsClientsOpen] = useState(false)
 
+  const isLoggedIn = Boolean(user)
   const isAdmin =
     user?.roles?.some((role) => role?.toLowerCase() === 'admin') ?? false
+  const isAssistant =
+    user?.roles?.some((role) => role?.toLowerCase() === 'assistant') ?? false
 
   const navigation = [
     { to: '/', label: 'Inicio', icon: HomeIcon },
@@ -107,6 +149,26 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
         },
       ]
     : []
+
+  const clientsNav =
+    isLoggedIn && (isAdmin || isAssistant)
+      ? [
+          {
+            to: '/clients',
+            label: 'Manejo de clientes',
+            icon: ClientsIcon,
+          },
+          ...(isAdmin
+            ? [
+                {
+                  to: '/clients/catalogs',
+                  label: 'Catálogos y actividades',
+                  icon: CatalogsIcon,
+                },
+              ]
+            : []),
+        ]
+      : []
 
   return (
     <aside
@@ -150,6 +212,60 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
             {!collapsed ? <span>{item.label}</span> : null}
           </NavLink>
         ))}
+
+        {clientsNav.length ? (
+          <div className="mt-4 space-y-1">
+            <button
+              type="button"
+              onClick={() => setIsClientsOpen((open) => !open)}
+              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-700/60 ${
+                collapsed ? 'flex-col gap-1 text-center' : 'text-slate-500'
+              }`}
+            >
+              <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                <ClientsIcon className="h-4 w-4" />
+                {!collapsed ? 'Clientes' : null}
+              </span>
+              <ChevronIcon
+                className={`h-3 w-3 text-slate-500 transition-transform ${
+                  isClientsOpen ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+            </button>
+            {isClientsOpen
+              ? clientsNav.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    title={item.label}
+                    className={() => {
+                      const isActive = location.pathname === item.to
+                      const baseClasses =
+                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white'
+                      const collapsedClasses = collapsed
+                        ? 'flex-col gap-2 px-2 py-3 text-xs'
+                        : ''
+                      const nestedClasses = collapsed
+                        ? ''
+                        : 'ml-2 border-l border-slate-700/40 pl-4'
+                      const activeClasses = isActive
+                        ? 'bg-slate-100 text-sidebar'
+                        : 'text-slate-200'
+                      return [
+                        baseClasses,
+                        collapsedClasses,
+                        nestedClasses,
+                        activeClasses,
+                      ].join(' ')
+                    }}
+                  >
+                    <item.icon className="h-5 w-5" aria-hidden="true" />
+                    {!collapsed ? <span>{item.label}</span> : null}
+                  </NavLink>
+                ))
+              : null}
+          </div>
+        ) : null}
 
         {securityNav.length ? (
           <div className="mt-4 space-y-1">

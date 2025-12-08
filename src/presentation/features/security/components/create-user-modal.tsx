@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { SecurityRole } from '@/infrastructure/interfaces/security/role'
@@ -47,9 +47,15 @@ export const CreateUserModal = ({
       password: '',
       confirmPassword: '',
       roles: [],
-      agencyId: 'HQ',
+      agencyId: '',
     },
   })
+
+  const selectedRoles = watch('roles')
+  const agenciesForSelect = useMemo(
+    () => availableAgencies ?? [],
+    [availableAgencies],
+  )
 
   useEffect(() => {
     if (open) {
@@ -58,15 +64,13 @@ export const CreateUserModal = ({
         phoneNumber: '',
         password: '',
         confirmPassword: '',
-        agencyId: 'HQ',
+        agencyId: '',
         roles: [],
       })
     }
   }, [open, reset])
 
   if (!open) return null
-
-  const selectedRoles = watch('roles')
 
   const submitHandler = handleSubmit(async (values) => {
     await onSubmit(values)
@@ -194,8 +198,7 @@ export const CreateUserModal = ({
                 disabled={isSaving || agenciesLoading}
               >
                 <option value="">Selecciona una agencia</option>
-                <option value="HQ">Casa Matriz (HQ)</option>
-                {availableAgencies.map((agency) => (
+                {agenciesForSelect.map((agency) => (
                   <option key={agency.id} value={agency.id}>
                     {agency.code} - {agency.name}
                   </option>

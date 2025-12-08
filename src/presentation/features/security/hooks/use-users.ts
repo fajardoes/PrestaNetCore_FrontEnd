@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { listUsersAction } from '@/core/actions/security/list-users.action'
 import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
+import type { StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
 
 const PAGE_SIZE = 10
 
@@ -21,7 +22,10 @@ export const useUsers = (options?: UseUsersOptions) => {
     isLoading: false,
     error: null,
   })
-  const [query, setQuery] = useState('')
+  const [query, setQuery] = useState<{ search: string; status: StatusFilterValue }>({
+    search: '',
+    status: 'active',
+  })
   const [page, setPage] = useState(1)
 
   const fetchUsers = useCallback(async () => {
@@ -47,12 +51,22 @@ export const useUsers = (options?: UseUsersOptions) => {
   }, [enabled, fetchUsers])
 
   const filtered = useMemo(() => {
-    const term = query.trim().toLowerCase()
-    if (!term) return state.data
+    const term = query.search.trim().toLowerCase()
     return state.data.filter((user) => {
-      const email = user.email.toLowerCase()
-      const phone = user.phoneNumber?.toLowerCase() ?? ''
-      return email.includes(term) || phone.includes(term)
+      const matchesTerm =
+        !term ||
+        user.email.toLowerCase().includes(term) ||
+        (user.phoneNumber?.toLowerCase() ?? '').includes(term)
+
+      const isActive = !user.isDeleted
+      const matchesStatus =
+        query.status === 'all'
+          ? true
+          : query.status === 'active'
+            ? isActive
+            : !isActive
+
+      return matchesTerm && matchesStatus
     })
   }, [query, state.data])
 

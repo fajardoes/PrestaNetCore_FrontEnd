@@ -1,25 +1,29 @@
-import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
+import type { EconomicActivityCatalog } from '@/infrastructure/interfaces/clients/catalog'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
-interface AgenciesTableProps {
-  agencies: Agency[]
+interface EconomicActivitiesTableProps {
+  items: EconomicActivityCatalog[]
   isLoading: boolean
   error: string | null
-  onEdit: (agency: Agency) => void
+  onEdit: (activity: EconomicActivityCatalog) => void
+  onToggle: (activity: EconomicActivityCatalog) => void
+  onDelete: (activity: EconomicActivityCatalog) => void
   page: number
   totalPages: number
   onPageChange: (page: number) => void
 }
 
-export const AgenciesTable = ({
-  agencies,
+export const EconomicActivitiesTable = ({
+  items,
   isLoading,
   error,
   onEdit,
+  onToggle,
+  onDelete,
   page,
   totalPages,
   onPageChange,
-}: AgenciesTableProps) => {
+}: EconomicActivitiesTableProps) => {
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="overflow-x-auto">
@@ -27,13 +31,13 @@ export const AgenciesTable = ({
           <thead className="bg-slate-50 dark:bg-slate-900">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Código
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 Nombre
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Slug
+                Sector
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                Descripción
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 Estado
@@ -47,64 +51,80 @@ export const AgenciesTable = ({
             {isLoading ? (
               <tr>
                 <td
-                  className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
                   colSpan={5}
+                  className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
                 >
-                  Cargando agencias...
+                  Cargando actividades...
                 </td>
               </tr>
             ) : error ? (
               <tr>
                 <td
-                  className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
                   colSpan={5}
+                  className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
                 >
                   {error}
                 </td>
               </tr>
-            ) : !agencies.length ? (
+            ) : !items.length ? (
               <tr>
                 <td
-                  className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
                   colSpan={5}
+                  className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
                 >
-                  No hay agencias registradas.
+                  No hay actividades económicas registradas.
                 </td>
               </tr>
             ) : (
-              agencies.map((agency) => (
+              items.map((activity) => (
                 <tr
-                  key={agency.id}
+                  key={activity.id}
                   className="hover:bg-slate-50/70 dark:hover:bg-slate-900"
                 >
                   <td className="px-4 py-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                    {agency.code}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                    {agency.name}
+                    {activity.nombre}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                    {agency.slug}
+                    {activity.sectorNombre ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">
+                    {activity.descripcion ?? '—'}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                        agency.isActive
+                        activity.activo
                           ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-100 dark:ring-emerald-500/40'
                           : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
                       }`}
                     >
-                      {agency.isActive ? 'Activa' : 'Inactiva'}
+                      {activity.activo ? 'Activa' : 'Inactiva'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right text-sm">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(agency)}
-                      className="btn-icon-label"
-                    >
-                      Editar
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onToggle(activity)}
+                        className="btn-icon-label text-xs"
+                      >
+                        {activity.activo ? 'Desactivar' : 'Activar'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onEdit(activity)}
+                        className="btn-icon-label text-xs"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(activity)}
+                        className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                      >
+                        Borrar
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

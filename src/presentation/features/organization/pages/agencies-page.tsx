@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import type { AgencyFormValues } from '@/infrastructure/validations/catalog/agency.schema'
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
@@ -6,6 +6,10 @@ import { useAgencies } from '@/presentation/features/catalog/hooks/use-agencies'
 import { useSaveAgency } from '@/presentation/features/catalog/hooks/use-save-agency'
 import { AgenciesTable } from '@/presentation/features/organization/components/agencies-table'
 import { AgencyModal } from '@/presentation/features/organization/components/agency-modal'
+import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
+import type { StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
+
+const PAGE_SIZE = 10
 
 export const AgenciesPage = () => {
   const { user } = useAuth()
@@ -23,7 +27,9 @@ export const AgenciesPage = () => {
 
   const [editingAgency, setEditingAgency] = useState<Agency | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [showInactive, setShowInactive] = useState(true)
+  const [status, setStatus] = useState<StatusFilterValue>('active')
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
 
   if (!isAdmin) {
     return (
@@ -53,9 +59,35 @@ export const AgenciesPage = () => {
     }
   }
 
-  const visibleAgencies = showInactive
-    ? agencies
-    : agencies.filter((agency) => agency.isActive)
+  const visibleAgencies = useMemo(() => {
+    if (status === 'all') return agencies
+    return agencies.filter((agency) =>
+      status === 'active' ? agency.isActive : !agency.isActive,
+    )
+  }, [agencies, status])
+
+  const filteredAgencies = useMemo(() => {
+    const term = query.trim().toLowerCase()
+    if (!term) return visibleAgencies
+    return visibleAgencies.filter((agency) => {
+      return (
+        agency.name.toLowerCase().includes(term) ||
+        agency.code.toLowerCase().includes(term) ||
+        agency.slug.toLowerCase().includes(term)
+      )
+    })
+  }, [query, visibleAgencies])
+
+  const totalPages = Math.max(1, Math.ceil(filteredAgencies.length / PAGE_SIZE))
+  const currentPage = Math.min(page, totalPages)
+  const paginatedAgencies = useMemo(
+    () =>
+      filteredAgencies.slice(
+        (currentPage - 1) * PAGE_SIZE,
+        currentPage * PAGE_SIZE,
+      ),
+    [currentPage, filteredAgencies],
+  )
 
   return (
     <div className="space-y-4">
@@ -68,36 +100,43 @@ export const AgenciesPage = () => {
         </p>
       </div>
 
-      <div className="flex justify-end">
-        <label className="mr-auto inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/50 dark:border-slate-600 dark:bg-slate-900 dark:focus:ring-primary/60"
-            checked={showInactive}
-            onChange={(e) => setShowInactive(e.target.checked)}
-          />
-          Mostrar inactivas
-        </label>
-        <button
-          type="button"
-          className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
-          onClick={() => {
-            setEditingAgency(null)
-            setIsCreateOpen(true)
-          }}
-        >
-          Nueva agencia
-        </button>
-      </div>
+      <ListFiltersBar
+        search={query}
+        onSearchChange={(value) => {
+          setQuery(value)
+          setPage(1)
+        }}
+        placeholder="Buscar por nombre, código o slug..."
+        status={status}
+        onStatusChange={(value) => {
+          setStatus(value)
+          setPage(1)
+        }}
+        actions={
+          <button
+            type="button"
+            className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={() => {
+              setEditingAgency(null)
+              setIsCreateOpen(true)
+            }}
+          >
+            Nueva agencia
+          </button>
+        }
+      />
 
       <AgenciesTable
-        agencies={visibleAgencies}
+        agencies={paginatedAgencies}
         isLoading={isLoading}
         error={error}
         onEdit={(agency) => {
           setEditingAgency(agency)
           setIsCreateOpen(false)
         }}
+        page={currentPage}
+        totalPages={totalPages}
+        onPageChange={(next) => setPage(Math.min(Math.max(1, next), totalPages))}
       />
 
       <AgencyModal

@@ -7,6 +7,7 @@ import { LoginPage } from '@/presentation/features/auth/pages/login-page'
 import { ResetPasswordPage } from '@/presentation/features/auth/pages/reset-password-page'
 import { SecurityRoutes } from './security-routes'
 import { OrganizationRoutes } from './organization-routes'
+import { ClientsRoutes } from './clients-routes'
 import { ProtectedRoute } from './ProtectedRoute'
 
 export const AppRouter = () => {
@@ -25,6 +26,7 @@ export const AppRouter = () => {
           <Route element={<ProtectedRoute />}>
             {SecurityRoutes()}
             {OrganizationRoutes()}
+            {ClientsRoutes()}
           </Route>
         </Route>
       </Routes>

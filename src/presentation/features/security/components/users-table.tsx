@@ -1,4 +1,5 @@
 import { StatusBadge } from '@/presentation/features/security/components/status-badge'
+import { TablePagination } from '@/presentation/share/components/table-pagination'
 import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
 
 interface UsersTableProps {
@@ -7,8 +8,6 @@ interface UsersTableProps {
   error: string | null
   page: number
   totalPages: number
-  query: string
-  onQueryChange: (value: string) => void
   onPageChange: (page: number) => void
   onEdit: (user: SecurityUser) => void
   onGenerateTemporaryPassword: (user: SecurityUser) => void
@@ -20,32 +19,19 @@ export const UsersTable = ({
   error,
   page,
   totalPages,
-  query,
-  onQueryChange,
   onPageChange,
   onEdit,
   onGenerateTemporaryPassword,
 }: UsersTableProps) => {
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-            Usuarios
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Gestión de cuentas, roles y estado activo/inactivo.
-          </p>
-        </div>
-        <div className="w-full sm:w-72">
-          <input
-            type="search"
-            placeholder="Buscar por correo o teléfono..."
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
-          />
-        </div>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+        <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+          Usuarios
+        </h2>
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          Gestión de cuentas, roles y estado activo/inactivo.
+        </p>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -78,7 +64,7 @@ export const UsersTable = ({
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                    colSpan={5}
+                    colSpan={6}
                   >
                     Cargando usuarios...
                   </td>
@@ -87,7 +73,7 @@ export const UsersTable = ({
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
-                    colSpan={5}
+                    colSpan={6}
                   >
                     {error}
                   </td>
@@ -96,7 +82,7 @@ export const UsersTable = ({
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                    colSpan={5}
+                    colSpan={6}
                   >
                     No hay usuarios para mostrar.
                   </td>
@@ -167,29 +153,11 @@ export const UsersTable = ({
           </table>
         </div>
 
-        <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
-          <span>
-            Página {page} de {totalPages}
-          </span>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onPageChange(Math.max(1, page - 1))}
-              className="btn-icon-label"
-              disabled={page === 1}
-            >
-              Anterior
-            </button>
-            <button
-              type="button"
-              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-              className="btn-icon-label"
-              disabled={page === totalPages}
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
+        <TablePagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
       </div>
     </div>
   )

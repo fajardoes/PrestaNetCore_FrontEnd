@@ -12,6 +12,8 @@ import { CreateUserModal } from '@/presentation/features/security/components/cre
 import { EditUserModal } from '@/presentation/features/security/components/edit-user-modal'
 import { TemporaryPasswordModal } from '@/presentation/features/security/components/temporary-password-modal'
 import { UsersTable } from '@/presentation/features/security/components/users-table'
+import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
+import type { StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
 
 export const UsersPage = () => {
   const { user } = useAuth()
@@ -54,6 +56,7 @@ export const UsersPage = () => {
   const [editingUser, setEditingUser] = useState<SecurityUser | null>(null)
   const [temporaryUser, setTemporaryUser] = useState<SecurityUser | null>(null)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const status = useMemo<StatusFilterValue>(() => query.status, [query.status])
 
   const handleEditSave = async (userId: string, values: EditUserFormValues) => {
     const result = await editUser({
@@ -115,29 +118,42 @@ export const UsersPage = () => {
         ) : null}
       </div>
 
+      <ListFiltersBar
+        search={query.search ?? ''}
+        onSearchChange={(value) => {
+          setQuery((prev) => ({ ...prev, search: value }))
+          setPage(1)
+        }}
+        placeholder="Buscar por correo o teléfono..."
+        status={status}
+        onStatusChange={(value) => {
+          setQuery((prev) => ({ ...prev, status: value }))
+          setPage(1)
+        }}
+        actions={
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => setIsCreateOpen(true)}
+              disabled={isLoading}
+            >
+              Nuevo usuario
+            </button>
+          </div>
+        }
+      />
+
       <UsersTable
         users={users}
         isLoading={isLoading}
         error={error ?? agenciesError ?? rolesError}
         page={page}
         totalPages={totalPages}
-        query={query}
-        onQueryChange={setQuery}
         onPageChange={setPage}
         onEdit={setEditingUser}
         onGenerateTemporaryPassword={setTemporaryUser}
       />
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
-          onClick={() => setIsCreateOpen(true)}
-          disabled={isLoading}
-        >
-          Nuevo usuario
-        </button>
-      </div>
 
       <EditUserModal
         user={editingUser}

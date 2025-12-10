@@ -1,19 +1,22 @@
-import { useMemo, useState } from 'react'
-import { deleteClientAction } from '@/core/actions/clients/delete-client.action'
-import { toggleClientAction } from '@/core/actions/clients/toggle-client.action'
-import type { ClientFormValues } from '@/infrastructure/validations/clients/client.schema'
+import { useMemo, useState } from "react";
+import { deleteClientAction } from "@/core/actions/clients/delete-client.action";
+import { toggleClientAction } from "@/core/actions/clients/toggle-client.action";
+import type { ClientFormValues } from "@/infrastructure/validations/clients/client.schema";
 import type {
   ClientCreatePayload,
   ClientListItem,
-} from '@/infrastructure/interfaces/clients/client'
-import { useClientLookups } from '@/presentation/features/clients/hooks/use-client-lookups'
-import { useClientsExplorer } from '@/presentation/features/clients/hooks/use-clients-explorer'
-import { useClientDetail } from '@/presentation/features/clients/hooks/use-client-detail'
-import { useSaveClient } from '@/presentation/features/clients/hooks/use-save-client'
-import { ClientsTable } from '@/presentation/features/clients/components/clients-table'
-import { ClientForm } from '@/presentation/features/clients/components/client-form'
-import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
-import { mapGeneroEnumToOption, mapGeneroToEnum } from '@/core/helpers/genero-mapper'
+} from "@/infrastructure/interfaces/clients/client";
+import { useClientLookups } from "@/presentation/features/clients/hooks/use-client-lookups";
+import { useClientsExplorer } from "@/presentation/features/clients/hooks/use-clients-explorer";
+import { useClientDetail } from "@/presentation/features/clients/hooks/use-client-detail";
+import { useSaveClient } from "@/presentation/features/clients/hooks/use-save-client";
+import { ClientsTable } from "@/presentation/features/clients/components/clients-table";
+import { ClientForm } from "@/presentation/features/clients/components/client-form";
+import { ListFiltersBar } from "@/presentation/share/components/list-filters-bar";
+import {
+  mapGeneroEnumToOption,
+  mapGeneroToEnum,
+} from "@/core/helpers/genero-mapper";
 
 export const ClientsPage = () => {
   const {
@@ -23,12 +26,13 @@ export const ClientsPage = () => {
     professions,
     dependents,
     housingTypes,
+    departments,
     municipalities,
     activities,
     isLoading: isLoadingLookups,
     error: lookupError,
     activitiesError,
-  } = useClientLookups()
+  } = useClientLookups();
 
   const {
     clients,
@@ -41,37 +45,62 @@ export const ClientsPage = () => {
     setPage,
     refresh,
     updateActive,
-  } = useClientsExplorer()
+  } = useClientsExplorer();
 
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
-  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const {
     client: clientDetail,
     error: detailError,
     refresh: refreshDetail,
     setClient,
-  } = useClientDetail(selectedClientId)
+  } = useClientDetail(selectedClientId);
 
-  const { saveClient, isSaving, error: saveError, resetError } = useSaveClient()
-  const [actionError, setActionError] = useState<string | null>(null)
-  const [processingId, setProcessingId] = useState<string | null>(null)
+  const {
+    saveClient,
+    isSaving,
+    error: saveError,
+    resetError,
+  } = useSaveClient();
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const filtersError = lookupError ?? activitiesError ?? null
+  const filtersError = lookupError ?? activitiesError ?? null;
 
   const activitiesBySector = useMemo(() => {
-    const map: Record<string, typeof activities> = {}
+    const map: Record<string, typeof activities> = {};
     activities.forEach((activity) => {
       if (!map[activity.sectorId]) {
-        map[activity.sectorId] = []
+        map[activity.sectorId] = [];
       }
-      map[activity.sectorId].push(activity)
-    })
-    return map
-  }, [activities])
+      map[activity.sectorId].push(activity);
+    });
+    return map;
+  }, [activities]);
+
+  const municipalityOptions = useMemo(() => {
+    const sorted = [...municipalities].sort((a, b) => {
+      const byDepartment = a.departmentName.localeCompare(
+        b.departmentName,
+        "es"
+      );
+      if (byDepartment !== 0) return byDepartment;
+      return a.name.localeCompare(b.name, "es");
+    });
+    return sorted;
+  }, [municipalities]);
+
+  const municipalityNameById = useMemo(() => {
+    const map: Record<string, string> = {};
+    municipalities.forEach((municipality) => {
+      map[municipality.id] = municipality.name;
+    });
+    return map;
+  }, [municipalities]);
 
   const initialValues = useMemo(() => {
-    if (!clientDetail) return undefined
+    if (!clientDetail) return undefined;
     return {
       ...clientDetail,
       genero: mapGeneroEnumToOption(clientDetail.genero),
@@ -83,71 +112,72 @@ export const ClientsPage = () => {
         ...activity,
         activo: activity.activo ?? true,
       })),
-    } satisfies ClientFormValues
-  }, [clientDetail])
+    } satisfies ClientFormValues;
+  }, [clientDetail]);
 
   const handleSaveClient = async (values: ClientFormValues) => {
-    resetError()
-    setActionError(null)
+    resetError();
+    setActionError(null);
     const payload: ClientCreatePayload = {
       ...values,
       genero: mapGeneroToEnum(values.genero),
-      actividades: values.actividades.map(({ sectorId: _sector, ...rest }) => ({
-        ...rest,
-      })),
-    }
-    const result = await saveClient(payload, selectedClientId ?? undefined)
+      actividades: values.actividades.map(({ sectorId: _sector, ...rest }) => {
+        void _sector;
+        return { ...rest };
+      }),
+    };
+    const result = await saveClient(payload, selectedClientId ?? undefined);
     if (result.success) {
-      await refresh(1)
-      setClient(result.data)
-      setIsFormOpen(false)
-      setSelectedClientId(result.data.id)
+      await refresh(1);
+      setClient(result.data);
+      setIsFormOpen(false);
+      setSelectedClientId(result.data.id);
     } else {
-      setActionError(result.error)
+      setActionError(result.error);
     }
-  }
+  };
 
   const handleSelectClient = (client: ClientListItem) => {
-    setSelectedClientId(client.id)
-    setIsFormOpen(true)
-  }
+    setSelectedClientId(client.id);
+    setIsFormOpen(true);
+  };
 
   const handleToggleClient = async (client: ClientListItem) => {
-    setProcessingId(client.id)
-    const result = await toggleClientAction(client.id, !client.activo)
+    setProcessingId(client.id);
+    const result = await toggleClientAction(client.id, !client.activo);
     if (result.success) {
-      updateActive(client.id, !client.activo)
+      updateActive(client.id, !client.activo);
       if (selectedClientId === client.id) {
-        await refreshDetail(client.id)
+        await refreshDetail(client.id);
       }
     } else {
-      setActionError(result.error)
+      setActionError(result.error);
     }
-    setProcessingId(null)
-  }
+    setProcessingId(null);
+  };
 
   const handleDeleteClient = async (client: ClientListItem) => {
     if (
       !window.confirm(
-        '¿Eliminar el cliente? Se aplicará un borrado lógico y desaparecerá de los listados.',
+        "¿Eliminar el cliente? Se aplicará un borrado lógico y desaparecerá de los listados."
       )
     ) {
-      return
+      return;
     }
-    setProcessingId(client.id)
-    const result = await deleteClientAction(client.id)
+    setProcessingId(client.id);
+    const result = await deleteClientAction(client.id);
     if (result.success) {
-      await refresh(1)
+      await refresh(1);
       if (selectedClientId === client.id) {
-        setIsFormOpen(false)
-        setSelectedClientId(null)
-        setClient(null)
+        setIsFormOpen(false);
+        setSelectedClientId(null);
+        setClient(null);
       }
     } else {
-      setActionError(result.error)
+      setActionError(result.error);
     }
-    setProcessingId(null)
-  }
+    setProcessingId(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -156,7 +186,7 @@ export const ClientsPage = () => {
           Clientes
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Filtra por sector, estado y género. La paginación aparece al final de la tabla.
+          Filtra por nombre, estado y municipio.
         </p>
       </div>
 
@@ -165,19 +195,20 @@ export const ClientsPage = () => {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
-                {selectedClientId ? 'Editar cliente' : 'Nuevo cliente'}
+                {selectedClientId ? "Editar cliente" : "Nuevo cliente"}
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Valida identidad (13 dígitos), teléfonos hasta 20 caracteres y una sola actividad principal.
+                Valida identidad (13 dígitos), teléfonos hasta 20 caracteres y
+                una sola actividad principal.
               </p>
             </div>
             <button
               type="button"
               onClick={() => {
-                setIsFormOpen(false)
-                setSelectedClientId(null)
-                setClient(null)
-                setActionError(null)
+                setIsFormOpen(false);
+                setSelectedClientId(null);
+                setClient(null);
+                setActionError(null);
               }}
               className="btn-icon"
               aria-label="Cerrar formulario"
@@ -203,10 +234,10 @@ export const ClientsPage = () => {
             isSaving={isSaving}
             onSubmit={handleSaveClient}
             onCancel={() => {
-              setIsFormOpen(false)
-              setSelectedClientId(null)
-              setClient(null)
-              setActionError(null)
+              setIsFormOpen(false);
+              setSelectedClientId(null);
+              setClient(null);
+              setActionError(null);
             }}
             catalogs={{
               sectors,
@@ -215,6 +246,7 @@ export const ClientsPage = () => {
               professions,
               dependents,
               housingTypes,
+              departments,
               municipalities,
               activities,
               activitiesBySector,
@@ -227,24 +259,43 @@ export const ClientsPage = () => {
           <ListFiltersBar
             search={filters.search}
             onSearchChange={(value) => {
-              setFilters((prev) => ({ ...prev, search: value }))
-              setPage(1)
+              setFilters((prev) => ({ ...prev, search: value }));
+              setPage(1);
             }}
             placeholder="Buscar por nombre o identidad..."
             status={filters.activo}
             onStatusChange={(value) => {
-              setFilters((prev) => ({ ...prev, activo: value }))
-              setPage(1)
+              setFilters((prev) => ({ ...prev, activo: value }));
+              setPage(1);
             }}
+            children={
+              <select
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40 md:w-64"
+                value={filters.municipioId ?? ""}
+                onChange={(event) => {
+                  const next = event.target.value || undefined;
+                  setFilters((prev) => ({ ...prev, municipioId: next }));
+                  setPage(1);
+                }}
+                disabled={isLoadingLookups}
+              >
+                <option value="">Todos los municipios</option>
+                {municipalityOptions.map((municipality) => (
+                  <option key={municipality.id} value={municipality.id}>
+                    {municipality.departmentName} · {municipality.name}
+                  </option>
+                ))}
+              </select>
+            }
             actions={
               <>
                 <button
                   type="button"
                   className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => {
-                    setClient(null)
-                    setSelectedClientId(null)
-                    setIsFormOpen(true)
+                    setClient(null);
+                    setSelectedClientId(null);
+                    setIsFormOpen(true);
                   }}
                 >
                   Nuevo cliente
@@ -263,18 +314,19 @@ export const ClientsPage = () => {
               setPage(Math.min(Math.max(1, next), Math.max(1, totalPages)))
             }
             onSelect={(client) => {
-              handleSelectClient(client)
-              setIsFormOpen(true)
+              handleSelectClient(client);
+              setIsFormOpen(true);
             }}
             onToggle={handleToggleClient}
             onDelete={handleDeleteClient}
             processingId={processingId}
+            municipalityNameById={municipalityNameById}
           />
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 const CloseIcon = ({ className }: { className?: string }) => (
   <svg
@@ -291,4 +343,4 @@ const CloseIcon = ({ className }: { className?: string }) => (
     <path d="M18 6 6 18" />
     <path d="m6 6 12 12" />
   </svg>
-)
+);

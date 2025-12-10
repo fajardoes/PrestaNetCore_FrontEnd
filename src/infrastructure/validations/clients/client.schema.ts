@@ -17,7 +17,7 @@ export const referenceSchema = z.object({
     .trim()
     .min(1, 'El parentesco es obligatorio.')
     .max(150, 'Máximo 150 caracteres.'),
-  direccion: z
+  address: z
     .string()
     .trim()
     .max(300, 'Máximo 300 caracteres.')
@@ -94,7 +94,7 @@ export const clientSchema = z
       .max(25, 'Máximo 25 caracteres.')
       .optional()
       .nullable(),
-    direccion: z
+    address: z
       .string({ required_error: 'La dirección es obligatoria.' })
       .trim()
       .min(5, 'Ingresa una dirección válida.')

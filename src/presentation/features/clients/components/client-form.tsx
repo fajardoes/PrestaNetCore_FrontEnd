@@ -1,10 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ClientCatalogItem } from '@/infrastructure/interfaces/clients/catalog'
 import type { ClientActivity, ClientReference } from '@/infrastructure/interfaces/clients/client'
 import { mapGeneroCatalogToEnum, mapGeneroEnumToOption } from '@/core/helpers/genero-mapper'
 import type { EconomicActivityCatalog } from '@/infrastructure/interfaces/clients/catalog'
+import type {
+  Department,
+  Municipality,
+} from '@/infrastructure/interfaces/organization/geography'
 import {
   clientSchema,
   type ClientFormValues,
@@ -26,7 +30,8 @@ interface ClientFormProps {
     professions: ClientCatalogItem[]
     dependents: ClientCatalogItem[]
     housingTypes: ClientCatalogItem[]
-    municipalities: ClientCatalogItem[]
+    departments: Department[]
+    municipalities: Municipality[]
     activities: EconomicActivityCatalog[]
     activitiesBySector: Record<string, EconomicActivityCatalog[]>
   }
@@ -64,7 +69,7 @@ export const ClientForm = ({
       nombreCompleto: '',
       identidad: '',
       rtn: '',
-      direccion: '',
+      address: '',
       telefono: '',
       genero: '',
       estadoCivilId: '',
@@ -104,7 +109,7 @@ export const ClientForm = ({
         fechaNacimiento: toSafeDateInput(initialValues.fechaNacimiento),
         referencias: (initialValues.referencias ?? []).map((reference) => ({
           ...reference,
-          direccion: reference.direccion ?? '',
+          address: reference.address ?? '',
           lugarTrabajo: reference.lugarTrabajo ?? '',
           activo: reference.activo ?? true,
         })),
@@ -120,8 +125,69 @@ export const ClientForm = ({
     }
   }, [initialValues, reset])
 
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('')
+  const municipalityId = watch('municipioId')
+
+  useEffect(() => {
+    if (initialValues?.municipioId && catalogs.municipalities.length) {
+      const currentMunicipality = catalogs.municipalities.find(
+        (item) => item.id === initialValues.municipioId,
+      )
+      if (currentMunicipality) {
+        setSelectedDepartmentId(currentMunicipality.departmentId)
+        return
+      }
+    }
+    if (!initialValues?.municipioId) {
+      setSelectedDepartmentId('')
+    }
+  }, [catalogs.municipalities, initialValues?.municipioId])
+
+  useEffect(() => {
+    if (!municipalityId) return
+    const current = catalogs.municipalities.find(
+      (item) => item.id === municipalityId,
+    )
+    if (current && current.departmentId !== selectedDepartmentId) {
+      setSelectedDepartmentId(current.departmentId)
+    }
+  }, [catalogs.municipalities, municipalityId, selectedDepartmentId])
+
   const activities = watch('actividades')
   const references = watch('referencias')
+
+  const handleDepartmentChange = (departmentId: string) => {
+    setSelectedDepartmentId(departmentId)
+    const currentMunicipalityId = getValues('municipioId')
+    const belongsToDepartment = catalogs.municipalities.some(
+      (municipality) =>
+        municipality.id === currentMunicipalityId &&
+        municipality.departmentId === departmentId,
+    )
+    if (currentMunicipalityId && !belongsToDepartment) {
+      setValue('municipioId', '')
+    }
+  }
+
+  const sortedDepartments = useMemo(
+    () =>
+      [...catalogs.departments].sort((a, b) =>
+        a.name.localeCompare(b.name, 'es'),
+      ),
+    [catalogs.departments],
+  )
+
+  const municipalityOptions = useMemo(() => {
+    const options = catalogs.municipalities.filter((municipality) => {
+      const matchesDepartment = selectedDepartmentId
+        ? municipality.departmentId === selectedDepartmentId
+        : true
+      const isActiveOrSelected =
+        municipality.activo || municipality.id === municipalityId
+      return matchesDepartment && isActiveOrSelected
+    })
+    return options.sort((a, b) => a.name.localeCompare(b.name, 'es'))
+  }, [catalogs.municipalities, municipalityId, selectedDepartmentId])
 
   const openNewReferenceModal = () => {
     setEditingReferenceIndex(null)
@@ -298,11 +364,11 @@ export const ClientForm = ({
             id="direccion"
             rows={2}
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('direccion')}
+            {...register('address')}
             disabled={isSaving}
           />
-          {errors.direccion ? (
-            <p className="text-xs text-red-500">{errors.direccion.message}</p>
+          {errors.address ? (
+            <p className="text-xs text-red-500">{errors.address.message}</p>
           ) : null}
         </div>
 
@@ -411,6 +477,29 @@ export const ClientForm = ({
 
         <div className="space-y-2">
           <label
+            htmlFor="departmentId"
+            className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+          >
+            Departamento
+          </label>
+          <select
+            id="departmentId"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+            value={selectedDepartmentId}
+            onChange={(event) => handleDepartmentChange(event.target.value)}
+            disabled={isSaving}
+          >
+            <option value="">Selecciona...</option>
+            {sortedDepartments.map((department) => (
+              <option key={department.id} value={department.id}>
+                {department.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label
             htmlFor="municipioId"
             className="block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
@@ -420,18 +509,22 @@ export const ClientForm = ({
             id="municipioId"
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
             {...register('municipioId')}
-            disabled={isSaving}
+            disabled={isSaving || (!municipalityOptions.length && !municipalityId)}
           >
             <option value="">Selecciona...</option>
-            {catalogs.municipalities.map((item) => (
+            {municipalityOptions.map((item) => (
               <option key={item.id} value={item.id}>
-                {item.nombre}
+                {item.name} · {item.departmentName}
               </option>
             ))}
           </select>
           {errors.municipioId ? (
             <p className="text-xs text-red-500">
               {errors.municipioId.message}
+            </p>
+          ) : !municipalityOptions.length ? (
+            <p className="text-xs text-amber-600 dark:text-amber-300">
+              Selecciona un departamento para mostrar sus municipios activos.
             </p>
           ) : null}
         </div>
@@ -572,9 +665,9 @@ export const ClientForm = ({
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     {reference.parentesco} · {reference.telefono}
                   </p>
-                  {reference.direccion ? (
+                  {reference.address ? (
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {reference.direccion}
+                      {reference.address}
                     </p>
                   ) : null}
                 </div>

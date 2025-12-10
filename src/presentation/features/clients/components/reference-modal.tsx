@@ -30,7 +30,7 @@ export const ReferenceModal = ({
       nombreCompleto: '',
       telefono: '',
       parentesco: '',
-      direccion: '',
+      address: '',
       lugarTrabajo: '',
       activo: true,
     },
@@ -43,7 +43,7 @@ export const ReferenceModal = ({
           nombreCompleto: '',
           telefono: '',
           parentesco: '',
-          direccion: '',
+          address: '',
           lugarTrabajo: '',
           activo: true,
         },
@@ -136,10 +136,10 @@ export const ReferenceModal = ({
             </label>
             <input
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('direccion')}
+              {...register('address')}
             />
-            {errors.direccion ? (
-              <p className="text-xs text-red-500">{errors.direccion.message}</p>
+            {errors.address ? (
+              <p className="text-xs text-red-500">{errors.address.message}</p>
             ) : null}
           </div>
 

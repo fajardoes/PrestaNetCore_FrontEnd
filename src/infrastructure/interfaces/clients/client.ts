@@ -5,7 +5,7 @@ export interface ClientReference {
   nombreCompleto: string
   telefono: string
   parentesco: string
-  direccion?: string | null
+  address?: string | null
   lugarTrabajo?: string | null
   activo?: boolean
 }
@@ -58,7 +58,7 @@ export interface ClientCreatePayload {
   nombreCompleto: string
   identidad: string
   rtn?: string | null
-  direccion: string
+  address: string
   telefono?: string | null
   genero: Genero
   estadoCivilId: string

@@ -74,6 +74,22 @@ const OrganizationIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const LocationIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 21s-6-5.14-6-11a6 6 0 1 1 12 0c0 5.86-6 11-6 11Z" />
+    <circle cx="12" cy="10" r="2.5" />
+  </svg>
+)
+
 const ClientsIcon = ({ className }: { className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -146,6 +162,16 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
           to: '/organization/agencies',
           label: 'Agencias',
           icon: OrganizationIcon,
+        },
+        {
+          to: '/organization/departments',
+          label: 'Departamentos',
+          icon: LocationIcon,
+        },
+        {
+          to: '/organization/municipalities',
+          label: 'Municipios',
+          icon: LocationIcon,
         },
       ]
     : []

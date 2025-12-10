@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { listClientCatalogsAction } from '@/core/actions/clients/list-client-catalogs.action'
 import { listEconomicActivitiesAction } from '@/core/actions/clients/list-economic-activities.action'
+import { listDepartmentsAction } from '@/core/actions/geography/list-departments.action'
+import { listMunicipalitiesAction } from '@/core/actions/geography/list-municipalities.action'
 import type {
   ClientCatalogItem,
   EconomicActivityCatalog,
 } from '@/infrastructure/interfaces/clients/catalog'
+import type {
+  Department,
+  Municipality,
+} from '@/infrastructure/interfaces/organization/geography'
 
 const LOOKUP_SLUGS = {
   sectors: 'clientes-sector',
@@ -31,7 +37,8 @@ export const useClientLookups = () => {
     professions: ClientCatalogItem[]
     dependents: ClientCatalogItem[]
     housingTypes: ClientCatalogItem[]
-    municipalities: ClientCatalogItem[]
+    departments: Department[]
+    municipalities: Municipality[]
   }>({
     sectors: [],
     civilStatus: [],
@@ -39,6 +46,7 @@ export const useClientLookups = () => {
     professions: [],
     dependents: [],
     housingTypes: [],
+    departments: [],
     municipalities: [],
   })
 
@@ -62,6 +70,7 @@ export const useClientLookups = () => {
       professions,
       dependents,
       housingTypes,
+      departments,
     ] = await Promise.all([
       listClientCatalogsAction({
         parentSlug: LOOKUP_SLUGS.sectors,
@@ -99,6 +108,7 @@ export const useClientLookups = () => {
         pageNumber: 1,
         pageSize: 200,
       }),
+      listDepartmentsAction(),
     ])
 
     const catalogError = [
@@ -108,6 +118,7 @@ export const useClientLookups = () => {
       professions,
       dependents,
       housingTypes,
+      departments,
     ].find((result) => !result.success)?.error ?? null
 
     if (
@@ -126,27 +137,24 @@ export const useClientLookups = () => {
         dependents: dependents.data.items,
         housingTypes: housingTypes.data.items,
         municipalities: [],
+        departments: departments.success ? departments.data : [],
       })
     } else {
       setCatalogs((prev) => ({ ...prev }))
     }
 
-    const municipalities = await listClientCatalogsAction({
-      parentSlug: LOOKUP_SLUGS.municipalities,
-      onlyActive: true,
-      pageNumber: 1,
-      pageSize: 300,
-    })
+    const municipalities = await listMunicipalitiesAction()
 
     if (municipalities.success) {
       setCatalogs((prev) => ({
         ...prev,
-        municipalities: municipalities.data.items,
+        municipalities: municipalities.data,
       }))
     }
 
     setError(
       catalogError ??
+        (departments.success ? null : departments.error ?? null) ??
         (municipalities.success ? null : municipalities.error ?? null),
     )
     setIsLoading(false)

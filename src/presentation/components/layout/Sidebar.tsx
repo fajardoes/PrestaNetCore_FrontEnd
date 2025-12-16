@@ -22,23 +22,6 @@ const HomeIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
-const InfoIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 16v-4" />
-    <path d="M12 8h.01" />
-  </svg>
-)
-
 const SecurityIcon = ({ className }: { className?: string }) => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -141,10 +124,7 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
   const isAssistant =
     user?.roles?.some((role) => role?.toLowerCase() === 'assistant') ?? false
 
-  const navigation = [
-    { to: '/', label: 'Inicio', icon: HomeIcon },
-    { to: '/about', label: 'Acerca de', icon: InfoIcon },
-  ]
+  const navigation = [{ to: '/', label: 'Inicio', icon: HomeIcon }]
 
   const securityNav = isAdmin
     ? [

@@ -1,6 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { LayoutShell } from '@/presentation/components/layout/LayoutShell'
-import { AboutPage } from '@/presentation/pages/AboutPage'
 import { HomePage } from '@/presentation/pages/HomePage'
 import { ForceChangePasswordPage } from '@/presentation/features/auth/pages/force-change-password-page'
 import { LoginPage } from '@/presentation/features/auth/pages/login-page'
@@ -20,10 +19,9 @@ export const AppRouter = () => {
           element={<ForceChangePasswordPage />}
         />
         <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-        <Route element={<LayoutShell />}>
-          <Route index element={<HomePage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute />}>
+          <Route element={<LayoutShell />}>
+            <Route index element={<HomePage />} />
             {SecurityRoutes()}
             {OrganizationRoutes()}
             {ClientsRoutes()}

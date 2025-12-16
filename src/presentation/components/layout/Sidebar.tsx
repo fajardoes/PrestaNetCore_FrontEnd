@@ -110,6 +110,27 @@ const CatalogsIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const AccountingIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M4 4h16v16H4z" />
+    <path d="M8 4v16" />
+    <path d="M16 4v16" />
+    <path d="M4 9h4" />
+    <path d="M4 15h4" />
+    <path d="M16 9h4" />
+    <path d="M16 15h4" />
+  </svg>
+)
+
 export const Sidebar = ({ collapsed }: SidebarProps) => {
   const { user } = useAuth()
   const location = useLocation()
@@ -117,6 +138,7 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
   const [isSecurityOpen, setIsSecurityOpen] = useState(false)
   const [isOrganizationOpen, setIsOrganizationOpen] = useState(false)
   const [isClientsOpen, setIsClientsOpen] = useState(false)
+  const [isAccountingOpen, setIsAccountingOpen] = useState(false)
 
   const isLoggedIn = Boolean(user)
   const isAdmin =
@@ -152,6 +174,26 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
           to: '/organization/municipalities',
           label: 'Municipios',
           icon: LocationIcon,
+        },
+      ]
+    : []
+
+  const accountingNav = isAdmin
+    ? [
+        {
+          to: '/accounting/chart',
+          label: 'Plan de cuentas',
+          icon: AccountingIcon,
+        },
+        {
+          to: '/accounting/cost-centers',
+          label: 'Centros de costo',
+          icon: AccountingIcon,
+        },
+        {
+          to: '/accounting/periods',
+          label: 'Períodos',
+          icon: AccountingIcon,
         },
       ]
     : []
@@ -294,6 +336,59 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
             </button>
             {isSecurityOpen
               ? securityNav.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    title={item.label}
+                    className={({ isActive }) => {
+                      const baseClasses =
+                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white'
+                      const collapsedClasses = collapsed
+                        ? 'flex-col gap-2 px-2 py-3 text-xs'
+                        : ''
+                      const nestedClasses = collapsed
+                        ? ''
+                        : 'ml-2 border-l border-slate-700/40 pl-4'
+                      const activeClasses = isActive
+                        ? 'bg-slate-100 text-sidebar'
+                        : 'text-slate-200'
+                      return [
+                        baseClasses,
+                        collapsedClasses,
+                        nestedClasses,
+                        activeClasses,
+                      ].join(' ')
+                    }}
+                  >
+                    <item.icon className="h-5 w-5" aria-hidden="true" />
+                    {!collapsed ? <span>{item.label}</span> : null}
+                  </NavLink>
+                ))
+              : null}
+          </div>
+        ) : null}
+
+        {accountingNav.length ? (
+          <div className="mt-4 space-y-1">
+            <button
+              type="button"
+              onClick={() => setIsAccountingOpen((open) => !open)}
+              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-700/60 ${
+                collapsed ? 'flex-col gap-1 text-center' : 'text-slate-500'
+              }`}
+            >
+              <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                <AccountingIcon className="h-4 w-4" />
+                {!collapsed ? 'Contabilidad' : null}
+              </span>
+              <ChevronIcon
+                className={`h-3 w-3 text-slate-500 transition-transform ${
+                  isAccountingOpen ? 'rotate-0' : '-rotate-90'
+                }`}
+              />
+            </button>
+            {isAccountingOpen
+              ? accountingNav.map((item) => (
                   <NavLink
                     key={item.to}
                     to={item.to}

@@ -1,4 +1,5 @@
 import axios, { AxiosError, type AxiosInstance } from 'axios'
+import { httpActivityTracker } from '@/infrastructure/api/httpActivityTracker'
 import { tokenStorage } from './tokenStorage'
 import type { RefreshResponse } from '@/types/auth'
 
@@ -82,6 +83,7 @@ const refreshAccessToken = async (): Promise<string | null> => {
 }
 
 httpClient.interceptors.request.use((config) => {
+  httpActivityTracker.increment()
   const accessToken = tokenStorage.getAccessToken()
   if (accessToken) {
     config.headers = config.headers ?? {}
@@ -91,8 +93,12 @@ httpClient.interceptors.request.use((config) => {
 })
 
 httpClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    httpActivityTracker.decrement()
+    return response
+  },
   async (error: AxiosError) => {
+    httpActivityTracker.decrement()
     const { response, config } = error
     if (!response || !config) {
       return Promise.reject(error)

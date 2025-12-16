@@ -5,6 +5,11 @@
 - **Lint**: `npm run lint` – Run ESLint across the project
 - **Preview**: `npm run preview` – Serve the production build locally
 
+## Componentes compartidos de listas/tablas
+
+- `src/presentation/share/components/list-filters-bar.tsx`: barra estándar de filtros con buscador y selector de estado (activos/inactivos/todos). Recibe `search`, `onSearchChange`, `status`, `onStatusChange`, `placeholder`, `children` para filtros adicionales (por ejemplo selects) y `actions` para botones (crear, limpiar filtros, etc.). Úsalo en páginas de listados para mantener consistencia.
+- `src/presentation/share/components/table-pagination.tsx`: pie de paginación uniforme para tablas. Recibe `page`, `totalPages`, `onPageChange` y opcional `label`. Integrarlo en tablas para la navegación de páginas.
+
 ## Architecture Overview
 
 The frontend follows a Clean Architecture separation: core business logic, infrastructure concerns, and presentation/UI. Every new feature or component must respect this layering to keep responsibilities clean and evolvable.

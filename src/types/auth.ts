@@ -5,6 +5,9 @@ export interface AuthUser {
   email: string
   fullName: string
   roles: Role[]
+  agencyId?: string | null
+  agencyName?: string | null
+  agencyCode?: string | null
 }
 
 export interface AuthTokens {

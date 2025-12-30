@@ -1,3 +1,3 @@
 export interface ClosePeriodRequest {
-  notes?: string | null
+  notes?: string
 }

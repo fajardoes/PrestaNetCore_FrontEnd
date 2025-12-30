@@ -1,15 +1,16 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { yupResolver } from '@hookform/resolvers/yup'
 import {
   closePeriodSchema,
   type ClosePeriodFormValues,
 } from '@/infrastructure/validations/accounting/close-period.schema'
-import type { AccountingPeriod } from '@/infrastructure/interfaces/accounting/accounting-period'
+import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
 
 interface ClosePeriodModalProps {
   open: boolean
-  period?: AccountingPeriod | null
+  period?: AccountingPeriodDto | null
+  nextPeriodPreview?: { month: number; fiscalYear: number } | null
   onClose: () => void
   onSubmit: (values: ClosePeriodFormValues) => Promise<void> | void
   isSubmitting: boolean
@@ -19,6 +20,7 @@ interface ClosePeriodModalProps {
 export const ClosePeriodModal = ({
   open,
   period,
+  nextPeriodPreview,
   onClose,
   onSubmit,
   isSubmitting,
@@ -30,7 +32,7 @@ export const ClosePeriodModal = ({
     reset,
     formState: { errors },
   } = useForm<ClosePeriodFormValues>({
-    resolver: zodResolver(closePeriodSchema),
+    resolver: yupResolver(closePeriodSchema),
     defaultValues: {
       notes: '',
     },
@@ -44,6 +46,25 @@ export const ClosePeriodModal = ({
 
   if (!open || !period) return null
 
+  const monthNames = [
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre',
+  ]
+  const currentMonthLabel = monthNames[period.month - 1] ?? `Mes ${period.month}`
+  const nextMonthLabel = nextPeriodPreview
+    ? monthNames[nextPeriodPreview.month - 1] ?? `Mes ${nextPeriodPreview.month}`
+    : null
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
       <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
@@ -53,7 +74,15 @@ export const ClosePeriodModal = ({
               Cerrar período {period.fiscalYear}-{String(period.month).padStart(2, '0')}
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Confirma el cierre e incluye notas que expliquen el estado final.
+              Al cerrar <span className="font-semibold">{currentMonthLabel} {period.fiscalYear}</span>, el sistema abrirá automáticamente{' '}
+              {nextPeriodPreview && nextMonthLabel ? (
+                <span className="font-semibold">
+                  {nextMonthLabel} {nextPeriodPreview.fiscalYear}
+                </span>
+              ) : (
+                <span className="font-semibold">el siguiente mes</span>
+              )}
+              .
             </p>
           </div>
           <button

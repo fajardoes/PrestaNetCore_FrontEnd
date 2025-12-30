@@ -1,7 +1,11 @@
-import { z } from 'zod'
+import * as yup from 'yup'
 
-export const closePeriodSchema = z.object({
-  notes: z.string().max(1000, { message: 'Máximo 1000 caracteres.' }).optional().nullable(),
+export const closePeriodSchema = yup.object({
+  notes: yup
+    .string()
+    .trim()
+    .max(500, 'Máximo 500 caracteres.')
+    .optional(),
 })
 
-export type ClosePeriodFormValues = z.infer<typeof closePeriodSchema>
+export type ClosePeriodFormValues = yup.InferType<typeof closePeriodSchema>

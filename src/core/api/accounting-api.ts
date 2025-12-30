@@ -1,7 +1,8 @@
 import { httpClient } from '@/infrastructure/api/httpClient'
 import type { ChartAccountDetail, ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
-import type { AccountingPeriod, AccountingPeriodState } from '@/infrastructure/interfaces/accounting/accounting-period'
+import type { AccountingPeriodDto, AccountingPeriodState } from '@/infrastructure/interfaces/accounting/accounting-period'
+import type { ClosePeriodResult } from '@/infrastructure/interfaces/accounting/close-period-result'
 import type { PagedResponse } from '@/infrastructure/interfaces/accounting/paged-response'
 import type { CreateChartAccountRequest } from '@/infrastructure/interfaces/accounting/requests/create-chart-account.request'
 import type { UpdateChartAccountRequest } from '@/infrastructure/interfaces/accounting/requests/update-chart-account.request'
@@ -88,16 +89,16 @@ export const accountingApi = {
     return data
   },
 
-  async getPeriods(params: PeriodFilters): Promise<PagedResponse<AccountingPeriod>> {
-    const { data } = await httpClient.get<PagedResponse<AccountingPeriod>>(
+  async getPeriods(params: PeriodFilters): Promise<PagedResponse<AccountingPeriodDto>> {
+    const { data } = await httpClient.get<PagedResponse<AccountingPeriodDto>>(
       '/accounting/periods',
       { params },
     )
     return data
   },
 
-  async openPeriod(payload: OpenPeriodRequest): Promise<AccountingPeriod> {
-    const { data } = await httpClient.post<AccountingPeriod>(
+  async openPeriod(payload: OpenPeriodRequest): Promise<AccountingPeriodDto> {
+    const { data } = await httpClient.post<AccountingPeriodDto>(
       '/accounting/periods/open',
       payload,
     )
@@ -107,8 +108,8 @@ export const accountingApi = {
   async closePeriod(
     periodId: string,
     payload: ClosePeriodRequest,
-  ): Promise<AccountingPeriod> {
-    const { data } = await httpClient.post<AccountingPeriod>(
+  ): Promise<ClosePeriodResult> {
+    const { data } = await httpClient.post<ClosePeriodResult>(
       `/accounting/periods/${periodId}/close`,
       payload,
     )

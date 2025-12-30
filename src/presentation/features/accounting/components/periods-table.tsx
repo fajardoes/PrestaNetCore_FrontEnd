@@ -1,15 +1,15 @@
-import type { AccountingPeriod } from '@/infrastructure/interfaces/accounting/accounting-period'
+import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
 import { AccountingStatusBadge } from './accounting-status-badge'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface PeriodsTableProps {
-  periods: AccountingPeriod[]
+  periods: AccountingPeriodDto[]
   isLoading: boolean
   error: string | null
   page: number
   totalPages: number
   onPageChange: (page: number) => void
-  onClosePeriod?: (period: AccountingPeriod) => void
+  onClosePeriod?: (period: AccountingPeriodDto) => void
 }
 
 const monthNames = [

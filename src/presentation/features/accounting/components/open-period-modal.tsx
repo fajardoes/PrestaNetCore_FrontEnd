@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
+import { yupResolver } from '@hookform/resolvers/yup'
 import {
   openPeriodSchema,
   type OpenPeriodFormValues,
@@ -27,7 +27,7 @@ export const OpenPeriodModal = ({
     reset,
     formState: { errors },
   } = useForm<OpenPeriodFormValues>({
-    resolver: zodResolver(openPeriodSchema),
+    resolver: yupResolver(openPeriodSchema),
     defaultValues: {
       fiscalYear: new Date().getFullYear(),
       month: new Date().getMonth() + 1,

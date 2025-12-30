@@ -1,10 +1,10 @@
 import { useCallback, useState } from 'react'
 import { openPeriodAction } from '@/core/actions/accounting/open-period.action'
-import type { AccountingPeriod } from '@/infrastructure/interfaces/accounting/accounting-period'
+import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
 import type { OpenPeriodRequest } from '@/infrastructure/interfaces/accounting/requests/open-period.request'
 
 interface UseOpenPeriodOptions {
-  onCompleted?: (period: AccountingPeriod) => void
+  onCompleted?: (period: AccountingPeriodDto) => void
 }
 
 export const useOpenPeriod = (options?: UseOpenPeriodOptions) => {

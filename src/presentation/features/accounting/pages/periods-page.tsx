@@ -1,16 +1,20 @@
 import { useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useNotifications } from '@/providers/NotificationProvider'
 import { usePeriods } from '@/presentation/features/accounting/hooks/use-periods'
 import { useOpenPeriod } from '@/presentation/features/accounting/hooks/use-open-period'
 import { useClosePeriod } from '@/presentation/features/accounting/hooks/use-close-period'
 import { PeriodsTable } from '@/presentation/features/accounting/components/periods-table'
 import { OpenPeriodModal } from '@/presentation/features/accounting/components/open-period-modal'
 import { ClosePeriodModal } from '@/presentation/features/accounting/components/close-period-modal'
+import { OpenPeriodCard } from '@/presentation/features/accounting/components/open-period-card'
+import { AdvancedPeriodActions } from '@/presentation/features/accounting/components/advanced-period-actions'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
-import type { AccountingPeriodState } from '@/infrastructure/interfaces/accounting/accounting-period'
+import type { AccountingPeriodDto, AccountingPeriodState } from '@/infrastructure/interfaces/accounting/accounting-period'
 
 export const PeriodsPage = () => {
   const { user } = useAuth()
+  const { notify } = useNotifications()
   const isAdmin =
     user?.roles?.some((role) => role.toLowerCase() === 'admin') ?? false
 
@@ -26,24 +30,21 @@ export const PeriodsPage = () => {
     periodState,
     setPeriodState,
     refresh,
+    openPeriod,
+    openPeriodLoading,
+    openPeriodError,
+    getNextPeriodPreview,
   } = usePeriods({ enabled: isAdmin })
 
   const [openModal, setOpenModal] = useState(false)
-  const [closingPeriod, setClosingPeriod] = useState<
-    { id: string; fiscalYear: number; month: number; state: AccountingPeriodState } | null
-  >(null)
+  const [closingPeriod, setClosingPeriod] = useState<AccountingPeriodDto | null>(null)
   const openHook = useOpenPeriod({
     onCompleted: async () => {
       setOpenModal(false)
       await refresh()
     },
   })
-  const closeHook = useClosePeriod({
-    onCompleted: async () => {
-      setClosingPeriod(null)
-      await refresh()
-    },
-  })
+  const closeHook = useClosePeriod()
 
   const stateLabel = useMemo<Record<AccountingPeriodState | 'all', string>>(
     () => ({
@@ -79,9 +80,31 @@ export const PeriodsPage = () => {
           Contabilidad - Períodos
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Abre y cierra períodos mensuales, y bloquea meses cerrados según el backend.
+          Cierra el período vigente y el sistema abrirá automáticamente el siguiente mes.
         </p>
       </div>
+
+      {openPeriodLoading ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+          Cargando período abierto...
+        </div>
+      ) : openPeriod ? (
+        <OpenPeriodCard
+          period={openPeriod}
+          onClose={() => {
+            setClosingPeriod(openPeriod)
+          }}
+          isClosing={closeHook.isLoading}
+        />
+      ) : openPeriodError ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 shadow-sm dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+          {openPeriodError}
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
+          No hay un período <span className="font-semibold">OPEN</span> en este momento.
+        </div>
+      )}
 
       <ListFiltersBar
         search={year?.toString() ?? ''}
@@ -124,15 +147,7 @@ export const PeriodsPage = () => {
           </div>
         }
         actions={
-          <button
-            type="button"
-            className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={() => {
-              setOpenModal(true)
-            }}
-          >
-            Abrir período
-          </button>
+          <AdvancedPeriodActions onOpenPeriod={() => setOpenModal(true)} />
         }
       />
 
@@ -145,12 +160,7 @@ export const PeriodsPage = () => {
         onPageChange={(next) => setPage(Math.min(Math.max(1, next), totalPages))}
         onClosePeriod={(period) => {
           if (period.state !== 'open') return
-          setClosingPeriod({
-            id: period.id,
-            fiscalYear: period.fiscalYear,
-            month: period.month,
-            state: period.state,
-          })
+          setClosingPeriod(period)
         }}
       />
 
@@ -166,20 +176,20 @@ export const PeriodsPage = () => {
 
       <ClosePeriodModal
         open={Boolean(closingPeriod)}
-        period={
-          closingPeriod
-            ? {
-                id: closingPeriod.id,
-                fiscalYear: closingPeriod.fiscalYear,
-                month: closingPeriod.month,
-                state: closingPeriod.state,
-              }
-            : null
-        }
+        period={closingPeriod}
+        nextPeriodPreview={getNextPeriodPreview(closingPeriod)}
         onClose={() => setClosingPeriod(null)}
         onSubmit={async (values) => {
           if (!closingPeriod) return
-          await closeHook.closePeriod(closingPeriod.id, values)
+          const result = await closeHook.mutate(closingPeriod.id, values.notes ?? undefined)
+          if (result.success) {
+            notify(
+              `Período cerrado: ${result.data.closedPeriod.month}/${result.data.closedPeriod.fiscalYear} | Período abierto: ${result.data.openedPeriod.month}/${result.data.openedPeriod.fiscalYear}`,
+              'success',
+            )
+            setClosingPeriod(null)
+            await refresh()
+          }
         }}
         isSubmitting={closeHook.isLoading}
         error={closeHook.error}

@@ -195,6 +195,16 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
           label: 'Períodos',
           icon: AccountingIcon,
         },
+        {
+          to: '/accounting/journal',
+          label: 'Diario',
+          icon: AccountingIcon,
+        },
+        {
+          to: '/accounting/ledger',
+          label: 'Libro mayor',
+          icon: AccountingIcon,
+        },
       ]
     : []
 

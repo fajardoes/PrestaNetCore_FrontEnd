@@ -58,6 +58,11 @@ const extractAxiosMessage = (
     return responseData
   }
 
+  const problemDetailsMessage = extractProblemDetailsMessage(responseData)
+  if (problemDetailsMessage) {
+    return problemDetailsMessage
+  }
+
   if (
     responseData &&
     typeof responseData === 'object' &&
@@ -72,4 +77,54 @@ const extractAxiosMessage = (
   }
 
   return fallbackMessage
+}
+
+const extractProblemDetailsMessage = (responseData: unknown): string | null => {
+  if (!responseData || typeof responseData !== 'object') return null
+
+  const maybe = responseData as {
+    title?: unknown
+    detail?: unknown
+    errors?: unknown
+  }
+
+  const title = typeof maybe.title === 'string' ? maybe.title.trim() : ''
+  const detail = typeof maybe.detail === 'string' ? maybe.detail.trim() : ''
+  const validationMessages = extractValidationMessages(maybe.errors)
+
+  const base = detail || title
+  if (base && validationMessages.length) {
+    return `${base}: ${validationMessages.join(' • ')}`
+  }
+  if (validationMessages.length) {
+    return validationMessages.join(' • ')
+  }
+  if (base) {
+    return base
+  }
+
+  return null
+}
+
+const extractValidationMessages = (errors: unknown): string[] => {
+  if (!errors || typeof errors !== 'object') return []
+
+  const record = errors as Record<string, unknown>
+  const messages: string[] = []
+
+  for (const value of Object.values(record)) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === 'string' && item.trim()) {
+          messages.push(item.trim())
+        }
+      }
+      continue
+    }
+    if (typeof value === 'string' && value.trim()) {
+      messages.push(value.trim())
+    }
+  }
+
+  return Array.from(new Set(messages))
 }

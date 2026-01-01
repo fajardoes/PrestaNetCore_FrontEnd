@@ -131,6 +131,115 @@ const AccountingIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
+const ChartAccountsIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M4 4h8v5H4z" />
+    <path d="M12 9h8v5h-8z" />
+    <path d="M4 14h6v6H4z" />
+    <path d="M10 17h10" />
+  </svg>
+)
+
+const CostCenterIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v4" />
+    <path d="M12 18v4" />
+    <path d="M2 12h4" />
+    <path d="M18 12h4" />
+  </svg>
+)
+
+const PeriodsIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="4" y="5" width="16" height="15" rx="2" />
+    <path d="M9 3v4" />
+    <path d="M15 3v4" />
+    <path d="M4 10h16" />
+  </svg>
+)
+
+const JournalIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M7 3h10a2 2 0 0 1 2 2v14l-4-2-4 2-4-2V5a2 2 0 0 1 2-2z" />
+    <path d="M9 8h6" />
+    <path d="M9 11h6" />
+  </svg>
+)
+
+const LedgerIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <rect x="4" y="4" width="16" height="16" rx="2" />
+    <path d="M9 4v16" />
+    <path d="M15 4v16" />
+    <path d="M4 9h16" />
+    <path d="M4 15h16" />
+  </svg>
+)
+
+const ReportsIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M8 3h6l5 5v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
+    <path d="M14 3v5h5" />
+    <path d="M10 13h6" />
+    <path d="M10 17h6" />
+  </svg>
+)
+
 export const Sidebar = ({ collapsed }: SidebarProps) => {
   const { user } = useAuth()
   const location = useLocation()
@@ -183,27 +292,42 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
         {
           to: '/accounting/chart',
           label: 'Plan de cuentas',
-          icon: AccountingIcon,
+          icon: ChartAccountsIcon,
         },
         {
           to: '/accounting/cost-centers',
           label: 'Centros de costo',
-          icon: AccountingIcon,
+          icon: CostCenterIcon,
         },
         {
           to: '/accounting/periods',
           label: 'Períodos',
-          icon: AccountingIcon,
+          icon: PeriodsIcon,
         },
         {
           to: '/accounting/journal',
           label: 'Diario',
-          icon: AccountingIcon,
+          icon: JournalIcon,
         },
         {
           to: '/accounting/ledger',
           label: 'Libro mayor',
-          icon: AccountingIcon,
+          icon: LedgerIcon,
+        },
+        {
+          to: '/accounting/reports/trial-balance',
+          label: 'Balance de comprobacion',
+          icon: ReportsIcon,
+        },
+        {
+          to: '/accounting/reports/balance-sheet',
+          label: 'Balance general',
+          icon: ReportsIcon,
+        },
+        {
+          to: '/accounting/reports/income-statement',
+          label: 'Estado de resultados',
+          icon: ReportsIcon,
         },
       ]
     : []

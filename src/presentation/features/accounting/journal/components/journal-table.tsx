@@ -90,7 +90,14 @@ export const JournalTable = ({
           {entry.description}
         </td>
         <td className="px-4 py-3 text-sm">
-          <JournalEntryStateBadge state={entry.state} />
+          <div className="flex flex-col items-start gap-1">
+            <JournalEntryStateBadge state={entry.state} />
+            {entry.state !== 'posted' && entry.totalDebit !== entry.totalCredit ? (
+              <span className="text-[11px] font-semibold leading-4 text-amber-700 dark:text-amber-300">
+                • Desbalanceado
+              </span>
+            ) : null}
+          </div>
         </td>
         <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
           {entry.source === 'manual' ? 'Manual' : 'Sistema'}
@@ -128,7 +135,7 @@ export const JournalTable = ({
                 Postear
               </button>
             ) : null}
-            {entry.state === 'posted' ? (
+            {entry.state === 'posted' && entry.source === 'manual' ? (
               <button
                 type="button"
                 onClick={() => onVoid(entry)}

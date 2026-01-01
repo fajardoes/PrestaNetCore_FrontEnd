@@ -11,6 +11,7 @@ import { JournalTable } from '@/presentation/features/accounting/journal/compone
 import { JournalEntryFormModal } from '@/presentation/features/accounting/journal/components/journal-entry-form-modal'
 import { JournalEntryVoidModal } from '@/presentation/features/accounting/journal/components/journal-entry-void-modal'
 import { JournalEntryDetailModal } from '@/presentation/features/accounting/journal/components/journal-entry-detail-modal'
+import { JournalEntryPostModal } from '@/presentation/features/accounting/journal/components/journal-entry-post-modal'
 import { usePostableAccounts } from '@/presentation/features/accounting/hooks/use-postable-accounts'
 import { useCostCenterOptions } from '@/presentation/features/accounting/hooks/use-cost-center-options'
 import type { JournalEntryListItem } from '@/infrastructure/interfaces/accounting/journal-entry'
@@ -41,6 +42,7 @@ export const JournalPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [voidEntry, setVoidEntry] = useState<JournalEntryListItem | null>(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
+  const [postEntryId, setPostEntryId] = useState<string | null>(null)
 
   const formHook = useJournalEntryForm({
     entryId: editingId,
@@ -70,6 +72,7 @@ export const JournalPage = () => {
   })
 
   const detailHook = useJournalEntryDetail()
+  const postDetailHook = useJournalEntryDetail()
 
   const canCreate = isAdmin
 
@@ -85,10 +88,8 @@ export const JournalPage = () => {
   }
 
   const handlePost = async (entry: JournalEntryListItem) => {
-    const result = await postHook.postEntry(entry.id)
-    if (!result.success) {
-      notify(result.error, 'error')
-    }
+    setPostEntryId(entry.id)
+    await postDetailHook.loadEntry(entry.id)
   }
 
   const handleVoid = (entry: JournalEntryListItem) => {
@@ -173,6 +174,28 @@ export const JournalPage = () => {
         isEdit={Boolean(editingId)}
         accounts={accountsHook.accounts}
         costCenters={costCentersHook.costCenters}
+      />
+
+      <JournalEntryPostModal
+        open={Boolean(postEntryId)}
+        entry={postDetailHook.entry}
+        isLoading={postDetailHook.isLoading || postHook.isLoading}
+        error={postHook.error ?? postDetailHook.error}
+        onClose={() => {
+          setPostEntryId(null)
+          postDetailHook.clear()
+        }}
+        onConfirm={async () => {
+          if (!postEntryId || !postDetailHook.entry) return
+          if (postDetailHook.entry.totalDebit !== postDetailHook.entry.totalCredit) return
+          const result = await postHook.postEntry(postEntryId)
+          if (result.success) {
+            setPostEntryId(null)
+            postDetailHook.clear()
+          } else {
+            notify(result.error, 'error')
+          }
+        }}
       />
 
       <JournalEntryVoidModal

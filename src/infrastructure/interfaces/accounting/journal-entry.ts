@@ -30,4 +30,6 @@ export interface JournalEntryDetail extends JournalEntryListItem {
   lines: JournalEntryLine[]
   postedAt?: string | null
   voidedAt?: string | null
+  periodName?: string | null
+  costCenterName?: string | null
 }

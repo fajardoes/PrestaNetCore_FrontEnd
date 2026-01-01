@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { useFieldArray, type UseFormReturn } from 'react-hook-form'
+import { useFieldArray, useWatch, type UseFormReturn } from 'react-hook-form'
+import type { ChangeEvent, KeyboardEvent } from 'react'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
 import type { JournalEntryFormValues } from '@/infrastructure/validations/accounting/journal-entry.schema'
@@ -25,6 +25,13 @@ const formatAmount = (value: number) => {
   }).format(value)
 }
 
+const parseAmount = (value: string | number): number => {
+  if (value === '' || value === null || value === undefined) return 0
+  const normalized = String(value).replace(',', '.')
+  const parsed = parseFloat(normalized)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 export const JournalEntryFormModal = ({
   open,
   onClose,
@@ -41,7 +48,6 @@ export const JournalEntryFormModal = ({
     register,
     control,
     formState: { errors },
-    watch,
   } = form
 
   const { fields, append, remove } = useFieldArray({
@@ -49,24 +55,33 @@ export const JournalEntryFormModal = ({
     name: 'lines',
   })
 
-  const watchedLines = watch('lines') ?? []
+  const watchedLines = useWatch({
+    control,
+    name: 'lines',
+  }) ?? []
   const linesError = (errors.lines as { message?: string } | undefined)?.message
 
-  const totals = useMemo(() => {
-    const debit = watchedLines.reduce(
-      (sum, line) => sum + (Number(line?.debit) || 0),
-      0,
-    )
-    const credit = watchedLines.reduce(
-      (sum, line) => sum + (Number(line?.credit) || 0),
-      0,
-    )
-    return {
-      debit,
-      credit,
-      diff: debit - credit,
+  const totals = watchedLines.reduce(
+    (sum, line) => ({
+      debit: sum.debit + (Number(line?.debit) || 0),
+      credit: sum.credit + (Number(line?.credit) || 0),
+    }),
+    { debit: 0, credit: 0 },
+  )
+  const diff = totals.debit - totals.credit
+
+  const handleNumericKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'e' || event.key === 'E' || event.key === '+' || event.key === '-') {
+      event.preventDefault()
     }
-  }, [watchedLines])
+  }
+
+  const handleSanitizeInput = (event: ChangeEvent<HTMLInputElement>) => {
+    const cleaned = event.currentTarget.value.replace(/[^0-9.,]/g, '').replace(',', '.')
+    const parts = cleaned.split('.')
+    const normalized = parts.shift() + (parts.length ? `.${parts.join('')}` : '')
+    event.currentTarget.value = normalized
+  }
 
   if (!open) return null
 
@@ -195,6 +210,8 @@ export const JournalEntryFormModal = ({
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {fields.map((field, index) => {
                       const lineErrors = errors.lines?.[index]
+                      const lineLevelMessage =
+                        typeof lineErrors?.message === 'string' ? lineErrors.message : null
                       return (
                         <tr
                           key={field.id}
@@ -229,12 +246,14 @@ export const JournalEntryFormModal = ({
                           </td>
                           <td className="px-3 py-2 text-right text-sm">
                             <input
-                              type="number"
-                              step="0.01"
-                              min="0"
+                              type="text"
                               className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              inputMode="decimal"
+                              pattern="[0-9]*[.,]?[0-9]*"
+                              onKeyDown={handleNumericKeyDown}
+                              onInput={handleSanitizeInput}
                               {...register(`lines.${index}.debit` as const, {
-                                valueAsNumber: true,
+                                setValueAs: (value) => parseAmount(value),
                               })}
                               disabled={isSaving}
                             />
@@ -243,15 +262,22 @@ export const JournalEntryFormModal = ({
                                 {lineErrors.debit.message}
                               </p>
                             ) : null}
+                            {lineLevelMessage ? (
+                              <p className="mt-1 text-xs text-amber-600 dark:text-amber-300">
+                                {lineLevelMessage}
+                              </p>
+                            ) : null}
                           </td>
                           <td className="px-3 py-2 text-right text-sm">
                             <input
-                              type="number"
-                              step="0.01"
-                              min="0"
+                              type="text"
                               className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              inputMode="decimal"
+                              pattern="[0-9]*[.,]?[0-9]*"
+                              onKeyDown={handleNumericKeyDown}
+                              onInput={handleSanitizeInput}
                               {...register(`lines.${index}.credit` as const, {
-                                valueAsNumber: true,
+                                setValueAs: (value) => parseAmount(value),
                               })}
                               disabled={isSaving}
                             />
@@ -319,17 +345,17 @@ export const JournalEntryFormModal = ({
                 </span>
                 <span
                   className={
-                    totals.diff === 0
+                    diff === 0
                       ? 'text-emerald-600 dark:text-emerald-300'
                       : 'text-amber-600 dark:text-amber-300'
                   }
                 >
-                  Diferencia: <strong>{formatAmount(Math.abs(totals.diff))}</strong>
+                  Diferencia: <strong>{formatAmount(Math.abs(diff))}</strong>
                 </span>
               </div>
             </div>
 
-            {totals.diff !== 0 ? (
+            {diff !== 0 ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-200">
                 El asiento está desbalanceado. Revisa los montos antes de guardar.
               </div>

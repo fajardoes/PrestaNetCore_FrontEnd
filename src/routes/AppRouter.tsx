@@ -7,6 +7,7 @@ import { ResetPasswordPage } from '@/presentation/features/auth/pages/reset-pass
 import { SecurityRoutes } from './security-routes'
 import { OrganizationRoutes } from './organization-routes'
 import { ClientsRoutes } from './clients-routes'
+import { AccountingRoutes } from './accounting-routes'
 import { ProtectedRoute } from './ProtectedRoute'
 
 export const AppRouter = () => {
@@ -25,6 +26,7 @@ export const AppRouter = () => {
             {SecurityRoutes()}
             {OrganizationRoutes()}
             {ClientsRoutes()}
+            {AccountingRoutes()}
           </Route>
         </Route>
       </Routes>

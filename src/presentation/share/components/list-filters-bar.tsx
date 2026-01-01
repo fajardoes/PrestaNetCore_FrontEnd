@@ -8,6 +8,7 @@ interface ListFiltersBarProps {
   placeholder?: string
   status: StatusFilterValue
   onStatusChange: (value: StatusFilterValue) => void
+  showStatus?: boolean
   children?: ReactNode
   actions?: ReactNode
 }
@@ -18,6 +19,7 @@ export const ListFiltersBar = ({
   placeholder = 'Buscar...',
   status,
   onStatusChange,
+  showStatus = true,
   children,
   actions,
 }: ListFiltersBarProps) => {
@@ -32,7 +34,9 @@ export const ListFiltersBar = ({
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
           />
-          <StatusPills value={status} onChange={onStatusChange} />
+          {showStatus ? (
+            <StatusPills value={status} onChange={onStatusChange} />
+          ) : null}
         </div>
         {children}
       </div>

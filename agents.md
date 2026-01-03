@@ -1,3 +1,8 @@
+## IMPORTANTE (reglas de trabajo)
+- NO ejecutes `npm`, `pnpm`, `yarn`, `vite`, `eslint`.
+- NO uses `git`.
+- Solo genera o modifica archivos de FRONTEND en este repo.
+
 ## Development Commands
 
 - **Development server**: `npm run dev` – Starts the Vite development server

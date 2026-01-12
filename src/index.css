@@ -9,6 +9,8 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --base-light: 232 237 243;
+  --surface-light: 242 245 248;
 }
 
 html {
@@ -20,7 +22,12 @@ html.dark {
 }
 
 body {
-  @apply bg-slate-100 text-slate-900 transition-colors dark:bg-slate-950 dark:text-slate-100;
+  @apply text-slate-900 transition-colors dark:text-slate-100;
+  background-color: rgb(var(--base-light) / 1);
+}
+
+html.dark body {
+  background-color: #020617;
 }
 
 #root {
@@ -46,5 +53,36 @@ body {
 
   .btn-print {
     @apply inline-flex items-center gap-2 rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-offset-slate-950;
+  }
+}
+
+@layer utilities {
+  html:not(.dark) .bg-white {
+    --tw-bg-opacity: 1;
+    background-color: rgb(var(--surface-light) / var(--tw-bg-opacity));
+  }
+
+  html:not(.dark) .bg-white\/90 {
+    background-color: rgb(var(--surface-light) / 0.9);
+  }
+
+  html:not(.dark) .bg-white\/95 {
+    background-color: rgb(var(--surface-light) / 0.95);
+  }
+
+  html:not(.dark) .bg-white\/80 {
+    background-color: rgb(var(--surface-light) / 0.8);
+  }
+
+  html:not(.dark) .bg-white\/10 {
+    background-color: rgb(var(--surface-light) / 0.1);
+  }
+
+  html:not(.dark) .hover\:bg-white:hover {
+    background-color: rgb(var(--surface-light) / 1);
+  }
+
+  html:not(.dark) .focus\:ring-offset-white:focus {
+    --tw-ring-offset-color: rgb(var(--surface-light) / 1);
   }
 }

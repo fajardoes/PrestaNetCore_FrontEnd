@@ -1,5 +1,3 @@
-export type Genero = number | 'M' | 'F' | 'O' | string
-
 export interface ClientReference {
   id?: string
   nombreCompleto: string
@@ -37,7 +35,7 @@ export interface ClientListItem {
   sectorNombre?: string | null
   municipioId?: string | null
   municipioNombre?: string | null
-  genero?: Genero | null
+  generoId?: string | null
   activo: boolean
 }
 
@@ -60,7 +58,7 @@ export interface ClientCreatePayload {
   rtn?: string | null
   address: string
   telefono?: string | null
-  genero: Genero
+  generoId: string
   estadoCivilId: string
   profesionId: string
   fechaNacimiento: string

@@ -78,7 +78,7 @@ export const Topbar = ({
   }, [isUserMenuOpen])
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-900/80">
+    <header className="sticky top-0 z-40 border-b border-slate-300 bg-white/80 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-900/80">
       <div
         className="flex h-16 items-center justify-between px-4 lg:px-8"
       >
@@ -114,7 +114,7 @@ export const Topbar = ({
               <button
                 type="button"
                 onClick={() => setIsUserMenuOpen((open) => !open)}
-                className="flex items-center gap-3 rounded-full border border-transparent bg-slate-100 px-3 py-1 transition hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:hover:bg-slate-700"
+                className="flex items-center gap-3 rounded-full border border-transparent bg-white/80 px-3 py-1 transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:hover:bg-slate-700"
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}
                 disabled={isProcessing}
@@ -130,7 +130,7 @@ export const Topbar = ({
                 </div>
               </button>
               {isUserMenuOpen ? (
-                <div className="absolute right-0 z-50 mt-3 w-60 rounded-xl border border-slate-200 bg-white p-4 shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900">
+                <div className="absolute right-0 z-50 mt-3 w-60 rounded-xl border border-slate-300 bg-white p-4 shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900">
                   <div className="mb-3 text-left text-sm">
                     <p className="font-medium text-slate-900 dark:text-slate-100">
                       {user.fullName}

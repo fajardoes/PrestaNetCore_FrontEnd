@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { saveClientAction } from '@/core/actions/clients/save-client.action'
 import type { ClientCreatePayload, ClientDetail } from '@/infrastructure/interfaces/clients/client'
 
@@ -13,7 +13,7 @@ export const useSaveClient = () => {
     error: null,
   })
 
-  const saveClient = async (payload: ClientCreatePayload, clientId?: string) => {
+  const saveClient = useCallback(async (payload: ClientCreatePayload, clientId?: string) => {
     setState({ isSaving: true, error: null })
     const result = await saveClientAction({ clientId, payload })
     if (result.success) {
@@ -22,9 +22,11 @@ export const useSaveClient = () => {
     }
     setState({ isSaving: false, error: result.error })
     return result
-  }
+  }, [])
 
-  const resetError = () => setState((prev) => ({ ...prev, error: null }))
+  const resetError = useCallback(() => {
+    setState((prev) => ({ ...prev, error: null }))
+  }, [])
 
   return {
     saveClient,

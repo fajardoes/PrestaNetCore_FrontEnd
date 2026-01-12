@@ -1,6 +1,6 @@
 import * as yup from 'yup'
 
-const feeSchema = yup.object({
+export const feeSchema = yup.object({
   feeTypeId: yup.string().trim().required('El tipo de comisión es requerido.'),
   chargeBaseId: yup.string().trim().required('La base de cobro es requerida.'),
   valueTypeId: yup.string().trim().required('El tipo de valor es requerido.'),
@@ -16,7 +16,7 @@ const feeSchema = yup.object({
   isActive: yup.boolean().required(),
 })
 
-const insuranceSchema = yup.object({
+export const insuranceSchema = yup.object({
   insuranceTypeId: yup
     .string()
     .trim()
@@ -41,7 +41,7 @@ const insuranceSchema = yup.object({
   isActive: yup.boolean().required(),
 })
 
-const collateralRuleSchema = yup.object({
+export const collateralRuleSchema = yup.object({
   collateralTypeId: yup
     .string()
     .trim()

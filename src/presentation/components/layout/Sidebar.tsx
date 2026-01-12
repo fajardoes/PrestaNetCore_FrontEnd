@@ -1,415 +1,184 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import type { MenuItemTreeDto } from '@/infrastructure/interfaces/security/menu'
+import { useMyMenus } from '@/presentation/features/security/menus/hooks/use-my-menus'
+import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
 
 interface SidebarProps {
   collapsed: boolean
 }
 
-const HomeIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M3 9.5 12 3l9 6.5" />
-    <path d="M5 10v9h5v-5h4v5h5v-9" />
-  </svg>
-)
+const isRouteActive = (route: string | null, pathname: string) => {
+  if (!route) return false
+  if (route === '/') return pathname === '/'
+  return pathname === route || pathname.startsWith(`${route}/`)
+}
 
-const SecurityIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
-    <path d="M8.5 12.5l2.5 2.5 4.5-4.5" />
-  </svg>
-)
+const isItemActive = (item: MenuItemTreeDto, pathname: string): boolean => {
+  if (isRouteActive(item.route, pathname)) return true
+  return item.children.some((child) => isItemActive(child, pathname))
+}
 
-const OrganizationIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M10.5 22v-6h3v6" />
-    <path d="M6 22v-6h12v6" />
-    <path d="M2 22h20" />
-    <path d="M12 16V2l7 4v4h-4v2" />
-    <path d="M6 12V6l6-4" />
-  </svg>
-)
+const sortMenuTree = (items: MenuItemTreeDto[]): MenuItemTreeDto[] => {
+  return items
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((item) => ({
+      ...item,
+      children: sortMenuTree(item.children ?? []),
+    }))
+}
 
-const LocationIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M12 21s-6-5.14-6-11a6 6 0 1 1 12 0c0 5.86-6 11-6 11Z" />
-    <circle cx="12" cy="10" r="2.5" />
-  </svg>
-)
+const collectActiveGroups = (
+  item: MenuItemTreeDto,
+  pathname: string,
+  activeGroups: Set<string>,
+): boolean => {
+  const childActive = item.children.some((child) =>
+    collectActiveGroups(child, pathname, activeGroups),
+  )
+  if (childActive) {
+    activeGroups.add(item.id)
+  }
+  return isRouteActive(item.route, pathname) || childActive
+}
 
-const ClientsIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-)
-
-const LoansIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M3 10h18" />
-    <path d="M5 6h14v12H5z" />
-    <path d="M9 14h6" />
-    <path d="M9 18h6" />
-  </svg>
-)
-
-const LoanProductIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M4 6h16" />
-    <path d="M6 6v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6" />
-    <path d="M9 11h6" />
-    <path d="M9 15h6" />
-  </svg>
-)
-
-const CatalogsIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M5 4h14" />
-    <path d="M5 8h14" />
-    <path d="M5 12h14" />
-    <path d="M5 16h14" />
-    <path d="M5 20h14" />
-  </svg>
-)
-
-const AccountingIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M4 4h16v16H4z" />
-    <path d="M8 4v16" />
-    <path d="M16 4v16" />
-    <path d="M4 9h4" />
-    <path d="M4 15h4" />
-    <path d="M16 9h4" />
-    <path d="M16 15h4" />
-  </svg>
-)
-
-const ChartAccountsIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M4 4h8v5H4z" />
-    <path d="M12 9h8v5h-8z" />
-    <path d="M4 14h6v6H4z" />
-    <path d="M10 17h10" />
-  </svg>
-)
-
-const CostCenterIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2v4" />
-    <path d="M12 18v4" />
-    <path d="M2 12h4" />
-    <path d="M18 12h4" />
-  </svg>
-)
-
-const PeriodsIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <rect x="4" y="5" width="16" height="15" rx="2" />
-    <path d="M9 3v4" />
-    <path d="M15 3v4" />
-    <path d="M4 10h16" />
-  </svg>
-)
-
-const JournalIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M7 3h10a2 2 0 0 1 2 2v14l-4-2-4 2-4-2V5a2 2 0 0 1 2-2z" />
-    <path d="M9 8h6" />
-    <path d="M9 11h6" />
-  </svg>
-)
-
-const LedgerIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <rect x="4" y="4" width="16" height="16" rx="2" />
-    <path d="M9 4v16" />
-    <path d="M15 4v16" />
-    <path d="M4 9h16" />
-    <path d="M4 15h16" />
-  </svg>
-)
-
-const ReportsIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M8 3h6l5 5v13a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" />
-    <path d="M14 3v5h5" />
-    <path d="M10 13h6" />
-    <path d="M10 17h6" />
-  </svg>
-)
+const getIndentClasses = (depth: number, collapsed: boolean) => {
+  if (collapsed || depth === 0) return ''
+  if (depth === 1) {
+    return 'ml-2 border-l border-slate-200 pl-4 dark:border-slate-700/40'
+  }
+  if (depth === 2) {
+    return 'ml-4 border-l border-slate-200 pl-4 dark:border-slate-700/40'
+  }
+  return 'ml-6 border-l border-slate-200 pl-4 dark:border-slate-700/40'
+}
 
 export const Sidebar = ({ collapsed }: SidebarProps) => {
-  const { user } = useAuth()
+  const { isAuthenticated } = useAuth()
+  const { menus, isLoading, error, refetch } = useMyMenus({
+    enabled: isAuthenticated,
+  })
   const location = useLocation()
   const sidebarWidth = collapsed ? 'w-20' : 'w-64'
-  const [isSecurityOpen, setIsSecurityOpen] = useState(false)
-  const [isOrganizationOpen, setIsOrganizationOpen] = useState(false)
-  const [isClientsOpen, setIsClientsOpen] = useState(false)
-  const [isAccountingOpen, setIsAccountingOpen] = useState(false)
-  const [isLoansOpen, setIsLoansOpen] = useState(false)
-  const [isLoanProductsOpen, setIsLoanProductsOpen] = useState(false)
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
-  const isLoggedIn = Boolean(user)
-  const isAdmin =
-    user?.roles?.some((role) => role?.toLowerCase() === 'admin') ?? false
-  const isAssistant =
-    user?.roles?.some((role) => role?.toLowerCase() === 'assistant') ?? false
-  const isLoanProductsActive = location.pathname.startsWith('/loans/products')
+  const sortedMenus = useMemo(() => sortMenuTree(menus), [menus])
 
-  const navigation = [{ to: '/', label: 'Inicio', icon: HomeIcon }]
+  useEffect(() => {
+    if (!sortedMenus.length) return
+    const activeGroups = new Set<string>()
+    sortedMenus.forEach((item) => {
+      collectActiveGroups(item, location.pathname, activeGroups)
+    })
+    if (!activeGroups.size) return
+    setExpanded((prev) => {
+      let changed = false
+      const next = { ...prev }
+      activeGroups.forEach((id) => {
+        if (!next[id]) {
+          next[id] = true
+          changed = true
+        }
+      })
+      return changed ? next : prev
+    })
+  }, [sortedMenus, location.pathname])
 
-  const securityNav = isAdmin
-    ? [
-        {
-          to: '/security/users',
-          label: 'Usuarios',
-          icon: SecurityIcon,
-        },
-      ]
-    : []
+  const toggleGroup = useCallback((id: string) => {
+    setExpanded((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }))
+  }, [])
 
-  const organizationNav = isAdmin
-    ? [
-        {
-          to: '/organization/agencies',
-          label: 'Agencias',
-          icon: OrganizationIcon,
-        },
-        {
-          to: '/organization/departments',
-          label: 'Departamentos',
-          icon: LocationIcon,
-        },
-        {
-          to: '/organization/municipalities',
-          label: 'Municipios',
-          icon: LocationIcon,
-        },
-      ]
-    : []
+  const baseItemClasses =
+    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-700 dark:hover:text-white'
 
-  const accountingNav = isAdmin
-    ? [
-        {
-          to: '/accounting/chart',
-          label: 'Plan de cuentas',
-          icon: ChartAccountsIcon,
-        },
-        {
-          to: '/accounting/cost-centers',
-          label: 'Centros de costo',
-          icon: CostCenterIcon,
-        },
-        {
-          to: '/accounting/periods',
-          label: 'Períodos',
-          icon: PeriodsIcon,
-        },
-        {
-          to: '/accounting/journal',
-          label: 'Diario',
-          icon: JournalIcon,
-        },
-        {
-          to: '/accounting/ledger',
-          label: 'Libro mayor',
-          icon: LedgerIcon,
-        },
-        {
-          to: '/accounting/reports/trial-balance',
-          label: 'Balance de comprobacion',
-          icon: ReportsIcon,
-        },
-        {
-          to: '/accounting/reports/balance-sheet',
-          label: 'Balance general',
-          icon: ReportsIcon,
-        },
-        {
-          to: '/accounting/reports/income-statement',
-          label: 'Estado de resultados',
-          icon: ReportsIcon,
-        },
-      ]
-    : []
+  const renderItems = (items: MenuItemTreeDto[], depth: number) => {
+    return items.map((item) => {
+      const hasChildren = item.children.length > 0
+      const isGroup = item.route === null
+      const isActive = isItemActive(item, location.pathname)
+      const isExpanded = Boolean(expanded[item.id]) || isActive
+      const indentClasses = getIndentClasses(depth, collapsed)
+      const collapsedClasses = collapsed ? 'flex-col gap-2 px-2 py-3 text-xs' : ''
+      const activeClasses = isActive
+        ? 'bg-slate-100 text-slate-900 dark:text-sidebar'
+        : 'text-slate-600 dark:text-slate-200'
 
-  const clientsNav =
-    isLoggedIn && (isAdmin || isAssistant)
-      ? [
-          {
-            to: '/clients',
-            label: 'Manejo de clientes',
-            icon: ClientsIcon,
-          },
-          ...(isAdmin
-            ? [
-                {
-                  to: '/clients/catalogs',
-                  label: 'Catálogos y actividades',
-                  icon: CatalogsIcon,
-                },
-              ]
-            : []),
-        ]
-      : []
+      if (isGroup) {
+        return (
+          <div key={item.id} className="space-y-1">
+            <button
+              type="button"
+              title={item.title}
+              onClick={hasChildren ? () => toggleGroup(item.id) : undefined}
+              className={[
+                baseItemClasses,
+                collapsedClasses,
+                indentClasses,
+                activeClasses,
+              ].join(' ')}
+              aria-expanded={hasChildren ? isExpanded : undefined}
+            >
+              <span className="flex items-center gap-3">
+                <MenuIcon iconName={item.icon} className="h-5 w-5" />
+                {!collapsed ? <span>{item.title}</span> : null}
+              </span>
+              {hasChildren ? (
+                <ChevronIcon
+                  className={`h-3 w-3 transition-transform ${
+                    isExpanded ? 'rotate-0' : '-rotate-90'
+                  }`}
+                />
+              ) : null}
+            </button>
+            {hasChildren && isExpanded ? (
+              <div className="space-y-1">
+                {renderItems(item.children, depth + 1)}
+              </div>
+            ) : null}
+          </div>
+        )
+      }
 
-  const loanProductsNav =
-    isLoggedIn && (isAdmin || isAssistant)
-      ? [
-          {
-            to: '/loans/products',
-            label: 'Gestión de productos',
-            icon: LoanProductIcon,
-          },
-          {
-            to: '/loans/products/catalogs',
-            label: 'Catálogos',
-            icon: CatalogsIcon,
-          },
-        ]
-      : []
+      return (
+        <div key={item.id} className="space-y-1">
+          <NavLink
+            to={item.route ?? '/'}
+            title={item.title}
+            end={item.route === '/'}
+            className={({ isActive: linkActive }) => {
+              const resolvedActive = linkActive || isActive
+              const linkActiveClasses = resolvedActive
+                ? 'bg-slate-100 text-slate-900 dark:text-sidebar'
+                : 'text-slate-600 dark:text-slate-200'
+              return [
+                baseItemClasses,
+                collapsedClasses,
+                indentClasses,
+                linkActiveClasses,
+              ].join(' ')
+            }}
+          >
+            <MenuIcon iconName={item.icon} className="h-5 w-5" />
+            {!collapsed ? <span>{item.title}</span> : null}
+          </NavLink>
+          {hasChildren ? (
+            <div className="space-y-1">
+              {renderItems(item.children, depth + 1)}
+            </div>
+          ) : null}
+        </div>
+      )
+    })
+  }
 
   return (
     <aside
-      className={`fixed inset-y-0 hidden transform bg-sidebar text-slate-100 transition-[width] duration-200 lg:flex lg:flex-col ${sidebarWidth}`}
+      className={`fixed inset-y-0 hidden transform border-r border-slate-300 bg-white text-slate-900 transition-[width] duration-200 dark:border-slate-800 dark:bg-sidebar dark:text-slate-100 lg:flex lg:flex-col ${sidebarWidth}`}
     >
       <div
         className={`flex items-center ${
@@ -426,325 +195,64 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
           </div>
         )}
       </div>
-      <nav className="flex-1 space-y-1 px-3">
-        {navigation.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            title={item.label}
-            className={({ isActive }) => {
-              const baseClasses =
-                'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white'
-              const collapsedClasses = collapsed
-                ? 'flex-col gap-2 px-2 py-3 text-xs'
-                : ''
-              const activeClasses = isActive
-                ? 'bg-slate-100 text-sidebar'
-                : 'text-slate-200'
-              return [baseClasses, collapsedClasses, activeClasses].join(' ')
-            }}
-            end={item.to === '/'}
-          >
-            <item.icon className="h-5 w-5" aria-hidden="true" />
-            {!collapsed ? <span>{item.label}</span> : null}
-          </NavLink>
-        ))}
-
-        {clientsNav.length ? (
-          <div className="mt-4 space-y-1">
-            <button
-              type="button"
-              onClick={() => setIsClientsOpen((open) => !open)}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-700/60 ${
-                collapsed ? 'flex-col gap-1 text-center' : 'text-slate-500'
-              }`}
-            >
-              <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                <ClientsIcon className="h-4 w-4" />
-                {!collapsed ? 'Clientes' : null}
-              </span>
-              <ChevronIcon
-                className={`h-3 w-3 text-slate-500 transition-transform ${
-                  isClientsOpen ? 'rotate-0' : '-rotate-90'
-                }`}
-              />
-            </button>
-            {isClientsOpen
-              ? clientsNav.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    className={() => {
-                      const isActive = location.pathname === item.to
-                      const baseClasses =
-                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white'
-                      const collapsedClasses = collapsed
-                        ? 'flex-col gap-2 px-2 py-3 text-xs'
-                        : ''
-                      const nestedClasses = collapsed
-                        ? ''
-                        : 'ml-2 border-l border-slate-700/40 pl-4'
-                      const activeClasses = isActive
-                        ? 'bg-slate-100 text-sidebar'
-                        : 'text-slate-200'
-                      return [
-                        baseClasses,
-                        collapsedClasses,
-                        nestedClasses,
-                        activeClasses,
-                      ].join(' ')
-                    }}
-                  >
-                    <item.icon className="h-5 w-5" aria-hidden="true" />
-                    {!collapsed ? <span>{item.label}</span> : null}
-                  </NavLink>
-                ))
-              : null}
-          </div>
-        ) : null}
-
-        {loanProductsNav.length ? (
-          <div className="mt-4 space-y-1">
-            <button
-              type="button"
-              onClick={() => setIsLoansOpen((open) => !open)}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-700/60 ${
-                collapsed ? 'flex-col gap-1 text-center' : 'text-slate-500'
-              }`}
-            >
-              <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                <LoansIcon className="h-4 w-4" />
-                {!collapsed ? 'Préstamos' : null}
-              </span>
-              <ChevronIcon
-                className={`h-3 w-3 text-slate-500 transition-transform ${
-                  isLoansOpen ? 'rotate-0' : '-rotate-90'
-                }`}
-              />
-            </button>
-            {isLoansOpen ? (
-              <div className="space-y-1">
-                <button
-                  type="button"
-                  onClick={() => setIsLoanProductsOpen((open) => !open)}
-                  className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white ${
-                    collapsed ? 'flex-col gap-2 px-2 py-3 text-xs' : ''
-                  } ${collapsed ? '' : 'ml-2 border-l border-slate-700/40 pl-4'} ${
-                    isLoanProductsOpen || isLoanProductsActive
-                      ? 'bg-slate-100 text-sidebar'
-                      : 'text-slate-200'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <LoanProductIcon className="h-5 w-5" />
-                    {!collapsed ? 'Productos' : null}
-                  </span>
-                  <ChevronIcon
-                    className={`h-3 w-3 transition-transform ${
-                      isLoanProductsOpen ? 'rotate-0' : '-rotate-90'
-                    }`}
-                  />
-                </button>
-                {isLoanProductsOpen
-                  ? loanProductsNav.map((item) => (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        title={item.label}
-                        end={item.to === '/loans/products'}
-                        className={({ isActive }) => {
-                          const baseClasses =
-                            'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white'
-                          const collapsedClasses = collapsed
-                            ? 'flex-col gap-2 px-2 py-3 text-xs'
-                            : ''
-                          const nestedClasses = collapsed
-                            ? ''
-                            : 'ml-6 border-l border-slate-700/60 pl-4'
-                          const activeClasses = isActive
-                            ? 'bg-slate-100 text-sidebar'
-                            : 'text-slate-200'
-                          return [
-                            baseClasses,
-                            collapsedClasses,
-                            nestedClasses,
-                            activeClasses,
-                          ].join(' ')
-                        }}
-                      >
-                        <item.icon className="h-5 w-5" aria-hidden="true" />
-                        {!collapsed ? <span>{item.label}</span> : null}
-                      </NavLink>
-                    ))
-                  : null}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-
-        {securityNav.length ? (
-          <div className="mt-4 space-y-1">
-            <button
-              type="button"
-              onClick={() => setIsSecurityOpen((open) => !open)}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-700/60 ${
-                collapsed ? 'flex-col gap-1 text-center' : 'text-slate-500'
-              }`}
-            >
-              <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                <SecurityIcon className="h-4 w-4" />
-                {!collapsed ? 'Seguridad' : null}
-              </span>
-              <ChevronIcon
-                className={`h-3 w-3 text-slate-500 transition-transform ${
-                  isSecurityOpen ? 'rotate-0' : '-rotate-90'
-                }`}
-              />
-            </button>
-            {isSecurityOpen
-              ? securityNav.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    className={({ isActive }) => {
-                      const baseClasses =
-                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white'
-                      const collapsedClasses = collapsed
-                        ? 'flex-col gap-2 px-2 py-3 text-xs'
-                        : ''
-                      const nestedClasses = collapsed
-                        ? ''
-                        : 'ml-2 border-l border-slate-700/40 pl-4'
-                      const activeClasses = isActive
-                        ? 'bg-slate-100 text-sidebar'
-                        : 'text-slate-200'
-                      return [
-                        baseClasses,
-                        collapsedClasses,
-                        nestedClasses,
-                        activeClasses,
-                      ].join(' ')
-                    }}
-                  >
-                    <item.icon className="h-5 w-5" aria-hidden="true" />
-                    {!collapsed ? <span>{item.label}</span> : null}
-                  </NavLink>
-                ))
-              : null}
-          </div>
-        ) : null}
-
-        {accountingNav.length ? (
-          <div className="mt-4 space-y-1">
-            <button
-              type="button"
-              onClick={() => setIsAccountingOpen((open) => !open)}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-700/60 ${
-                collapsed ? 'flex-col gap-1 text-center' : 'text-slate-500'
-              }`}
-            >
-              <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                <AccountingIcon className="h-4 w-4" />
-                {!collapsed ? 'Contabilidad' : null}
-              </span>
-              <ChevronIcon
-                className={`h-3 w-3 text-slate-500 transition-transform ${
-                  isAccountingOpen ? 'rotate-0' : '-rotate-90'
-                }`}
-              />
-            </button>
-            {isAccountingOpen
-              ? accountingNav.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    className={({ isActive }) => {
-                      const baseClasses =
-                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white'
-                      const collapsedClasses = collapsed
-                        ? 'flex-col gap-2 px-2 py-3 text-xs'
-                        : ''
-                      const nestedClasses = collapsed
-                        ? ''
-                        : 'ml-2 border-l border-slate-700/40 pl-4'
-                      const activeClasses = isActive
-                        ? 'bg-slate-100 text-sidebar'
-                        : 'text-slate-200'
-                      return [
-                        baseClasses,
-                        collapsedClasses,
-                        nestedClasses,
-                        activeClasses,
-                      ].join(' ')
-                    }}
-                  >
-                    <item.icon className="h-5 w-5" aria-hidden="true" />
-                    {!collapsed ? <span>{item.label}</span> : null}
-                  </NavLink>
-                ))
-              : null}
-          </div>
-        ) : null}
-
-        {organizationNav.length ? (
-          <div className="mt-4 space-y-1">
-            <button
-              type="button"
-              onClick={() => setIsOrganizationOpen((open) => !open)}
-              className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition hover:bg-slate-700/60 ${
-                collapsed ? 'flex-col gap-1 text-center' : 'text-slate-500'
-              }`}
-            >
-              <span className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
-                <OrganizationIcon className="h-4 w-4" />
-                {!collapsed ? 'Organización' : null}
-              </span>
-              <ChevronIcon
-                className={`h-3 w-3 text-slate-500 transition-transform ${
-                  isOrganizationOpen ? 'rotate-0' : '-rotate-90'
-                }`}
-              />
-            </button>
-            {isOrganizationOpen
-              ? organizationNav.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    title={item.label}
-                    className={({ isActive }) => {
-                      const baseClasses =
-                        'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-700 hover:text-white'
-                      const collapsedClasses = collapsed
-                        ? 'flex-col gap-2 px-2 py-3 text-xs'
-                        : ''
-                      const nestedClasses = collapsed
-                        ? ''
-                        : 'ml-2 border-l border-slate-700/40 pl-4'
-                      const activeClasses = isActive
-                        ? 'bg-slate-100 text-sidebar'
-                        : 'text-slate-200'
-                      return [
-                        baseClasses,
-                        collapsedClasses,
-                        nestedClasses,
-                        activeClasses,
-                      ].join(' ')
-                    }}
-                  >
-                    <item.icon className="h-5 w-5" aria-hidden="true" />
-                    {!collapsed ? <span>{item.label}</span> : null}
-                  </NavLink>
-                ))
-              : null}
-          </div>
-        ) : null}
+      <nav className="flex-1 space-y-2 px-3">
+        {!isAuthenticated ? null : isLoading ? (
+          <SidebarSkeleton collapsed={collapsed} />
+        ) : error ? (
+          <SidebarError collapsed={collapsed} error={error} onRetry={refetch} />
+        ) : (
+          renderItems(sortedMenus, 0)
+        )}
       </nav>
     </aside>
   )
 }
+
+const SidebarSkeleton = ({ collapsed }: { collapsed: boolean }) => {
+  const items = Array.from({ length: 6 }, (_, index) => index)
+  return (
+    <div className="space-y-2">
+      {items.map((item) => (
+        <div
+          key={item}
+          className={`flex animate-pulse items-center rounded-md px-3 py-2 ${
+            collapsed ? 'flex-col gap-2 px-2 py-3' : 'gap-3'
+          }`}
+        >
+          <div className="h-5 w-5 rounded bg-slate-200 dark:bg-slate-700" />
+          {!collapsed ? (
+            <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-700" />
+          ) : null}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const SidebarError = ({
+  collapsed,
+  error,
+  onRetry,
+}: {
+  collapsed: boolean
+  error: string
+  onRetry: () => void
+}) => (
+  <div
+    className={`rounded-md border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-200 ${
+      collapsed ? 'text-center' : ''
+    }`}
+  >
+    <p className="mb-2">{error}</p>
+    <button
+      type="button"
+      onClick={onRetry}
+      className="w-full rounded-md border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-700"
+    >
+      Reintentar
+    </button>
+  </div>
+)
 
 const ChevronIcon = ({ className }: { className?: string }) => (
   <svg

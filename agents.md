@@ -92,6 +92,7 @@ Configurados en `tsconfig.app.json` y `vite.config.ts`:
 - Siempre ofrecer soporte para tema claro/oscuro mediante utilidades Tailwind.
 - Formularios nuevos deben integrarse con `react-hook-form` y un esquema Yup/Zod correspondiente.
 - Centralizar feedback (éxito/error) usando componentes compartidos dentro de `presentation/share/components`.
+- En listas tipo tarjetas con estado (ej. referencias, actividades, comisiones, seguros, garantías): usar tarjeta con etiqueta Activo/Inactivo, botón Agregar que abre modal con toggle Activo, y fondo tenue rojo para items inactivos (`bg-red-50` y variante `dark:bg-red-500/10`).
 - No hagas pruebas de eslint ni intentes correr la aplicacion
 - No hagas pruebas con git ni intentes ejecutarlo
 

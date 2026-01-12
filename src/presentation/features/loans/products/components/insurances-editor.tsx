@@ -1,10 +1,11 @@
-import { useFieldArray, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form'
+import { useState } from 'react'
+import { useFieldArray, useWatch, type Control, type FieldErrors } from 'react-hook-form'
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
+import { InsuranceModal } from '@/presentation/features/loans/products/components/insurance-modal'
 
 interface InsurancesEditorProps {
   control: Control<LoanProductFormValues>
-  register: UseFormRegister<LoanProductFormValues>
   errors: FieldErrors<LoanProductFormValues>
   disabled?: boolean
   allowRemove?: boolean
@@ -14,13 +15,10 @@ interface InsurancesEditorProps {
   insuranceChargeTimings: LoanCatalogItemDto[]
 }
 
-const toNumberValue = (value: string) => (value === '' ? undefined : Number(value))
 const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
 
 export const InsurancesEditor = ({
   control,
-  register,
-  errors,
   disabled,
   allowRemove = true,
   insuranceTypes,
@@ -28,170 +26,138 @@ export const InsurancesEditor = ({
   insuranceCoveragePeriods,
   insuranceChargeTimings,
 }: InsurancesEditorProps) => {
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: 'insurances',
   })
+  const insurances = useWatch({ control, name: 'insurances' }) ?? []
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+
+  const openNewInsuranceModal = () => {
+    setEditingIndex(null)
+    setIsModalOpen(true)
+  }
+
+  const openEditInsuranceModal = (index: number) => {
+    setEditingIndex(index)
+    setIsModalOpen(true)
+  }
+
+  const handleSaveInsurance = (values: LoanProductFormValues['insurances'][number]) => {
+    if (editingIndex === null) {
+      append(values)
+    } else {
+      update(editingIndex, values)
+    }
+    setIsModalOpen(false)
+  }
+
+  const handleToggleInsurance = (index: number) => {
+    const current = insurances[index]
+    if (!current) return
+    update(index, {
+      ...current,
+      isActive: current.isActive === false,
+    })
+  }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-          Seguros
-        </h4>
+        <div>
+          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+            Seguros
+          </h4>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Configura seguros y activa o inactiva según el producto.
+          </p>
+        </div>
         <button
           type="button"
-          className="btn-secondary px-3 py-1 text-xs"
-          onClick={() =>
-            append({
-              insuranceTypeId: '',
-              calculationBaseId: '',
-              coveragePeriodId: '',
-              rate: 0,
-              chargeTimingId: '',
-              isActive: true,
-            })
-          }
+          className="btn-primary px-3 py-1.5 text-xs shadow"
+          onClick={openNewInsuranceModal}
           disabled={disabled}
         >
-          Agregar
+          Agregar seguro
         </button>
       </div>
 
       {fields.length ? (
         <div className="space-y-3">
-          {fields.map((field, index) => (
-            <div
-              key={field.id}
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950"
-            >
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-6">
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    Tipo
-                  </label>
-                  <select
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                    {...register(`insurances.${index}.insuranceTypeId`)}
+          {fields.map((field, index) => {
+            const insurance = insurances[index]
+            if (!insurance) return null
+            const insuranceType = insuranceTypes.find(
+              (item) => item.id === insurance.insuranceTypeId,
+            )
+            const calculationBase = insuranceCalculationBases.find(
+              (item) => item.id === insurance.calculationBaseId,
+            )
+            const coverage = insuranceCoveragePeriods.find(
+              (item) => item.id === insurance.coveragePeriodId,
+            )
+            const timing = insuranceChargeTimings.find(
+              (item) => item.id === insurance.chargeTimingId,
+            )
+
+            const isInactive = insurance.isActive === false
+            return (
+              <div
+                key={field.id}
+                className={`space-y-2 rounded-xl border p-3 ${
+                  isInactive
+                    ? 'border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-500/10'
+                    : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+                      {insuranceType ? getOptionLabel(insuranceType) : 'Seguro sin tipo'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Base: {calculationBase ? getOptionLabel(calculationBase) : 'Sin base'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Cobertura: {coverage ? getOptionLabel(coverage) : 'Sin cobertura'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Tasa: {insurance.rate} ·{' '}
+                      {timing ? getOptionLabel(timing) : 'Sin momento'}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+                      insurance.isActive !== false
+                        ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-50 dark:ring-emerald-500/40'
+                        : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
+                    }`}
+                  >
+                    {insurance.isActive !== false ? 'Activo' : 'Inactivo'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="btn-icon-label text-xs"
+                    onClick={() => openEditInsuranceModal(index)}
                     disabled={disabled}
                   >
-                    <option value="">Selecciona un tipo</option>
-                    {insuranceTypes.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {getOptionLabel(item)}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.insurances?.[index]?.insuranceTypeId ? (
-                    <p className="text-xs text-red-500">
-                      {errors.insurances[index]?.insuranceTypeId?.message}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    Base cálculo
-                  </label>
-                  <select
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                    {...register(`insurances.${index}.calculationBaseId`)}
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-icon-label text-xs"
+                    onClick={() => handleToggleInsurance(index)}
                     disabled={disabled}
                   >
-                    <option value="">Selecciona una base</option>
-                    {insuranceCalculationBases.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {getOptionLabel(item)}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.insurances?.[index]?.calculationBaseId ? (
-                    <p className="text-xs text-red-500">
-                      {errors.insurances[index]?.calculationBaseId?.message}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    Cobertura
-                  </label>
-                  <select
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                    {...register(`insurances.${index}.coveragePeriodId`)}
-                    disabled={disabled}
-                  >
-                    <option value="">Selecciona un período</option>
-                    {insuranceCoveragePeriods.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {getOptionLabel(item)}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.insurances?.[index]?.coveragePeriodId ? (
-                    <p className="text-xs text-red-500">
-                      {errors.insurances[index]?.coveragePeriodId?.message}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    Tasa
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                    {...register(`insurances.${index}.rate`, {
-                      setValueAs: toNumberValue,
-                    })}
-                    disabled={disabled}
-                  />
-                  {errors.insurances?.[index]?.rate ? (
-                    <p className="text-xs text-red-500">
-                      {errors.insurances[index]?.rate?.message}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    Momento
-                  </label>
-                  <select
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                    {...register(`insurances.${index}.chargeTimingId`)}
-                    disabled={disabled}
-                  >
-                    <option value="">Selecciona un momento</option>
-                    {insuranceChargeTimings.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {getOptionLabel(item)}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.insurances?.[index]?.chargeTimingId ? (
-                    <p className="text-xs text-red-500">
-                      {errors.insurances[index]?.chargeTimingId?.message}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/40 dark:border-slate-700"
-                      {...register(`insurances.${index}.isActive`)}
-                      disabled={disabled}
-                    />
-                    Activo
-                  </label>
+                    {insurance.isActive === false ? 'Activar' : 'Desactivar'}
+                  </button>
                   {allowRemove ? (
                     <button
                       type="button"
-                      className="btn-icon-label text-xs text-red-600 dark:text-red-400"
+                      className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       onClick={() => remove(index)}
                       disabled={disabled}
                     >
@@ -200,14 +166,25 @@ export const InsurancesEditor = ({
                   ) : null}
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       ) : (
         <p className="text-sm text-slate-500 dark:text-slate-400">
           Aún no hay seguros configurados.
         </p>
       )}
+
+      <InsuranceModal
+        open={isModalOpen}
+        initialValues={editingIndex !== null ? insurances[editingIndex] : null}
+        insuranceTypes={insuranceTypes}
+        insuranceCalculationBases={insuranceCalculationBases}
+        insuranceCoveragePeriods={insuranceCoveragePeriods}
+        insuranceChargeTimings={insuranceChargeTimings}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSaveInsurance}
+      />
     </div>
   )
 }

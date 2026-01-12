@@ -105,7 +105,7 @@ export const clientSchema = z
       .max(20, 'Máximo 20 caracteres.')
       .optional()
       .nullable(),
-    genero: z
+    generoId: z
       .string({ required_error: 'El género es obligatorio.' })
       .trim()
       .min(1, 'Selecciona un género.'),

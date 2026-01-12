@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { deleteClientAction } from "@/core/actions/clients/delete-client.action";
 import { toggleClientAction } from "@/core/actions/clients/toggle-client.action";
 import type { ClientFormValues } from "@/infrastructure/validations/clients/client.schema";
@@ -13,12 +13,10 @@ import { useSaveClient } from "@/presentation/features/clients/hooks/use-save-cl
 import { ClientsTable } from "@/presentation/features/clients/components/clients-table";
 import { ClientForm } from "@/presentation/features/clients/components/client-form";
 import { ListFiltersBar } from "@/presentation/share/components/list-filters-bar";
-import {
-  mapGeneroEnumToOption,
-  mapGeneroToEnum,
-} from "@/core/helpers/genero-mapper";
+import { useNotifications } from "@/providers/NotificationProvider";
 
 export const ClientsPage = () => {
+  const { notify } = useNotifications();
   const {
     sectors,
     civilStatus,
@@ -68,6 +66,13 @@ export const ClientsPage = () => {
 
   const filtersError = lookupError ?? activitiesError ?? null;
 
+  useEffect(() => {
+    if (!isFormOpen) {
+      resetError();
+      setActionError(null);
+    }
+  }, [isFormOpen, resetError]);
+
   const activitiesBySector = useMemo(() => {
     const map: Record<string, typeof activities> = {};
     activities.forEach((activity) => {
@@ -103,7 +108,6 @@ export const ClientsPage = () => {
     if (!clientDetail) return undefined;
     return {
       ...clientDetail,
-      genero: mapGeneroEnumToOption(clientDetail.genero),
       referencias: clientDetail.referencias.map((ref) => ({
         ...ref,
         activo: ref.activo ?? true,
@@ -118,9 +122,9 @@ export const ClientsPage = () => {
   const handleSaveClient = async (values: ClientFormValues) => {
     resetError();
     setActionError(null);
+    const isEdit = Boolean(selectedClientId);
     const payload: ClientCreatePayload = {
       ...values,
-      genero: mapGeneroToEnum(values.genero),
       actividades: values.actividades.map(({ sectorId: _sector, ...rest }) => {
         void _sector;
         return { ...rest };
@@ -132,6 +136,10 @@ export const ClientsPage = () => {
       setClient(result.data);
       setIsFormOpen(false);
       setSelectedClientId(result.data.id);
+      notify(
+        isEdit ? "Cliente actualizado correctamente." : "Cliente creado correctamente.",
+        "success"
+      );
     } else {
       setActionError(result.error);
     }
@@ -209,6 +217,7 @@ export const ClientsPage = () => {
                 setSelectedClientId(null);
                 setClient(null);
                 setActionError(null);
+                resetError();
               }}
               className="btn-icon"
               aria-label="Cerrar formulario"
@@ -238,7 +247,9 @@ export const ClientsPage = () => {
               setSelectedClientId(null);
               setClient(null);
               setActionError(null);
+              resetError();
             }}
+            isEdit={Boolean(selectedClientId)}
             catalogs={{
               sectors,
               civilStatus,

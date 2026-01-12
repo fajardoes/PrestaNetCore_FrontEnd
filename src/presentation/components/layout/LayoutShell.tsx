@@ -35,7 +35,7 @@ export const LayoutShell = () => {
   const contentOffsetClass = isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
 
   return (
-    <div className="min-h-screen bg-slate-100 transition-colors dark:bg-slate-950">
+    <div className="min-h-screen transition-colors">
       <Sidebar collapsed={isSidebarCollapsed} />
       <div className={`transition-[margin] duration-200 ${contentOffsetClass}`}>
         <Topbar

@@ -71,6 +71,14 @@ const extractAxiosMessage = (
   ) {
     return (responseData as { message: string }).message
   }
+  if (
+    responseData &&
+    typeof responseData === 'object' &&
+    'error' in responseData &&
+    typeof (responseData as { error?: unknown }).error === 'string'
+  ) {
+    return (responseData as { error: string }).error
+  }
 
   if (error.response?.statusText) {
     return error.response.statusText

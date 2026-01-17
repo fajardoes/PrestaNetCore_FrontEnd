@@ -34,7 +34,7 @@ export interface ListClientsFilters {
   pageSize?: number
   search?: string
   municipioId?: string
-  genero?: string
+  generoId?: string
   activo?: boolean
 }
 

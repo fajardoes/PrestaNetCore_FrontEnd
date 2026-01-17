@@ -28,8 +28,7 @@ const catalogGroups = [
   { slug: 'clientes-gender', label: 'Géneros' },
   { slug: 'clientes-profession', label: 'Profesiones' },
   { slug: 'clientes-dependents', label: 'Dependientes' },
-  { slug: 'clientes-housing-type', label: 'Tipo de vivienda' },
-  { slug: 'clientes-municipality', label: 'Municipios' },
+  { slug: 'clientes-housing-type', label: 'Tipo de vivienda' }
 ]
 
 const statusToOnlyActive = (status: StatusFilterValue) => {

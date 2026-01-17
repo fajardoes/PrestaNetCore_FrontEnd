@@ -47,10 +47,11 @@ export const JournalEntryDetailModal = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+              className="btn-print"
               onClick={() => setIsPdfOpen(true)}
               disabled={!canPrint}
             >
+              <PrinterIcon className="h-4 w-4" />
               Imprimir comprobante
             </button>
             <button
@@ -192,5 +193,24 @@ const CloseIcon = ({ className }: { className?: string }) => (
   >
     <path d="M18 6 6 18" />
     <path d="m6 6 12 12" />
+  </svg>
+)
+
+const PrinterIcon = ({ className }: { className?: string }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+    aria-hidden="true"
+  >
+    <path d="M6 9V4h12v5" />
+    <path d="M6 18h12v2H6z" />
+    <path d="M6 14h12v4H6z" />
+    <path d="M4 12h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v1a2 2 0 0 0 2 2Z" />
   </svg>
 )

@@ -3,7 +3,6 @@ import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ClientCatalogItem } from '@/infrastructure/interfaces/clients/catalog'
 import type { ClientActivity, ClientReference } from '@/infrastructure/interfaces/clients/client'
-import { mapGeneroCatalogToEnum, mapGeneroEnumToOption } from '@/core/helpers/genero-mapper'
 import type { EconomicActivityCatalog } from '@/infrastructure/interfaces/clients/catalog'
 import type {
   Department,
@@ -23,6 +22,7 @@ interface ClientFormProps {
   onCancel: () => void
   isSaving?: boolean
   error?: string | null
+  isEdit?: boolean
   catalogs: {
     sectors: ClientCatalogItem[]
     civilStatus: ClientCatalogItem[]
@@ -48,6 +48,7 @@ export const ClientForm = ({
   onCancel,
   isSaving,
   error,
+  isEdit,
   catalogs,
 }: ClientFormProps) => {
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false)
@@ -71,7 +72,7 @@ export const ClientForm = ({
       rtn: '',
       address: '',
       telefono: '',
-      genero: '',
+      generoId: '',
       estadoCivilId: '',
       profesionId: '',
       fechaNacimiento: '',
@@ -105,7 +106,7 @@ export const ClientForm = ({
     if (initialValues) {
       reset({
         ...initialValues,
-        genero: mapGeneroEnumToOption(initialValues.genero),
+        generoId: initialValues.generoId ?? '',
         fechaNacimiento: toSafeDateInput(initialValues.fechaNacimiento),
         referencias: (initialValues.referencias ?? []).map((reference) => ({
           ...reference,
@@ -214,9 +215,14 @@ export const ClientForm = ({
 
   const handleDeleteReference = (index: number) => {
     const current = getValues('referencias')
-    const updated = current.map((ref, idx) =>
-      idx === index ? { ...ref, activo: false } : ref,
-    )
+    if (isEdit) {
+      const updated = current.map((ref, idx) =>
+        idx === index ? { ...ref, activo: false } : ref,
+      )
+      setValue('referencias', updated)
+      return
+    }
+    const updated = current.filter((_, idx) => idx !== index)
     setValue('referencias', updated)
   }
 
@@ -260,15 +266,25 @@ export const ClientForm = ({
 
   const handleDeleteActivity = (index: number) => {
     const current = getValues('actividades')
-    const updated = current.map((activity, idx) =>
-      idx === index ? { ...activity, activo: false } : activity,
-    )
+    if (isEdit) {
+      const updated = current.map((activity, idx) =>
+        idx === index ? { ...activity, activo: false } : activity,
+      )
+      setValue('actividades', updated)
+      return
+    }
+    const updated = current.filter((_, idx) => idx !== index)
     setValue('actividades', updated)
   }
 
   const submitHandler = handleSubmit(async (values) => {
     await onSubmit(values)
   })
+
+  const activitiesError =
+    typeof errors.actividades?.message === 'string'
+      ? errors.actividades?.message
+      : null
 
   return (
     <>
@@ -374,29 +390,29 @@ export const ClientForm = ({
 
         <div className="space-y-2">
           <label
-            htmlFor="genero"
+            htmlFor="generoId"
             className="block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Género
           </label>
           <select
-            id="genero"
+            id="generoId"
             className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('genero')}
+            {...register('generoId')}
             disabled={isSaving}
           >
             <option value="">Selecciona...</option>
             {catalogs.genders.map((gender) => (
               <option
                 key={gender.id}
-                value={mapGeneroCatalogToEnum(gender).toString()}
+                value={gender.id}
               >
                 {gender.nombre}
               </option>
             ))}
           </select>
-          {errors.genero ? (
-            <p className="text-xs text-red-500">{errors.genero.message}</p>
+          {errors.generoId ? (
+            <p className="text-xs text-red-500">{errors.generoId.message}</p>
           ) : null}
         </div>
 
@@ -652,10 +668,16 @@ export const ClientForm = ({
         ) : null}
 
         <div className="space-y-2">
-          {references.map((reference, index) => (
+          {references.map((reference, index) => {
+            const isInactive = reference.activo === false
+            return (
             <div
               key={`${reference.id ?? index}-${reference.nombreCompleto}`}
-              className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
+              className={`flex flex-col gap-2 rounded-xl border p-3 ${
+                isInactive
+                  ? 'border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-500/10'
+                  : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900'
+              }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -705,17 +727,20 @@ export const ClientForm = ({
                 >
                   {reference.activo === false ? 'Activar' : 'Desactivar'}
                 </button>
-                <button
-                  type="button"
-                  className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
-                  onClick={() => handleDeleteReference(index)}
-                  disabled={isSaving}
-                >
-                  Eliminar
-                </button>
+                {!isEdit ? (
+                  <button
+                    type="button"
+                    className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                    onClick={() => handleDeleteReference(index)}
+                    disabled={isSaving}
+                  >
+                    Eliminar
+                  </button>
+                ) : null}
               </div>
             </div>
-          ))}
+          )
+          })}
         </div>
       </div>
 
@@ -746,12 +771,23 @@ export const ClientForm = ({
             Relaciona al menos una actividad para calcular ingresos/gastos.
           </p>
         ) : null}
+        {activitiesError ? (
+          <p className="text-sm font-medium text-red-600 dark:text-red-300">
+            {activitiesError}
+          </p>
+        ) : null}
 
         <div className="space-y-2">
-          {activities.map((activity, index) => (
+          {activities.map((activity, index) => {
+            const isInactive = activity.activo === false
+            return (
             <div
               key={`${activity.id ?? index}-${activity.actividadId}`}
-              className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900"
+              className={`space-y-2 rounded-xl border p-3 ${
+                isInactive
+                  ? 'border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-500/10'
+                  : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900'
+              }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -829,17 +865,20 @@ export const ClientForm = ({
                 >
                   {activity.esPrincipal ? 'Quitar principal' : 'Marcar principal'}
                 </button>
-                <button
-                  type="button"
-                  className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
-                  onClick={() => handleDeleteActivity(index)}
-                  disabled={isSaving}
-                >
-                  Eliminar
-                </button>
+                {!isEdit ? (
+                  <button
+                    type="button"
+                    className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                    onClick={() => handleDeleteActivity(index)}
+                    disabled={isSaving}
+                  >
+                    Eliminar
+                  </button>
+                ) : null}
               </div>
             </div>
-          ))}
+          )
+          })}
         </div>
       </div>
 

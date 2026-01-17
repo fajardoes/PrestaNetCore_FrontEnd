@@ -9,7 +9,7 @@ export const listMunicipalitiesAction = async (
     const municipalities = await geographyApi.listMunicipalities(departmentId)
     return { success: true, data: municipalities }
   } catch (error) {
-    return toApiError(
+    return toApiError<undefined>(
       error,
       'No fue posible obtener los municipios. Intenta nuevamente.',
     )

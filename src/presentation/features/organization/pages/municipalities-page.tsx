@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import type { MunicipalityFormValues } from '@/infrastructure/validations/organization/municipality.schema'
 import type {
-  Department,
   Municipality,
 } from '@/infrastructure/interfaces/organization/geography'
 import { useMunicipalities } from '@/presentation/features/organization/hooks/use-municipalities'
@@ -20,6 +19,14 @@ export const MunicipalitiesPage = () => {
   const isAdmin =
     user?.roles.some((role) => role.toLowerCase() === 'admin') ?? false
 
+  const [status, setStatus] = useState<StatusFilterValue>('active')
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(1)
+  const [departmentFilter, setDepartmentFilter] = useState<string>('')
+  const [editingMunicipality, setEditingMunicipality] =
+    useState<Municipality | null>(null)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+
   const {
     municipalities,
     isLoading,
@@ -34,35 +41,6 @@ export const MunicipalitiesPage = () => {
   } = useDepartments({ enabled: isAdmin })
   const { saveMunicipality, isSaving, error: saveError } =
     useSaveMunicipality()
-
-  const [status, setStatus] = useState<StatusFilterValue>('active')
-  const [query, setQuery] = useState('')
-  const [page, setPage] = useState(1)
-  const [departmentFilter, setDepartmentFilter] = useState<string>('')
-  const [editingMunicipality, setEditingMunicipality] =
-    useState<Municipality | null>(null)
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
-
-  if (!isAdmin) {
-    return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
-        <p className="font-semibold">Acceso restringido</p>
-        <p className="text-sm">
-          Solo los usuarios con rol <span className="font-semibold">Admin</span>{' '}
-          pueden gestionar municipios.
-        </p>
-      </div>
-    )
-  }
-
-  const handleSave = async (values: MunicipalityFormValues) => {
-    const result = await saveMunicipality(values, editingMunicipality?.id)
-    if (result.success) {
-      setEditingMunicipality(null)
-      setIsCreateOpen(false)
-      await refreshMunicipalities()
-    }
-  }
 
   const visibleMunicipalities = useMemo(() => {
     if (status === 'all') return municipalities
@@ -109,6 +87,27 @@ export const MunicipalitiesPage = () => {
       [...departments].sort((a, b) => a.name.localeCompare(b.name, 'es')),
     [departments],
   )
+
+  if (!isAdmin) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">Acceso restringido</p>
+        <p className="text-sm">
+          Solo los usuarios con rol <span className="font-semibold">Admin</span>{' '}
+          pueden gestionar municipios.
+        </p>
+      </div>
+    )
+  }
+
+  const handleSave = async (values: MunicipalityFormValues) => {
+    const result = await saveMunicipality(values, editingMunicipality?.id)
+    if (result.success) {
+      setEditingMunicipality(null)
+      setIsCreateOpen(false)
+      await refreshMunicipalities()
+    }
+  }
 
   return (
     <div className="space-y-4">

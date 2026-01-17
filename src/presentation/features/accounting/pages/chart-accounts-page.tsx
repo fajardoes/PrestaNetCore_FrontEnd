@@ -25,12 +25,9 @@ export const ChartAccountsPage = () => {
     user?.roles?.some((role) => role.toLowerCase() === 'admin') ?? false
 
   const {
-    chartAccounts,
     rootAccounts,
     isLoading,
     error,
-    page,
-    totalPages,
     setPage,
     search,
     setSearch,
@@ -149,9 +146,8 @@ export const ChartAccountsPage = () => {
             normalBalance: account.normalBalance,
             isActive: account.isActive,
           })
-        }}
-        onCreateChild={(account) => openCreate(account)}
-      />
+        } }
+        onCreateChild={(account) => openCreate(account)} page={0} totalPages={0}      />
 
       <ChartAccountFormModal
         open={isModalOpen}

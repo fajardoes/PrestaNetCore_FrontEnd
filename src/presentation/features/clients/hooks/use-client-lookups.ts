@@ -192,7 +192,7 @@ export const useClientLookups = () => {
   useEffect(() => {
     void fetchBaseLookups()
     void fetchActivitiesForSector(null)
-  }, [fetchBaseLookups])
+  }, [fetchBaseLookups, fetchActivitiesForSector])
 
   return {
     ...catalogs,

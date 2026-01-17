@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import type { MenuFormValues } from '@/infrastructure/validations/security/menu.schema'
 import type { MenuItemAdminDto } from '@/infrastructure/interfaces/security/menu'
@@ -10,8 +10,6 @@ import { MenusTable } from '@/presentation/features/security/menus/components/me
 import { MenuModal } from '@/presentation/features/security/menus/components/menu-modal'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import type { StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
-
-const PAGE_SIZE = 10
 
 const normalizeTree = (menus: MenuItemAdminDto[]): MenuItemAdminDto[] => {
   const hasChildren = menus.some((menu) => Array.isArray(menu.children))
@@ -47,19 +45,6 @@ const normalizeTree = (menus: MenuItemAdminDto[]): MenuItemAdminDto[] => {
 
   sortNodes(roots)
   return roots
-}
-
-const flattenTree = (
-  items: MenuItemAdminDto[],
-  depth = 0,
-): { item: MenuItemAdminDto; depth: number }[] => {
-  return items.flatMap((item) => {
-    const rows = [{ item, depth }]
-    if (item.children?.length) {
-      rows.push(...flattenTree(item.children, depth + 1))
-    }
-    return rows
-  })
 }
 
 const findNode = (
@@ -102,6 +87,18 @@ const buildParentOptions = (
   })
 }
 
+const collectGroupIds = (
+  items: MenuItemAdminDto[],
+  bucket: Set<string>,
+) => {
+  items.forEach((item) => {
+    if (item.children?.length) {
+      bucket.add(item.id)
+      collectGroupIds(item.children, bucket)
+    }
+  })
+}
+
 export const MenusPage = () => {
   const { user } = useAuth()
   const isAdmin = useMemo(
@@ -125,7 +122,8 @@ export const MenusPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [status, setStatus] = useState<StatusFilterValue>('active')
   const [query, setQuery] = useState('')
-  const [page, setPage] = useState(1)
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+  const hasInitializedExpand = useRef(false)
 
   const handleSave = async (values: MenuFormValues) => {
     if (editingMenu) {
@@ -173,14 +171,26 @@ export const MenusPage = () => {
   }, [query, visibleMenus])
 
   const tree = useMemo(() => normalizeTree(filteredMenus), [filteredMenus])
-  const rows = useMemo(() => flattenTree(tree), [tree])
-  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE))
-  const currentPage = Math.min(page, totalPages)
-  const paginatedRows = useMemo(
-    () =>
-      rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
-    [currentPage, rows],
-  )
+  useEffect(() => {
+    if (!tree.length) {
+      setExpandedIds(new Set())
+      hasInitializedExpand.current = false
+      return
+    }
+    const available = new Set<string>()
+    collectGroupIds(tree, available)
+    setExpandedIds((prev) => {
+      if (!hasInitializedExpand.current) {
+        hasInitializedExpand.current = true
+        return new Set(available)
+      }
+      const next = new Set<string>()
+      prev.forEach((id) => {
+        if (available.has(id)) next.add(id)
+      })
+      return next.size === prev.size ? prev : next
+    })
+  }, [tree])
 
   const fullTree = useMemo(() => normalizeTree(menus), [menus])
   const excludedIds = useMemo(() => {
@@ -234,13 +244,11 @@ export const MenusPage = () => {
         search={query}
         onSearchChange={(value) => {
           setQuery(value)
-          setPage(1)
         }}
         placeholder="Buscar por titulo, slug o ruta..."
         status={status}
         onStatusChange={(value) => {
           setStatus(value)
-          setPage(1)
         }}
         actions={
           <button
@@ -258,12 +266,21 @@ export const MenusPage = () => {
       />
 
       <MenusTable
-        rows={paginatedRows}
+        items={tree}
+        expandedIds={expandedIds}
+        onToggleExpand={(menuId) => {
+          setExpandedIds((prev) => {
+            const next = new Set(prev)
+            if (next.has(menuId)) {
+              next.delete(menuId)
+            } else {
+              next.add(menuId)
+            }
+            return next
+          })
+        }}
         isLoading={isLoading}
         error={error}
-        page={currentPage}
-        totalPages={totalPages}
-        onPageChange={(next) => setPage(Math.min(Math.max(1, next), totalPages))}
         onEdit={(menu) => {
           setEditingMenu(menu)
           setIsCreateOpen(false)

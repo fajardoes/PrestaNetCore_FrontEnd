@@ -15,6 +15,12 @@ const isRouteActive = (route: string | null, pathname: string) => {
   return pathname === route || pathname.startsWith(`${route}/`)
 }
 
+const isRouteExact = (route: string | null, pathname: string) => {
+  if (!route) return false
+  if (route === '/') return pathname === '/'
+  return pathname === route
+}
+
 const isItemActive = (item: MenuItemTreeDto, pathname: string): boolean => {
   if (isRouteActive(item.route, pathname)) return true
   return item.children.some((child) => isItemActive(child, pathname))
@@ -55,6 +61,13 @@ const getIndentClasses = (depth: number, collapsed: boolean) => {
   return 'ml-6 border-l border-slate-200 pl-4 dark:border-slate-700/40'
 }
 
+const getSubmenuClasses = (isExpanded: boolean) => {
+  return [
+    'space-y-1 overflow-hidden transition-[max-height,opacity,transform] duration-200 ease-out',
+    isExpanded ? 'max-h-96 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-1 pointer-events-none',
+  ].join(' ')
+}
+
 export const Sidebar = ({ collapsed }: SidebarProps) => {
   const { isAuthenticated } = useAuth()
   const { menus, isLoading, error, refetch } = useMyMenus({
@@ -72,17 +85,16 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
     sortedMenus.forEach((item) => {
       collectActiveGroups(item, location.pathname, activeGroups)
     })
-    if (!activeGroups.size) return
     setExpanded((prev) => {
-      let changed = false
-      const next = { ...prev }
+      const next: Record<string, boolean> = {}
       activeGroups.forEach((id) => {
-        if (!next[id]) {
-          next[id] = true
-          changed = true
-        }
+        next[id] = true
       })
-      return changed ? next : prev
+      const prevKeys = Object.keys(prev)
+      const nextKeys = Object.keys(next)
+      if (prevKeys.length !== nextKeys.length) return next
+      const hasDiff = prevKeys.some((key) => prev[key] !== next[key])
+      return hasDiff ? next : prev
     })
   }, [sortedMenus, location.pathname])
 
@@ -104,8 +116,9 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
       const isExpanded = Boolean(expanded[item.id]) || isActive
       const indentClasses = getIndentClasses(depth, collapsed)
       const collapsedClasses = collapsed ? 'flex-col gap-2 px-2 py-3 text-xs' : ''
+      const isExactActive = isRouteExact(item.route, location.pathname)
       const activeClasses = isActive
-        ? 'bg-slate-100 text-slate-900 dark:text-sidebar'
+        ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-emerald-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-emerald-400"
         : 'text-slate-600 dark:text-slate-200'
 
       if (isGroup) {
@@ -135,8 +148,8 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
                 />
               ) : null}
             </button>
-            {hasChildren && isExpanded ? (
-              <div className="space-y-1">
+            {hasChildren ? (
+              <div className={getSubmenuClasses(isExpanded)} aria-hidden={!isExpanded}>
                 {renderItems(item.children, depth + 1)}
               </div>
             ) : null}
@@ -150,10 +163,9 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
             to={item.route ?? '/'}
             title={item.title}
             end={item.route === '/'}
-            className={({ isActive: linkActive }) => {
-              const resolvedActive = linkActive || isActive
-              const linkActiveClasses = resolvedActive
-                ? 'bg-slate-100 text-slate-900 dark:text-sidebar'
+            className={() => {
+              const linkActiveClasses = isExactActive
+                ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-emerald-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-emerald-400"
                 : 'text-slate-600 dark:text-slate-200'
               return [
                 baseItemClasses,
@@ -167,7 +179,7 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
             {!collapsed ? <span>{item.title}</span> : null}
           </NavLink>
           {hasChildren ? (
-            <div className="space-y-1">
+            <div className={getSubmenuClasses(isExpanded)} aria-hidden={!isExpanded}>
               {renderItems(item.children, depth + 1)}
             </div>
           ) : null}

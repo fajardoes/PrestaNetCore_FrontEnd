@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { deleteClientAction } from "@/core/actions/clients/delete-client.action";
 import { toggleClientAction } from "@/core/actions/clients/toggle-client.action";
 import type { ClientFormValues } from "@/infrastructure/validations/clients/client.schema";
@@ -46,6 +46,8 @@ export const ClientsPage = () => {
   } = useClientsExplorer();
 
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState(filters.search);
+  const lastAppliedSearch = useRef(filters.search);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const {
@@ -72,6 +74,29 @@ export const ClientsPage = () => {
       setActionError(null);
     }
   }, [isFormOpen, resetError]);
+
+  useEffect(() => {
+    setSearchInput(filters.search);
+  }, [filters.search]);
+
+  useEffect(() => {
+    const trimmed = searchInput.trim();
+    if (!trimmed) {
+      if (lastAppliedSearch.current !== '') {
+        lastAppliedSearch.current = '';
+        setFilters((prev) => ({ ...prev, search: '' }));
+        setPage(1);
+      }
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (lastAppliedSearch.current === trimmed) return;
+      lastAppliedSearch.current = trimmed;
+      setFilters((prev) => ({ ...prev, search: trimmed }));
+      setPage(1);
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [searchInput, setFilters, setPage]);
 
   const activitiesBySector = useMemo(() => {
     const map: Record<string, typeof activities> = {};
@@ -268,10 +293,9 @@ export const ClientsPage = () => {
       ) : (
         <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <ListFiltersBar
-            search={filters.search}
+            search={searchInput}
             onSearchChange={(value) => {
-              setFilters((prev) => ({ ...prev, search: value }));
-              setPage(1);
+              setSearchInput(value);
             }}
             placeholder="Buscar por nombre o identidad..."
             status={filters.activo}

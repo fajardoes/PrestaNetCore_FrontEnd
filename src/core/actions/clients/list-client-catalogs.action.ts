@@ -10,7 +10,7 @@ export const listClientCatalogsAction = async (
     const catalogs = await clientesApi.listCatalogs(filters)
     return { success: true, data: catalogs }
   } catch (error) {
-    return toApiError(
+    return toApiError<PagedResult<ClientCatalogItem>>(
       error,
       'No fue posible obtener los catálogos de clientes.',
     )

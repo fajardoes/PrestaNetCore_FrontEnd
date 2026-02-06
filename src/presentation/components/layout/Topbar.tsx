@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ThemeToggle } from '@/presentation/components/theme/ThemeToggle'
+import { BusinessDateIndicator } from '@/presentation/components/topbar/business-date-indicator'
 import type { AuthUser } from '@/types/auth'
 
 interface TopbarProps {
@@ -108,6 +109,7 @@ export const Topbar = ({
           </div>
         </div>
         <div className="flex items-center gap-3">
+          {user ? <BusinessDateIndicator /> : null}
           <ThemeToggle />
           {user ? (
             <div ref={userMenuRef} className="relative">

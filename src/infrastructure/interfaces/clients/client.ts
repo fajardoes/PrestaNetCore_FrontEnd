@@ -37,6 +37,7 @@ export interface ClientListItem {
   municipioNombre?: string | null
   generoId?: string | null
   activo: boolean
+  esEmpleado?: boolean
 }
 
 export interface ClientDetail

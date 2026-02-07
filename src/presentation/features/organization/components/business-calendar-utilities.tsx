@@ -10,6 +10,8 @@ import {
   type BusinessDayCheckFormValues,
 } from '@/infrastructure/validations/organization/business-calendar.schema'
 import type { BusinessDayAdjustmentRule } from '@/infrastructure/interfaces/organization/holidays/business-day-adjustment-rule'
+import AsyncSelect from '@/presentation/share/components/async-select'
+import { DatePicker } from '@/presentation/share/components/date-picker'
 
 interface BusinessCalendarUtilitiesProps {
   isChecking: boolean
@@ -66,6 +68,9 @@ export const BusinessCalendarUtilities = ({
   const {
     register: registerCheck,
     handleSubmit: handleCheckSubmit,
+    watch: watchCheck,
+    setValue: setCheckValue,
+    getValues: getCheckValues,
     formState: { errors: checkErrors },
   } = useForm<BusinessDayCheckFormValues>({
     resolver: yupResolver(businessDayCheckSchema),
@@ -79,6 +84,9 @@ export const BusinessCalendarUtilities = ({
   const {
     register: registerAdjust,
     handleSubmit: handleAdjustSubmit,
+    watch: watchAdjust,
+    setValue: setAdjustValue,
+    getValues: getAdjustValues,
     formState: { errors: adjustErrors },
   } = useForm<AdjustDateFormValues>({
     resolver: yupResolver(adjustDateSchema),
@@ -89,6 +97,35 @@ export const BusinessCalendarUtilities = ({
       portfolioTypeId: '',
     },
   })
+
+  const agencyOptions = useMemo(
+    () => sortedAgencies.map((agency) => ({ value: agency.id, label: agency.name })),
+    [sortedAgencies],
+  )
+  const portfolioTypeOptions = useMemo(
+    () => sortedPortfolioTypes.map((type) => ({ value: type.id, label: type.name })),
+    [sortedPortfolioTypes],
+  )
+  const ruleOptions = useMemo(
+    () => RULE_OPTIONS.map((rule) => ({ value: String(rule.value), label: rule.label })),
+    [],
+  )
+  const filterOptions = async <T extends string | number>(
+    options: Array<{ value: T; label: string }>,
+    inputValue: string,
+  ) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return options
+    return options.filter((option) => option.label.toLowerCase().includes(term))
+  }
+
+  const selectedCheckAgencyId = watchCheck('agencyId')
+  const selectedCheckPortfolioTypeId = watchCheck('portfolioTypeId')
+  const selectedCheckDate = watchCheck('date')
+  const selectedAdjustRule = watchAdjust('rule')
+  const selectedAdjustAgencyId = watchAdjust('agencyId')
+  const selectedAdjustPortfolioTypeId = watchAdjust('portfolioTypeId')
+  const selectedAdjustDate = watchAdjust('date')
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -111,15 +148,27 @@ export const BusinessCalendarUtilities = ({
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Fecha
             </label>
-            <input
-              type="date"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...registerCheck('date')}
+            <DatePicker
+              value={selectedCheckDate}
+              onChange={(value) =>
+                setCheckValue('date', value, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                  shouldTouch: true,
+                })
+              }
+              onBlur={() =>
+                setCheckValue('date', getCheckValues('date'), {
+                  shouldValidate: true,
+                  shouldTouch: true,
+                })
+              }
+              error={checkErrors.date?.message}
               disabled={isChecking}
+              placeholder="Selecciona una fecha"
+              allowFutureDates
             />
-            {checkErrors.date ? (
-              <p className="text-xs text-red-500">{checkErrors.date.message}</p>
-            ) : null}
+            <input type="hidden" {...registerCheck('date')} />
           </div>
 
           <div className="grid gap-3 md:grid-cols-2">
@@ -127,35 +176,49 @@ export const BusinessCalendarUtilities = ({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
                 Agencia (opcional)
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...registerCheck('agencyId')}
-                disabled={isChecking || agenciesLoading}
-              >
-                <option value="">Todas</option>
-                {sortedAgencies.map((agency) => (
-                  <option key={agency.id} value={agency.id}>
-                    {agency.name}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect
+                value={
+                  agencyOptions.find((option) => option.value === selectedCheckAgencyId) ?? null
+                }
+                onChange={(option) =>
+                  setCheckValue('agencyId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) => filterOptions(agencyOptions, inputValue)}
+                defaultOptions={agencyOptions}
+                instanceId="organization-holidays-check-agency"
+                isClearable
+                placeholder="Todas"
+                isDisabled={isChecking || agenciesLoading}
+                noOptionsMessage="Sin agencias"
+              />
+              <input type="hidden" {...registerCheck('agencyId')} />
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de portafolio (opcional)
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...registerCheck('portfolioTypeId')}
-                disabled={isChecking || catalogs.isLoading}
-              >
-                <option value="">Todos</option>
-                {sortedPortfolioTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect
+                value={
+                  portfolioTypeOptions.find(
+                    (option) => option.value === selectedCheckPortfolioTypeId,
+                  ) ?? null
+                }
+                onChange={(option) =>
+                  setCheckValue('portfolioTypeId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) => filterOptions(portfolioTypeOptions, inputValue)}
+                defaultOptions={portfolioTypeOptions}
+                instanceId="organization-holidays-check-portfolio-type"
+                isClearable
+                placeholder="Todos"
+                isDisabled={isChecking || catalogs.isLoading}
+                noOptionsMessage="Sin tipos"
+              />
+              <input type="hidden" {...registerCheck('portfolioTypeId')} />
             </div>
           </div>
 
@@ -214,32 +277,50 @@ export const BusinessCalendarUtilities = ({
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Fecha
             </label>
-            <input
-              type="date"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...registerAdjust('date')}
+            <DatePicker
+              value={selectedAdjustDate}
+              onChange={(value) =>
+                setAdjustValue('date', value, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                  shouldTouch: true,
+                })
+              }
+              onBlur={() =>
+                setAdjustValue('date', getAdjustValues('date'), {
+                  shouldValidate: true,
+                  shouldTouch: true,
+                })
+              }
+              error={adjustErrors.date?.message}
               disabled={isAdjusting}
+              placeholder="Selecciona una fecha"
+              allowFutureDates
             />
-            {adjustErrors.date ? (
-              <p className="text-xs text-red-500">{adjustErrors.date.message}</p>
-            ) : null}
+            <input type="hidden" {...registerAdjust('date')} />
           </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
               Regla
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...registerAdjust('rule', { valueAsNumber: true })}
-              disabled={isAdjusting}
-            >
-              {RULE_OPTIONS.map((rule) => (
-                <option key={rule.value} value={rule.value}>
-                  {rule.label}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect
+              value={
+                ruleOptions.find((option) => option.value === String(selectedAdjustRule)) ?? null
+              }
+              onChange={(option) =>
+                setAdjustValue('rule', Number(option?.value ?? '1'), {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) => filterOptions(ruleOptions, inputValue)}
+              defaultOptions={ruleOptions}
+              instanceId="organization-holidays-adjust-rule"
+              isClearable={false}
+              isDisabled={isAdjusting}
+              noOptionsMessage="Sin reglas"
+            />
+            <input type="hidden" {...registerAdjust('rule', { valueAsNumber: true })} />
             {adjustErrors.rule ? (
               <p className="text-xs text-red-500">{adjustErrors.rule.message}</p>
             ) : null}
@@ -250,35 +331,49 @@ export const BusinessCalendarUtilities = ({
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
                 Agencia (opcional)
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...registerAdjust('agencyId')}
-                disabled={isAdjusting || agenciesLoading}
-              >
-                <option value="">Todas</option>
-                {sortedAgencies.map((agency) => (
-                  <option key={agency.id} value={agency.id}>
-                    {agency.name}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect
+                value={
+                  agencyOptions.find((option) => option.value === selectedAdjustAgencyId) ?? null
+                }
+                onChange={(option) =>
+                  setAdjustValue('agencyId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) => filterOptions(agencyOptions, inputValue)}
+                defaultOptions={agencyOptions}
+                instanceId="organization-holidays-adjust-agency"
+                isClearable
+                placeholder="Todas"
+                isDisabled={isAdjusting || agenciesLoading}
+                noOptionsMessage="Sin agencias"
+              />
+              <input type="hidden" {...registerAdjust('agencyId')} />
             </div>
             <div className="space-y-2">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de portafolio (opcional)
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...registerAdjust('portfolioTypeId')}
-                disabled={isAdjusting || catalogs.isLoading}
-              >
-                <option value="">Todos</option>
-                {sortedPortfolioTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect
+                value={
+                  portfolioTypeOptions.find(
+                    (option) => option.value === selectedAdjustPortfolioTypeId,
+                  ) ?? null
+                }
+                onChange={(option) =>
+                  setAdjustValue('portfolioTypeId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) => filterOptions(portfolioTypeOptions, inputValue)}
+                defaultOptions={portfolioTypeOptions}
+                instanceId="organization-holidays-adjust-portfolio-type"
+                isClearable
+                placeholder="Todos"
+                isDisabled={isAdjusting || catalogs.isLoading}
+                noOptionsMessage="Sin tipos"
+              />
+              <input type="hidden" {...registerAdjust('portfolioTypeId')} />
             </div>
           </div>
 

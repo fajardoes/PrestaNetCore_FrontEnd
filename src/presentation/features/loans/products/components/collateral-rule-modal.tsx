@@ -1,9 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { collateralRuleSchema } from '@/infrastructure/validations/loans/loan-product-form.schema'
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 type CollateralRuleFormValues = LoanProductFormValues['collateralRules'][number]
 
@@ -25,6 +28,14 @@ const defaultValues: CollateralRuleFormValues = {
 const toNumberValue = (value: string) => (value === '' ? undefined : Number(value))
 const toOptionalNumber = (value: string) => (value === '' ? null : Number(value))
 const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
+const filterOptions = (
+  options: AsyncSelectOption<LoanCatalogItemDto>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
+}
 
 export const CollateralRuleModal = ({
   open,
@@ -37,6 +48,8 @@ export const CollateralRuleModal = ({
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<CollateralRuleFormValues>({
     resolver: yupResolver(collateralRuleSchema),
@@ -48,6 +61,17 @@ export const CollateralRuleModal = ({
       reset(initialValues ?? defaultValues)
     }
   }, [initialValues, open, reset])
+
+  const collateralTypeId = watch('collateralTypeId')
+  const collateralTypeOptions = useMemo(
+    () =>
+      collateralTypes.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [collateralTypes],
+  )
 
   const submitHandler = handleSubmit((values) => onSubmit(values))
 
@@ -81,17 +105,26 @@ export const CollateralRuleModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de garantía
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('collateralTypeId')}
-              >
-                <option value="">Selecciona...</option>
-                {collateralTypes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {getOptionLabel(item)}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<LoanCatalogItemDto>
+                value={
+                  collateralTypeOptions.find((option) => option.value === collateralTypeId) ??
+                  null
+                }
+                onChange={(option) =>
+                  setValue('collateralTypeId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(collateralTypeOptions, inputValue))
+                }
+                placeholder="Selecciona..."
+                inputId="collateralTypeId"
+                instanceId="loan-product-collateral-type-id"
+                defaultOptions={collateralTypeOptions}
+                noOptionsMessage="Sin tipos de garantía"
+              />
+              <input type="hidden" {...register('collateralTypeId')} />
               {errors.collateralTypeId ? (
                 <p className="text-xs text-red-500">
                   {errors.collateralTypeId.message}

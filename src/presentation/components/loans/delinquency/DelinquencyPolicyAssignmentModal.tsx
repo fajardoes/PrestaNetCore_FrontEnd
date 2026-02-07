@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import {
@@ -9,6 +9,9 @@ import type { DelinquencyPolicyAssignmentListItemDto } from '@/infrastructure/in
 import type { DelinquencyPolicyListItemDto } from '@/infrastructure/intranet/responses/loans/delinquency-policy-list-item.response'
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface DelinquencyPolicyAssignmentModalProps {
   open: boolean
@@ -25,6 +28,15 @@ interface DelinquencyPolicyAssignmentModalProps {
 const formatPolicyLabel = (policy: DelinquencyPolicyListItemDto) =>
   `${policy.code} - ${policy.name}`
 
+const filterOptions = <TMeta,>(
+  options: AsyncSelectOption<TMeta>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
+}
+
 export const DelinquencyPolicyAssignmentModal = ({
   open,
   onClose,
@@ -40,6 +52,8 @@ export const DelinquencyPolicyAssignmentModal = ({
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<DelinquencyPolicyAssignmentFormValues>({
     resolver: yupResolver(delinquencyPolicyAssignmentSchema),
@@ -70,8 +84,6 @@ export const DelinquencyPolicyAssignmentModal = ({
     })
   }, [assignment, open, reset])
 
-  if (!open) return null
-
   const submitHandler = handleSubmit(async (values) => {
     await onSubmit({
       ...values,
@@ -96,6 +108,38 @@ export const DelinquencyPolicyAssignmentModal = ({
           ...policies,
         ]
     : policies
+  const policyId = watch('policyId')
+  const agencyId = watch('agencyId')
+  const portfolioTypeId = watch('portfolioTypeId')
+  const policyAsyncOptions = useMemo(
+    () =>
+      policyOptions.map((policy) => ({
+        value: policy.id,
+        label: formatPolicyLabel(policy),
+        meta: policy,
+      })),
+    [policyOptions],
+  )
+  const agencyOptions = useMemo(
+    () =>
+      agencies.map((agency) => ({
+        value: agency.id,
+        label: `${agency.code} - ${agency.name}`,
+        meta: agency,
+      })),
+    [agencies],
+  )
+  const portfolioTypeOptions = useMemo(
+    () =>
+      portfolioTypes.map((type) => ({
+        value: type.id,
+        label: `${type.code} - ${type.name}`,
+        meta: type,
+      })),
+    [portfolioTypes],
+  )
+
+  if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
@@ -127,19 +171,22 @@ export const DelinquencyPolicyAssignmentModal = ({
             >
               Política activa
             </label>
-            <select
-              id="policyId"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('policyId')}
-              disabled={isSaving}
-            >
-              <option value="">Selecciona una política</option>
-              {policyOptions.map((policy) => (
-                <option key={policy.id} value={policy.id}>
-                  {formatPolicyLabel(policy)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<DelinquencyPolicyListItemDto>
+              value={policyAsyncOptions.find((option) => option.value === policyId) ?? null}
+              onChange={(option) =>
+                setValue('policyId', option?.value ?? '', { shouldValidate: true })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(policyAsyncOptions, inputValue))
+              }
+              placeholder="Selecciona una política"
+              inputId="policyId"
+              instanceId="delinquency-assignment-policy-id"
+              isDisabled={isSaving}
+              defaultOptions={policyAsyncOptions}
+              noOptionsMessage="Sin políticas"
+            />
+            <input type="hidden" {...register('policyId')} />
             {errors.policyId ? (
               <p className="text-xs text-red-500">{errors.policyId.message}</p>
             ) : null}
@@ -153,19 +200,23 @@ export const DelinquencyPolicyAssignmentModal = ({
               >
                 Sucursal
               </label>
-              <select
-                id="agencyId"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('agencyId')}
-                disabled={isSaving}
-              >
-                <option value="">Todas</option>
-                {agencies.map((agency) => (
-                  <option key={agency.id} value={agency.id}>
-                    {agency.code} - {agency.name}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<Agency>
+                value={agencyOptions.find((option) => option.value === agencyId) ?? null}
+                onChange={(option) =>
+                  setValue('agencyId', option?.value ?? '', { shouldValidate: true })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(agencyOptions, inputValue))
+                }
+                placeholder="Todas"
+                inputId="agencyId"
+                instanceId="delinquency-assignment-agency-id"
+                isDisabled={isSaving}
+                defaultOptions={agencyOptions}
+                isClearable
+                noOptionsMessage="Sin sucursales"
+              />
+              <input type="hidden" {...register('agencyId')} />
             </div>
 
             <div className="space-y-2">
@@ -175,19 +226,28 @@ export const DelinquencyPolicyAssignmentModal = ({
               >
                 Tipo de cartera
               </label>
-              <select
-                id="portfolioTypeId"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('portfolioTypeId')}
-                disabled={isSaving}
-              >
-                <option value="">Todas</option>
-                {portfolioTypes.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.code} - {type.name}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<LoanCatalogItemDto>
+                value={
+                  portfolioTypeOptions.find((option) => option.value === portfolioTypeId) ??
+                  null
+                }
+                onChange={(option) =>
+                  setValue('portfolioTypeId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(portfolioTypeOptions, inputValue))
+                }
+                placeholder="Todas"
+                inputId="portfolioTypeId"
+                instanceId="delinquency-assignment-portfolio-type-id"
+                isDisabled={isSaving}
+                defaultOptions={portfolioTypeOptions}
+                isClearable
+                noOptionsMessage="Sin tipos de cartera"
+              />
+              <input type="hidden" {...register('portfolioTypeId')} />
             </div>
           </div>
 

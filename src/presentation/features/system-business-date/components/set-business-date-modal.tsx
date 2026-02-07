@@ -5,6 +5,7 @@ import {
   businessDateSchema,
   type BusinessDateFormValues,
 } from '@/infrastructure/validations/system/business-date.schema'
+import { DatePicker } from '@/presentation/share/components/date-picker'
 
 interface SetBusinessDateModalProps {
   open: boolean
@@ -29,6 +30,9 @@ export const SetBusinessDateModal = ({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<BusinessDateFormValues>({
     resolver: yupResolver(businessDateSchema),
@@ -43,6 +47,8 @@ export const SetBusinessDateModal = ({
       businessDate: initialDate ?? todayIso(),
     })
   }, [open, initialDate, reset])
+
+  const businessDate = watch('businessDate')
 
   if (!open) return null
 
@@ -83,16 +89,27 @@ export const SetBusinessDateModal = ({
             >
               Fecha operativa
             </label>
-            <input
-              id="businessDate"
-              type="date"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('businessDate')}
+            <DatePicker
+              value={businessDate}
+              onChange={(value) =>
+                setValue('businessDate', value, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                  shouldTouch: true,
+                })
+              }
+              onBlur={() =>
+                setValue('businessDate', getValues('businessDate'), {
+                  shouldValidate: true,
+                  shouldTouch: true,
+                })
+              }
+              error={errors.businessDate?.message}
               disabled={isSubmitting}
+              placeholder="Selecciona la fecha operativa"
+              allowFutureDates
             />
-            {errors.businessDate ? (
-              <p className="text-xs text-red-500">{errors.businessDate.message}</p>
-            ) : null}
+            <input type="hidden" {...register('businessDate')} />
           </div>
 
           {error ? (

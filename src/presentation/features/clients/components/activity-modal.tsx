@@ -6,6 +6,9 @@ import {
   type ClientActivityFormValues,
 } from '@/infrastructure/validations/clients/client.schema'
 import type { EconomicActivityCatalog } from '@/infrastructure/interfaces/clients/catalog'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface ActivityModalProps {
   open: boolean
@@ -26,6 +29,8 @@ export const ActivityModal = ({
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ClientActivityFormValues>({
     resolver: zodResolver(activitySchema),
@@ -63,6 +68,22 @@ export const ActivityModal = ({
       )
     }
   }, [initialValues, open, reset])
+
+  const activityId = watch('actividadId')
+  const activityOptions: AsyncSelectOption<EconomicActivityCatalog>[] =
+    activitiesCatalog.map((activity) => ({
+      value: activity.id,
+      label: `${activity.nombre}${activity.sectorNombre ? ` (${activity.sectorNombre})` : ''}`,
+      meta: activity,
+    }))
+
+  const loadActivityOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return activityOptions
+    return activityOptions.filter((option) =>
+      option.label.toLowerCase().includes(term),
+    )
+  }
 
   const submitHandler = handleSubmit((values) => onSubmit(values))
 
@@ -103,18 +124,24 @@ export const ActivityModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Actividad económica
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('actividadId')}
-              >
-                <option value="">Selecciona...</option>
-                {activitiesCatalog.map((activity) => (
-                  <option key={activity.id} value={activity.id}>
-                    {activity.nombre}{' '}
-                    {activity.sectorNombre ? `(${activity.sectorNombre})` : ''}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<EconomicActivityCatalog>
+                value={
+                  activityOptions.find((option) => option.value === activityId) ??
+                  null
+                }
+                onChange={(option) =>
+                  setValue('actividadId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={loadActivityOptions}
+                placeholder="Selecciona..."
+                inputId="actividadId"
+                instanceId="client-actividad-id"
+                defaultOptions={activityOptions}
+                noOptionsMessage="Sin actividades"
+              />
+              <input type="hidden" {...register('actividadId')} />
               {errors.actividadId ? (
                 <p className="text-xs text-red-500">
                   {errors.actividadId.message}

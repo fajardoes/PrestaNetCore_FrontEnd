@@ -3,6 +3,9 @@ import { AccountingStatusBadge } from '@/presentation/features/accounting/compon
 import { ListFiltersBar, type StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { DelinquencyPolicyAssignmentModal } from '@/presentation/components/loans/delinquency/DelinquencyPolicyAssignmentModal'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 import { useDelinquencyPolicyAssignmentsList } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policy-assignments-list'
 import { useDelinquencyPolicyAssignmentMutations } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policy-assignment-mutations'
 import { useActiveDelinquencyPolicies } from '@/presentation/features/loans/delinquency/hooks/use-active-delinquency-policies'
@@ -10,6 +13,15 @@ import { useAgencies } from '@/presentation/features/catalog/hooks/use-agencies'
 import { useLoanCatalogsCache } from '@/presentation/features/loans/catalogs/hooks/use-loan-catalogs-cache'
 import type { DelinquencyPolicyAssignmentListItemDto } from '@/infrastructure/intranet/responses/loans/delinquency-policy-assignment-list-item.response'
 import type { DelinquencyPolicyAssignmentFormValues } from '@/infrastructure/validations/loans/delinquency-policy-assignment.schema'
+
+const filterOptions = <TMeta,>(
+  options: AsyncSelectOption<TMeta>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
+}
 
 export const DelinquencyPolicyAssignmentsPage = () => {
   const { filters, setFilters, load, items, isLoading, error } =
@@ -89,6 +101,25 @@ export const DelinquencyPolicyAssignmentsPage = () => {
     })
   }, [items, search])
 
+  const agencyOptions = useMemo(
+    () =>
+      agencies.map((agency) => ({
+        value: agency.id,
+        label: `${agency.code} - ${agency.name}`,
+        meta: agency,
+      })),
+    [agencies],
+  )
+  const portfolioTypeOptions = useMemo(
+    () =>
+      catalogs.portfolioTypes.map((type) => ({
+        value: type.id,
+        label: `${type.code} - ${type.name}`,
+        meta: type,
+      })),
+    [catalogs.portfolioTypes],
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
@@ -135,41 +166,52 @@ export const DelinquencyPolicyAssignmentsPage = () => {
         }
       >
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <select
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40 sm:w-56"
-            value={filters.agencyId ?? ''}
-            onChange={(event) =>
-              setFilters((prev) => ({
-                ...prev,
-                agencyId: event.target.value || undefined,
-              }))
-            }
-          >
-            <option value="">Todas las sucursales</option>
-            {agencies.map((agency) => (
-              <option key={agency.id} value={agency.id}>
-                {agency.code} - {agency.name}
-              </option>
-            ))}
-          </select>
+          <div className="w-full sm:w-56">
+            <AsyncSelect
+              value={
+                agencyOptions.find((option) => option.value === (filters.agencyId ?? '')) ??
+                null
+              }
+              onChange={(option) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  agencyId: option?.value || undefined,
+                }))
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(agencyOptions, inputValue))
+              }
+              placeholder="Todas las sucursales"
+              instanceId="delinquency-policy-assignments-agency-filter"
+              defaultOptions={agencyOptions}
+              isClearable
+              noOptionsMessage="Sin sucursales"
+            />
+          </div>
 
-          <select
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40 sm:w-56"
-            value={filters.portfolioTypeId ?? ''}
-            onChange={(event) =>
-              setFilters((prev) => ({
-                ...prev,
-                portfolioTypeId: event.target.value || undefined,
-              }))
-            }
-          >
-            <option value="">Todos los tipos</option>
-            {catalogs.portfolioTypes.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.code} - {type.name}
-              </option>
-            ))}
-          </select>
+          <div className="w-full sm:w-56">
+            <AsyncSelect
+              value={
+                portfolioTypeOptions.find(
+                  (option) => option.value === (filters.portfolioTypeId ?? ''),
+                ) ?? null
+              }
+              onChange={(option) =>
+                setFilters((prev) => ({
+                  ...prev,
+                  portfolioTypeId: option?.value || undefined,
+                }))
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(portfolioTypeOptions, inputValue))
+              }
+              placeholder="Todos los tipos"
+              instanceId="delinquency-policy-assignments-portfolio-type-filter"
+              defaultOptions={portfolioTypeOptions}
+              isClearable
+              noOptionsMessage="Sin tipos de cartera"
+            />
+          </div>
         </div>
       </ListFiltersBar>
 

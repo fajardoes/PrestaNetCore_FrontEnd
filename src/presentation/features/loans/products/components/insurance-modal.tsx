@@ -1,9 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { insuranceSchema } from '@/infrastructure/validations/loans/loan-product-form.schema'
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 type InsuranceFormValues = LoanProductFormValues['insurances'][number]
 
@@ -29,6 +32,14 @@ const defaultValues: InsuranceFormValues = {
 
 const toNumberValue = (value: string) => (value === '' ? undefined : Number(value))
 const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
+const filterOptions = (
+  options: AsyncSelectOption<LoanCatalogItemDto>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
+}
 
 export const InsuranceModal = ({
   open,
@@ -44,6 +55,8 @@ export const InsuranceModal = ({
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<InsuranceFormValues>({
     resolver: yupResolver(insuranceSchema),
@@ -55,6 +68,48 @@ export const InsuranceModal = ({
       reset(initialValues ?? defaultValues)
     }
   }, [initialValues, open, reset])
+
+  const insuranceTypeId = watch('insuranceTypeId')
+  const calculationBaseId = watch('calculationBaseId')
+  const coveragePeriodId = watch('coveragePeriodId')
+  const chargeTimingId = watch('chargeTimingId')
+
+  const insuranceTypeOptions = useMemo(
+    () =>
+      insuranceTypes.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [insuranceTypes],
+  )
+  const calculationBaseOptions = useMemo(
+    () =>
+      insuranceCalculationBases.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [insuranceCalculationBases],
+  )
+  const coveragePeriodOptions = useMemo(
+    () =>
+      insuranceCoveragePeriods.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [insuranceCoveragePeriods],
+  )
+  const chargeTimingOptions = useMemo(
+    () =>
+      insuranceChargeTimings.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [insuranceChargeTimings],
+  )
 
   const submitHandler = handleSubmit((values) => onSubmit(values))
 
@@ -88,17 +143,26 @@ export const InsuranceModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de seguro
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('insuranceTypeId')}
-              >
-                <option value="">Selecciona...</option>
-                {insuranceTypes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {getOptionLabel(item)}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<LoanCatalogItemDto>
+                value={
+                  insuranceTypeOptions.find((option) => option.value === insuranceTypeId) ??
+                  null
+                }
+                onChange={(option) =>
+                  setValue('insuranceTypeId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(insuranceTypeOptions, inputValue))
+                }
+                placeholder="Selecciona..."
+                inputId="insuranceTypeId"
+                instanceId="loan-product-insurance-type-id"
+                defaultOptions={insuranceTypeOptions}
+                noOptionsMessage="Sin tipos de seguro"
+              />
+              <input type="hidden" {...register('insuranceTypeId')} />
               {errors.insuranceTypeId ? (
                 <p className="text-xs text-red-500">
                   {errors.insuranceTypeId.message}
@@ -110,17 +174,26 @@ export const InsuranceModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Base de cálculo
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('calculationBaseId')}
-              >
-                <option value="">Selecciona...</option>
-                {insuranceCalculationBases.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {getOptionLabel(item)}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<LoanCatalogItemDto>
+                value={
+                  calculationBaseOptions.find((option) => option.value === calculationBaseId) ??
+                  null
+                }
+                onChange={(option) =>
+                  setValue('calculationBaseId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(calculationBaseOptions, inputValue))
+                }
+                placeholder="Selecciona..."
+                inputId="calculationBaseId"
+                instanceId="loan-product-insurance-calculation-base-id"
+                defaultOptions={calculationBaseOptions}
+                noOptionsMessage="Sin bases de cálculo"
+              />
+              <input type="hidden" {...register('calculationBaseId')} />
               {errors.calculationBaseId ? (
                 <p className="text-xs text-red-500">
                   {errors.calculationBaseId.message}
@@ -134,17 +207,26 @@ export const InsuranceModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Cobertura
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('coveragePeriodId')}
-              >
-                <option value="">Selecciona...</option>
-                {insuranceCoveragePeriods.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {getOptionLabel(item)}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<LoanCatalogItemDto>
+                value={
+                  coveragePeriodOptions.find((option) => option.value === coveragePeriodId) ??
+                  null
+                }
+                onChange={(option) =>
+                  setValue('coveragePeriodId', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(coveragePeriodOptions, inputValue))
+                }
+                placeholder="Selecciona..."
+                inputId="coveragePeriodId"
+                instanceId="loan-product-insurance-coverage-period-id"
+                defaultOptions={coveragePeriodOptions}
+                noOptionsMessage="Sin coberturas"
+              />
+              <input type="hidden" {...register('coveragePeriodId')} />
               {errors.coveragePeriodId ? (
                 <p className="text-xs text-red-500">
                   {errors.coveragePeriodId.message}
@@ -172,17 +254,25 @@ export const InsuranceModal = ({
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Momento de cobro
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('chargeTimingId')}
-            >
-              <option value="">Selecciona...</option>
-              {insuranceChargeTimings.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getOptionLabel(item)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={
+                chargeTimingOptions.find((option) => option.value === chargeTimingId) ?? null
+              }
+              onChange={(option) =>
+                setValue('chargeTimingId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(chargeTimingOptions, inputValue))
+              }
+              placeholder="Selecciona..."
+              inputId="chargeTimingId"
+              instanceId="loan-product-insurance-charge-timing-id"
+              defaultOptions={chargeTimingOptions}
+              noOptionsMessage="Sin momentos de cobro"
+            />
+            <input type="hidden" {...register('chargeTimingId')} />
             {errors.chargeTimingId ? (
               <p className="text-xs text-red-500">
                 {errors.chargeTimingId.message}

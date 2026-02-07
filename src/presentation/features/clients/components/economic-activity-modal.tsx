@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -9,6 +9,7 @@ import type {
   ClientCatalogItem,
   EconomicActivityCatalog,
 } from '@/infrastructure/interfaces/clients/catalog'
+import AsyncSelect from '@/presentation/share/components/async-select'
 
 interface EconomicActivityModalProps {
   open: boolean
@@ -33,6 +34,8 @@ export const EconomicActivityModal = ({
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<EconomicActivityFormValues>({
     resolver: zodResolver(economicActivitySchema),
@@ -61,6 +64,25 @@ export const EconomicActivityModal = ({
       })
     }
   }, [activity, open, reset])
+
+  const selectedSectorId = watch('sectorId')
+  const sectorOptions = useMemo(
+    () =>
+      sectors.map((sector) => ({
+        value: sector.id,
+        label: sector.nombre,
+        meta: sector,
+      })),
+    [sectors],
+  )
+
+  const loadSectorOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return sectorOptions
+    return sectorOptions.filter((option) =>
+      option.label.toLowerCase().includes(term),
+    )
+  }
 
   if (!open) return null
 
@@ -98,19 +120,23 @@ export const EconomicActivityModal = ({
             >
               Sector
             </label>
-            <select
-              id="sectorId"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('sectorId')}
-              disabled={isSaving}
-            >
-              <option value="">Selecciona un sector...</option>
-              {sectors.map((sector) => (
-                <option key={sector.id} value={sector.id}>
-                  {sector.nombre}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<ClientCatalogItem>
+              value={
+                sectorOptions.find((option) => option.value === selectedSectorId) ??
+                null
+              }
+              onChange={(option) =>
+                setValue('sectorId', option?.value ?? '', { shouldValidate: true })
+              }
+              loadOptions={loadSectorOptions}
+              placeholder="Selecciona un sector..."
+              inputId="sectorId"
+              instanceId="economic-activity-sector-id"
+              isDisabled={isSaving}
+              defaultOptions={sectorOptions}
+              noOptionsMessage="Sin sectores"
+            />
+            <input type="hidden" {...register('sectorId')} />
             {errors.sectorId ? (
               <p className="text-xs text-red-500">{errors.sectorId.message}</p>
             ) : null}

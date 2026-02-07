@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
@@ -11,6 +11,9 @@ import { FeesEditor } from '@/presentation/features/loans/products/components/fe
 import { InsurancesEditor } from '@/presentation/features/loans/products/components/insurances-editor'
 import { CollateralRulesEditor } from '@/presentation/features/loans/products/components/collateral-rules-editor'
 import { GlAccountsSelector } from '@/presentation/features/loans/products/components/gl-accounts-selector'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface LoanCatalogOptions {
   termUnits: LoanCatalogItemDto[]
@@ -85,6 +88,14 @@ const toOptionalText = (value?: string | null) => {
   return trimmed ? trimmed : null
 }
 const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
+const filterOptions = (
+  options: AsyncSelectOption<LoanCatalogItemDto>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
+}
 
 export const LoanProductForm = ({
   initialValues,
@@ -129,8 +140,67 @@ export const LoanProductForm = ({
   const hasInsurance = useWatch({ control, name: 'hasInsurance' })
   const insurances = useWatch({ control, name: 'insurances' })
   const termUnitId = useWatch({ control, name: 'termUnitId' })
+  const interestRateTypeId = useWatch({ control, name: 'interestRateTypeId' })
+  const rateBaseId = useWatch({ control, name: 'rateBaseId' })
+  const amortizationMethodId = useWatch({ control, name: 'amortizationMethodId' })
+  const paymentFrequencyId = useWatch({ control, name: 'paymentFrequencyId' })
+  const portfolioTypeId = useWatch({ control, name: 'portfolioTypeId' })
   const selectedTermUnit = catalogs.termUnits.find((item) => item.id === termUnitId)
   const termUnitLabel = selectedTermUnit?.name ?? 'unidad'
+  const termUnitOptions = useMemo(
+    () =>
+      catalogs.termUnits.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.termUnits],
+  )
+  const interestRateTypeOptions = useMemo(
+    () =>
+      catalogs.interestRateTypes.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.interestRateTypes],
+  )
+  const rateBaseOptions = useMemo(
+    () =>
+      catalogs.rateBases.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.rateBases],
+  )
+  const amortizationMethodOptions = useMemo(
+    () =>
+      catalogs.amortizationMethods.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.amortizationMethods],
+  )
+  const paymentFrequencyOptions = useMemo(
+    () =>
+      catalogs.paymentFrequencies.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.paymentFrequencies],
+  )
+  const portfolioTypeOptions = useMemo(
+    () =>
+      catalogs.portfolioTypes.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.portfolioTypes],
+  )
 
   useEffect(() => {
     if (!requiresCollateral) {
@@ -292,18 +362,22 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Unidad de plazo
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('termUnitId')}
-              disabled={isSaving || isLoadingCatalogs}
-            >
-              <option value="">Selecciona una unidad</option>
-              {catalogs.termUnits.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getOptionLabel(item)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={termUnitOptions.find((option) => option.value === termUnitId) ?? null}
+              onChange={(option) =>
+                setValue('termUnitId', option?.value ?? '', { shouldValidate: true })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(termUnitOptions, inputValue))
+              }
+              placeholder="Selecciona una unidad"
+              inputId="termUnitId"
+              instanceId="loan-product-term-unit-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={termUnitOptions}
+              noOptionsMessage="Sin unidades"
+            />
+            <input type="hidden" {...register('termUnitId')} />
             {errors.termUnitId ? (
               <p className="text-xs text-red-500">{errors.termUnitId.message}</p>
             ) : null}
@@ -358,18 +432,27 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Tipo de tasa
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('interestRateTypeId')}
-              disabled={isSaving || isLoadingCatalogs}
-            >
-              <option value="">Selecciona un tipo</option>
-              {catalogs.interestRateTypes.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getOptionLabel(item)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={
+                interestRateTypeOptions.find((option) => option.value === interestRateTypeId) ??
+                null
+              }
+              onChange={(option) =>
+                setValue('interestRateTypeId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(interestRateTypeOptions, inputValue))
+              }
+              placeholder="Selecciona un tipo"
+              inputId="interestRateTypeId"
+              instanceId="loan-product-interest-rate-type-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={interestRateTypeOptions}
+              noOptionsMessage="Sin tipos de tasa"
+            />
+            <input type="hidden" {...register('interestRateTypeId')} />
             {errors.interestRateTypeId ? (
               <p className="text-xs text-red-500">
                 {errors.interestRateTypeId.message}
@@ -397,18 +480,22 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Base de tasa
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('rateBaseId')}
-              disabled={isSaving || isLoadingCatalogs}
-            >
-              <option value="">Selecciona una base</option>
-              {catalogs.rateBases.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getOptionLabel(item)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={rateBaseOptions.find((option) => option.value === rateBaseId) ?? null}
+              onChange={(option) =>
+                setValue('rateBaseId', option?.value ?? '', { shouldValidate: true })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(rateBaseOptions, inputValue))
+              }
+              placeholder="Selecciona una base"
+              inputId="rateBaseId"
+              instanceId="loan-product-rate-base-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={rateBaseOptions}
+              noOptionsMessage="Sin bases de tasa"
+            />
+            <input type="hidden" {...register('rateBaseId')} />
             {errors.rateBaseId ? (
               <p className="text-xs text-red-500">{errors.rateBaseId.message}</p>
             ) : null}
@@ -417,18 +504,28 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Método amortización
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('amortizationMethodId')}
-              disabled={isSaving || isLoadingCatalogs}
-            >
-              <option value="">Selecciona un método</option>
-              {catalogs.amortizationMethods.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getOptionLabel(item)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={
+                amortizationMethodOptions.find(
+                  (option) => option.value === amortizationMethodId,
+                ) ?? null
+              }
+              onChange={(option) =>
+                setValue('amortizationMethodId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(amortizationMethodOptions, inputValue))
+              }
+              placeholder="Selecciona un método"
+              inputId="amortizationMethodId"
+              instanceId="loan-product-amortization-method-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={amortizationMethodOptions}
+              noOptionsMessage="Sin métodos de amortización"
+            />
+            <input type="hidden" {...register('amortizationMethodId')} />
             {errors.amortizationMethodId ? (
               <p className="text-xs text-red-500">
                 {errors.amortizationMethodId.message}
@@ -439,18 +536,27 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Frecuencia de pago
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('paymentFrequencyId')}
-              disabled={isSaving || isLoadingCatalogs}
-            >
-              <option value="">Selecciona una frecuencia</option>
-              {catalogs.paymentFrequencies.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getOptionLabel(item)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={
+                paymentFrequencyOptions.find((option) => option.value === paymentFrequencyId) ??
+                null
+              }
+              onChange={(option) =>
+                setValue('paymentFrequencyId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(paymentFrequencyOptions, inputValue))
+              }
+              placeholder="Selecciona una frecuencia"
+              inputId="paymentFrequencyId"
+              instanceId="loan-product-payment-frequency-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={paymentFrequencyOptions}
+              noOptionsMessage="Sin frecuencias"
+            />
+            <input type="hidden" {...register('paymentFrequencyId')} />
             {errors.paymentFrequencyId ? (
               <p className="text-xs text-red-500">
                 {errors.paymentFrequencyId.message}
@@ -559,18 +665,26 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Tipo de cartera
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('portfolioTypeId')}
-              disabled={isSaving || isLoadingCatalogs}
-            >
-              <option value="">Selecciona un tipo</option>
-              {catalogs.portfolioTypes.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getOptionLabel(item)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={
+                portfolioTypeOptions.find((option) => option.value === portfolioTypeId) ?? null
+              }
+              onChange={(option) =>
+                setValue('portfolioTypeId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(portfolioTypeOptions, inputValue))
+              }
+              placeholder="Selecciona un tipo"
+              inputId="portfolioTypeId"
+              instanceId="loan-product-portfolio-type-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={portfolioTypeOptions}
+              noOptionsMessage="Sin tipos de cartera"
+            />
+            <input type="hidden" {...register('portfolioTypeId')} />
             {errors.portfolioTypeId ? (
               <p className="text-xs text-red-500">
                 {errors.portfolioTypeId.message}

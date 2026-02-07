@@ -3,6 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { DelinquencyBucketsEditor } from '@/presentation/components/loans/delinquency/DelinquencyBucketsEditor'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 import {
   delinquencyPolicyFormSchema,
   type DelinquencyPolicyFormValues,
@@ -24,9 +27,23 @@ const roundingModeOptions = [
   { value: 'DOWN', label: 'Redondear hacia abajo' },
 ]
 
+const rateBaseOptions = [
+  { value: 360, label: '360' },
+  { value: 365, label: '365' },
+]
+
 const normalizeOptions = (options: { value: string; label: string }[], value?: string) => {
   if (!value || options.some((option) => option.value === value)) return options
   return [{ value, label: value }, ...options]
+}
+
+const filterOptions = <TMeta,>(
+  options: AsyncSelectOption<TMeta>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
 }
 
 const buildDefaultValues = (): DelinquencyPolicyFormValues => ({
@@ -66,6 +83,8 @@ export const DelinquencyPolicyFormPage = () => {
     control,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<DelinquencyPolicyFormValues>({
     resolver: yupResolver(delinquencyPolicyFormSchema),
@@ -111,6 +130,36 @@ export const DelinquencyPolicyFormPage = () => {
   const roundingOptions = useMemo(
     () => normalizeOptions(roundingModeOptions, data?.roundingMode),
     [data?.roundingMode],
+  )
+  const rateBase = watch('rateBase')
+  const calculationBase = watch('calculationBase')
+  const roundingMode = watch('roundingMode')
+  const rateBaseAsyncOptions = useMemo(
+    () =>
+      rateBaseOptions.map((option) => ({
+        value: String(option.value),
+        label: option.label,
+        meta: option,
+      })),
+    [],
+  )
+  const calculationAsyncOptions = useMemo(
+    () =>
+      calculationOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+        meta: option,
+      })),
+    [calculationOptions],
+  )
+  const roundingAsyncOptions = useMemo(
+    () =>
+      roundingOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+        meta: option,
+      })),
+    [roundingOptions],
   )
 
   const onSubmit = handleSubmit(async (values) => {
@@ -286,15 +335,27 @@ export const DelinquencyPolicyFormPage = () => {
               >
                 Base de tasa
               </label>
-              <select
-                id="rateBase"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('rateBase', { valueAsNumber: true })}
-                disabled={isSaving}
-              >
-                <option value={360}>360</option>
-                <option value={365}>365</option>
-              </select>
+              <AsyncSelect<{ value: number; label: string }>
+                value={
+                  rateBaseAsyncOptions.find((option) => option.value === String(rateBase)) ??
+                  null
+                }
+                onChange={(option) =>
+                  setValue('rateBase', Number(option?.value ?? 360), {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(rateBaseAsyncOptions, inputValue))
+                }
+                placeholder="Selecciona base"
+                inputId="rateBase"
+                instanceId="delinquency-policy-rate-base"
+                isDisabled={isSaving}
+                defaultOptions={rateBaseAsyncOptions}
+                noOptionsMessage="Sin bases"
+              />
+              <input type="hidden" {...register('rateBase', { valueAsNumber: true })} />
               {errors.rateBase ? (
                 <p className="text-xs text-red-500">{errors.rateBase.message}</p>
               ) : null}
@@ -307,19 +368,27 @@ export const DelinquencyPolicyFormPage = () => {
               >
                 Base de cálculo
               </label>
-              <select
-                id="calculationBase"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('calculationBase')}
-                disabled={isSaving}
-              >
-                <option value="">Selecciona una base</option>
-                {calculationOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<{ value: string; label: string }>
+                value={
+                  calculationAsyncOptions.find((option) => option.value === calculationBase) ??
+                  null
+                }
+                onChange={(option) =>
+                  setValue('calculationBase', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(calculationAsyncOptions, inputValue))
+                }
+                placeholder="Selecciona una base"
+                inputId="calculationBase"
+                instanceId="delinquency-policy-calculation-base"
+                isDisabled={isSaving}
+                defaultOptions={calculationAsyncOptions}
+                noOptionsMessage="Sin bases de cálculo"
+              />
+              <input type="hidden" {...register('calculationBase')} />
               {errors.calculationBase ? (
                 <p className="text-xs text-red-500">
                   {errors.calculationBase.message}
@@ -334,19 +403,26 @@ export const DelinquencyPolicyFormPage = () => {
               >
                 Modo de redondeo
               </label>
-              <select
-                id="roundingMode"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('roundingMode')}
-                disabled={isSaving}
-              >
-                <option value="">Selecciona un modo</option>
-                {roundingOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<{ value: string; label: string }>
+                value={
+                  roundingAsyncOptions.find((option) => option.value === roundingMode) ?? null
+                }
+                onChange={(option) =>
+                  setValue('roundingMode', option?.value ?? '', {
+                    shouldValidate: true,
+                  })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(roundingAsyncOptions, inputValue))
+                }
+                placeholder="Selecciona un modo"
+                inputId="roundingMode"
+                instanceId="delinquency-policy-rounding-mode"
+                isDisabled={isSaving}
+                defaultOptions={roundingAsyncOptions}
+                noOptionsMessage="Sin modos de redondeo"
+              />
+              <input type="hidden" {...register('roundingMode')} />
               {errors.roundingMode ? (
                 <p className="text-xs text-red-500">
                   {errors.roundingMode.message}

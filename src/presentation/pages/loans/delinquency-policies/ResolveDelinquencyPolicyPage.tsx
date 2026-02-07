@@ -4,10 +4,22 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { useAgencies } from '@/presentation/features/catalog/hooks/use-agencies'
 import { useLoanCatalogsCache } from '@/presentation/features/loans/catalogs/hooks/use-loan-catalogs-cache'
 import { useResolveDelinquencyPolicy } from '@/presentation/features/loans/delinquency/hooks/use-resolve-delinquency-policy'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 import {
   delinquencyPolicyResolveSchema,
   type DelinquencyPolicyResolveFormValues,
 } from '@/infrastructure/validations/loans/delinquency-policy-resolve.schema'
+
+const filterOptions = <TMeta,>(
+  options: AsyncSelectOption<TMeta>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
+}
 
 export const ResolveDelinquencyPolicyPage = () => {
   const { agencies, isLoading: agenciesLoading } = useAgencies()
@@ -17,6 +29,8 @@ export const ResolveDelinquencyPolicyPage = () => {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<DelinquencyPolicyResolveFormValues>({
     resolver: yupResolver(delinquencyPolicyResolveSchema),
@@ -39,6 +53,26 @@ export const ResolveDelinquencyPolicyPage = () => {
       (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
     )
   }, [data?.buckets])
+  const agencyId = watch('agencyId')
+  const portfolioTypeId = watch('portfolioTypeId')
+  const agencyOptions = useMemo(
+    () =>
+      agencies.map((agency) => ({
+        value: agency.id,
+        label: `${agency.code} - ${agency.name}`,
+        meta: agency,
+      })),
+    [agencies],
+  )
+  const portfolioTypeOptions = useMemo(
+    () =>
+      catalogs.portfolioTypes.map((type) => ({
+        value: type.id,
+        label: `${type.code} - ${type.name}`,
+        meta: type,
+      })),
+    [catalogs.portfolioTypes],
+  )
 
   return (
     <div className="space-y-6">
@@ -64,19 +98,23 @@ export const ResolveDelinquencyPolicyPage = () => {
             >
               Sucursal
             </label>
-            <select
-              id="agencyId"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('agencyId')}
-              disabled={isLoading || agenciesLoading}
-            >
-              <option value="">Todas</option>
-              {agencies.map((agency) => (
-                <option key={agency.id} value={agency.id}>
-                  {agency.code} - {agency.name}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect
+              value={agencyOptions.find((option) => option.value === agencyId) ?? null}
+              onChange={(option) =>
+                setValue('agencyId', option?.value ?? '', { shouldValidate: true })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(agencyOptions, inputValue))
+              }
+              placeholder="Todas"
+              inputId="agencyId"
+              instanceId="resolve-delinquency-policy-agency"
+              isDisabled={isLoading || agenciesLoading}
+              defaultOptions={agencyOptions}
+              isClearable
+              noOptionsMessage="Sin sucursales"
+            />
+            <input type="hidden" {...register('agencyId')} />
             {errors.agencyId ? (
               <p className="text-xs text-red-500">{errors.agencyId.message}</p>
             ) : null}
@@ -89,19 +127,27 @@ export const ResolveDelinquencyPolicyPage = () => {
             >
               Tipo de cartera
             </label>
-            <select
-              id="portfolioTypeId"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('portfolioTypeId')}
-              disabled={isLoading || catalogs.isLoading}
-            >
-              <option value="">Todas</option>
-              {catalogs.portfolioTypes.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.code} - {type.name}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect
+              value={
+                portfolioTypeOptions.find((option) => option.value === portfolioTypeId) ?? null
+              }
+              onChange={(option) =>
+                setValue('portfolioTypeId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(portfolioTypeOptions, inputValue))
+              }
+              placeholder="Todas"
+              inputId="portfolioTypeId"
+              instanceId="resolve-delinquency-policy-portfolio-type"
+              isDisabled={isLoading || catalogs.isLoading}
+              defaultOptions={portfolioTypeOptions}
+              isClearable
+              noOptionsMessage="Sin tipos de cartera"
+            />
+            <input type="hidden" {...register('portfolioTypeId')} />
             {errors.portfolioTypeId ? (
               <p className="text-xs text-red-500">
                 {errors.portfolioTypeId.message}

@@ -1,7 +1,10 @@
+import { useMemo } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import type { FinancialStatementsReportFormValues } from '@/infrastructure/validations/accounting/financial-statements-report.schema'
 import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
+import AsyncSelect from '@/presentation/share/components/async-select'
+import { DatePicker } from '@/presentation/share/components/date-picker'
 
 interface FinancialStatementsFiltersProps {
   form: UseFormReturn<FinancialStatementsReportFormValues>
@@ -26,11 +29,40 @@ export const FinancialStatementsFilters = ({
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
     watch,
     formState: { errors },
   } = form
   const selectedPeriod = watch('periodId')
+  const selectedCostCenterId = watch('costCenterId')
+  const fromDate = watch('fromDate')
+  const toDate = watch('toDate')
   const disableDates = Boolean(selectedPeriod)
+  const periodOptions = useMemo(
+    () =>
+      periods.map((period) => ({
+        value: period.id,
+        label: buildPeriodLabel(period),
+      })),
+    [periods],
+  )
+  const costCenterOptions = useMemo(
+    () =>
+      costCenters.map((center) => ({
+        value: center.id,
+        label: `${center.code} - ${center.name}`,
+      })),
+    [costCenters],
+  )
+  const filterOptions = async (
+    options: Array<{ value: string; label: string }>,
+    inputValue: string,
+  ) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return options
+    return options.filter((option) => option.label.toLowerCase().includes(term))
+  }
 
   return (
     <form
@@ -46,19 +78,21 @@ export const FinancialStatementsFilters = ({
           >
             Periodo contable
           </label>
-          <select
-            id="periodId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('periodId')}
-            disabled={isLoading}
-          >
-            <option value="">Selecciona un periodo</option>
-            {periods.map((period) => (
-              <option key={period.id} value={period.id}>
-                {buildPeriodLabel(period)}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect
+            value={periodOptions.find((option) => option.value === selectedPeriod) ?? null}
+            onChange={(option) =>
+              setValue('periodId', option?.value ?? '', { shouldValidate: true })
+            }
+            loadOptions={(inputValue) => filterOptions(periodOptions, inputValue)}
+            inputId="periodId"
+            instanceId="accounting-financial-statements-period-id"
+            isDisabled={isLoading}
+            defaultOptions={periodOptions}
+            isClearable
+            placeholder="Selecciona un periodo"
+            noOptionsMessage="Sin periodos"
+          />
+          <input type="hidden" {...register('periodId')} />
         </div>
 
         <div className="space-y-2">
@@ -68,16 +102,27 @@ export const FinancialStatementsFilters = ({
           >
             Desde
           </label>
-          <input
-            id="fromDate"
-            type="date"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40 dark:disabled:bg-slate-900"
-            {...register('fromDate')}
+          <DatePicker
+            value={fromDate}
+            onChange={(value) =>
+              setValue('fromDate', value, {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true,
+              })
+            }
+            onBlur={() =>
+              setValue('fromDate', getValues('fromDate'), {
+                shouldValidate: true,
+                shouldTouch: true,
+              })
+            }
+            error={errors.fromDate?.message}
             disabled={disableDates || isLoading}
+            placeholder="Selecciona fecha inicial"
+            maxDate={toDate ? new Date(toDate) : undefined}
           />
-          {errors.fromDate ? (
-            <p className="text-xs text-red-500">{errors.fromDate.message}</p>
-          ) : null}
+          <input type="hidden" {...register('fromDate')} />
         </div>
 
         <div className="space-y-2">
@@ -87,16 +132,27 @@ export const FinancialStatementsFilters = ({
           >
             Hasta
           </label>
-          <input
-            id="toDate"
-            type="date"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40 dark:disabled:bg-slate-900"
-            {...register('toDate')}
+          <DatePicker
+            value={toDate}
+            onChange={(value) =>
+              setValue('toDate', value, {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true,
+              })
+            }
+            onBlur={() =>
+              setValue('toDate', getValues('toDate'), {
+                shouldValidate: true,
+                shouldTouch: true,
+              })
+            }
+            error={errors.toDate?.message}
             disabled={disableDates || isLoading}
+            placeholder="Selecciona fecha final"
+            minDate={fromDate ? new Date(fromDate) : undefined}
           />
-          {errors.toDate ? (
-            <p className="text-xs text-red-500">{errors.toDate.message}</p>
-          ) : null}
+          <input type="hidden" {...register('toDate')} />
         </div>
 
         <div className="space-y-2">
@@ -106,19 +162,24 @@ export const FinancialStatementsFilters = ({
           >
             Centro de costo
           </label>
-          <select
-            id="costCenterId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('costCenterId')}
-            disabled={isLoading}
-          >
-            <option value="">Todos</option>
-            {costCenters.map((center) => (
-              <option key={center.id} value={center.id}>
-                {center.code} - {center.name}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect
+            value={
+              costCenterOptions.find((option) => option.value === selectedCostCenterId) ??
+              null
+            }
+            onChange={(option) =>
+              setValue('costCenterId', option?.value ?? '', { shouldValidate: true })
+            }
+            loadOptions={(inputValue) => filterOptions(costCenterOptions, inputValue)}
+            inputId="costCenterId"
+            instanceId="accounting-financial-statements-cost-center-id"
+            isDisabled={isLoading}
+            defaultOptions={costCenterOptions}
+            isClearable
+            placeholder="Todos"
+            noOptionsMessage="Sin centros de costo"
+          />
+          <input type="hidden" {...register('costCenterId')} />
         </div>
       </div>
 

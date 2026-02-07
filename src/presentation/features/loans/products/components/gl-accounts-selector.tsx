@@ -1,5 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface GlAccountsSelectorProps {
   label: string
@@ -15,6 +18,14 @@ interface GlAccountsSelectorProps {
 const getAccountLabel = (account: ChartAccountListItem) =>
   `${account.code} - ${account.name}`
 
+const toOption = (
+  account: ChartAccountListItem,
+): AsyncSelectOption<ChartAccountListItem> => ({
+  value: account.id,
+  label: getAccountLabel(account),
+  meta: account,
+})
+
 export const GlAccountsSelector = ({
   label,
   value,
@@ -25,150 +36,61 @@ export const GlAccountsSelector = ({
   error,
   placeholder = 'Buscar cuenta por código o nombre...',
 }: GlAccountsSelectorProps) => {
-  const [query, setQuery] = useState('')
-  const [options, setOptions] = useState<ChartAccountListItem[]>([])
-  const [lastQuery, setLastQuery] = useState('')
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedAccount, setSelectedAccount] = useState<ChartAccountListItem | null>(
-    null,
-  )
-  const [isEditing, setIsEditing] = useState(false)
+  const [selectedOption, setSelectedOption] =
+    useState<AsyncSelectOption<ChartAccountListItem> | null>(null)
 
   useEffect(() => {
     if (!value) {
-      setSelectedAccount(null)
-      if (!isEditing) {
-        setQuery('')
-      }
+      setSelectedOption(null)
       return
     }
 
-    const inOptions = options.find((option) => option.id === value)
-    if (inOptions) {
-      setSelectedAccount(inOptions)
-      if (!isEditing) {
-        setQuery(getAccountLabel(inOptions))
-      }
+    if (selectedOption?.value === value) {
       return
     }
+
+    setSelectedOption(null)
 
     if (onResolveAccount) {
       void onResolveAccount(value).then((resolved) => {
         if (resolved) {
-          setSelectedAccount(resolved)
-          if (!isEditing) {
-            setQuery(getAccountLabel(resolved))
-          }
+          setSelectedOption(toOption(resolved))
         }
       })
     }
-  }, [value, options, onResolveAccount, isEditing])
-
-  useEffect(() => {
-    if (!isOpen) return
-    const handler = window.setTimeout(async () => {
-      const term = query.trim()
-      const results = await onSearch(term)
-      setOptions(results)
-      setLastQuery(term)
-    }, 300)
-    return () => window.clearTimeout(handler)
-  }, [query, onSearch, isOpen])
+  }, [value, onResolveAccount, selectedOption?.value])
 
   const selectionLabel = useMemo(() => {
-    if (!selectedAccount) return 'Sin cuenta seleccionada.'
-    return `Cuenta seleccionada: ${getAccountLabel(selectedAccount)}`
-  }, [selectedAccount])
+    if (!selectedOption) return 'Sin cuenta seleccionada.'
+    return `Cuenta seleccionada: ${selectedOption.label}`
+  }, [selectedOption])
 
-  const handleOpen = async () => {
-    setIsOpen(true)
-    setIsEditing(false)
-    if (options.length === 0) {
-      const results = await onSearch('')
-      setOptions(results)
-      setLastQuery('')
-    }
-  }
-
-  const handleSelect = (option: ChartAccountListItem) => {
-    setSelectedAccount(option)
-    setQuery(getAccountLabel(option))
-    setIsOpen(false)
-    setIsEditing(false)
-    onChange(option.id)
-  }
+  const loadOptions = useCallback(
+    async (inputValue: string) => {
+      const results = await onSearch(inputValue.trim())
+      return results.map(toOption)
+    },
+    [onSearch],
+  )
 
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
         {label}
       </label>
-      <div className="relative">
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => {
-            const nextValue = event.target.value
-            setQuery(nextValue)
-            setIsOpen(true)
-            setIsEditing(true)
-            if (!nextValue.trim()) {
-              setSelectedAccount(null)
-              setOptions([])
-              setLastQuery('')
-              onChange('')
-            }
-          }}
-          onFocus={handleOpen}
-          onBlur={() => setIsEditing(false)}
-          placeholder={placeholder}
-          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-        />
-
-        {isOpen ? (
-          <div className="absolute z-20 mt-2 w-full rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-950">
-            <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              <span>
-                {lastQuery
-                  ? `Resultados para "${lastQuery}"`
-                  : 'Sugerencias'}
-              </span>
-              <button
-                type="button"
-                className="text-xs font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                onClick={() => setIsOpen(false)}
-              >
-                Cerrar
-              </button>
-            </div>
-            <div className="max-h-64 overflow-y-auto">
-              {isSearching ? (
-                <div className="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
-                  Buscando cuentas...
-                </div>
-              ) : options.length ? (
-                options.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    className="flex w-full items-center justify-between gap-3 border-b border-slate-100 px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50 dark:border-slate-900 dark:text-slate-200 dark:hover:bg-slate-900"
-                    onMouseDown={(event) => {
-                      event.preventDefault()
-                      handleSelect(option)
-                    }}
-                  >
-                    <span className="font-medium">{getAccountLabel(option)}</span>
-                  </button>
-                ))
-              ) : (
-                <div className="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
-                  No hay resultados.
-                </div>
-              )}
-            </div>
-          </div>
-        ) : null}
-      </div>
+      <AsyncSelect<ChartAccountListItem>
+        value={selectedOption}
+        onChange={(option) => {
+          setSelectedOption(option)
+          onChange(option?.value ?? '')
+        }}
+        loadOptions={loadOptions}
+        placeholder={placeholder}
+        defaultOptions
+        isClearable
+        isLoading={isSearching}
+        noOptionsMessage="No hay resultados."
+      />
       {error ? <p className="text-xs text-red-500">{error}</p> : null}
       <p className="text-xs text-slate-500 dark:text-slate-400">{selectionLabel}</p>
     </div>

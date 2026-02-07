@@ -1,9 +1,12 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { feeSchema } from '@/infrastructure/validations/loans/loan-product-form.schema'
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 type FeeFormValues = LoanProductFormValues['fees'][number]
 
@@ -29,6 +32,14 @@ const defaultValues: FeeFormValues = {
 
 const toNumberValue = (value: string) => (value === '' ? undefined : Number(value))
 const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
+const filterOptions = (
+  options: AsyncSelectOption<LoanCatalogItemDto>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
+}
 
 export const FeeModal = ({
   open,
@@ -44,6 +55,8 @@ export const FeeModal = ({
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<FeeFormValues>({
     resolver: yupResolver(feeSchema),
@@ -55,6 +68,48 @@ export const FeeModal = ({
       reset(initialValues ?? defaultValues)
     }
   }, [initialValues, open, reset])
+
+  const feeTypeId = watch('feeTypeId')
+  const chargeBaseId = watch('chargeBaseId')
+  const valueTypeId = watch('valueTypeId')
+  const chargeTimingId = watch('chargeTimingId')
+
+  const feeTypeOptions = useMemo(
+    () =>
+      feeTypes.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [feeTypes],
+  )
+  const chargeBaseOptions = useMemo(
+    () =>
+      feeChargeBases.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [feeChargeBases],
+  )
+  const valueTypeOptions = useMemo(
+    () =>
+      feeValueTypes.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [feeValueTypes],
+  )
+  const chargeTimingOptions = useMemo(
+    () =>
+      feeChargeTimings.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [feeChargeTimings],
+  )
 
   const submitHandler = handleSubmit((values) => onSubmit(values))
 
@@ -88,17 +143,21 @@ export const FeeModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de comisión
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('feeTypeId')}
-              >
-                <option value="">Selecciona...</option>
-                {feeTypes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {getOptionLabel(item)}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<LoanCatalogItemDto>
+                value={feeTypeOptions.find((option) => option.value === feeTypeId) ?? null}
+                onChange={(option) =>
+                  setValue('feeTypeId', option?.value ?? '', { shouldValidate: true })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(feeTypeOptions, inputValue))
+                }
+                placeholder="Selecciona..."
+                inputId="feeTypeId"
+                instanceId="loan-product-fee-type-id"
+                defaultOptions={feeTypeOptions}
+                noOptionsMessage="Sin tipos de comisión"
+              />
+              <input type="hidden" {...register('feeTypeId')} />
               {errors.feeTypeId ? (
                 <p className="text-xs text-red-500">{errors.feeTypeId.message}</p>
               ) : null}
@@ -108,17 +167,21 @@ export const FeeModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Base de cobro
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('chargeBaseId')}
-              >
-                <option value="">Selecciona...</option>
-                {feeChargeBases.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {getOptionLabel(item)}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<LoanCatalogItemDto>
+                value={chargeBaseOptions.find((option) => option.value === chargeBaseId) ?? null}
+                onChange={(option) =>
+                  setValue('chargeBaseId', option?.value ?? '', { shouldValidate: true })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(chargeBaseOptions, inputValue))
+                }
+                placeholder="Selecciona..."
+                inputId="chargeBaseId"
+                instanceId="loan-product-fee-charge-base-id"
+                defaultOptions={chargeBaseOptions}
+                noOptionsMessage="Sin bases de cobro"
+              />
+              <input type="hidden" {...register('chargeBaseId')} />
               {errors.chargeBaseId ? (
                 <p className="text-xs text-red-500">{errors.chargeBaseId.message}</p>
               ) : null}
@@ -130,17 +193,21 @@ export const FeeModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de valor
               </label>
-              <select
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('valueTypeId')}
-              >
-                <option value="">Selecciona...</option>
-                {feeValueTypes.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {getOptionLabel(item)}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<LoanCatalogItemDto>
+                value={valueTypeOptions.find((option) => option.value === valueTypeId) ?? null}
+                onChange={(option) =>
+                  setValue('valueTypeId', option?.value ?? '', { shouldValidate: true })
+                }
+                loadOptions={(inputValue) =>
+                  Promise.resolve(filterOptions(valueTypeOptions, inputValue))
+                }
+                placeholder="Selecciona..."
+                inputId="valueTypeId"
+                instanceId="loan-product-fee-value-type-id"
+                defaultOptions={valueTypeOptions}
+                noOptionsMessage="Sin tipos de valor"
+              />
+              <input type="hidden" {...register('valueTypeId')} />
               {errors.valueTypeId ? (
                 <p className="text-xs text-red-500">{errors.valueTypeId.message}</p>
               ) : null}
@@ -166,17 +233,23 @@ export const FeeModal = ({
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Momento de cobro
             </label>
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('chargeTimingId')}
-            >
-              <option value="">Selecciona...</option>
-              {feeChargeTimings.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {getOptionLabel(item)}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={
+                chargeTimingOptions.find((option) => option.value === chargeTimingId) ?? null
+              }
+              onChange={(option) =>
+                setValue('chargeTimingId', option?.value ?? '', { shouldValidate: true })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(chargeTimingOptions, inputValue))
+              }
+              placeholder="Selecciona..."
+              inputId="chargeTimingId"
+              instanceId="loan-product-fee-charge-timing-id"
+              defaultOptions={chargeTimingOptions}
+              noOptionsMessage="Sin momentos de cobro"
+            />
+            <input type="hidden" {...register('chargeTimingId')} />
             {errors.chargeTimingId ? (
               <p className="text-xs text-red-500">{errors.chargeTimingId.message}</p>
             ) : null}

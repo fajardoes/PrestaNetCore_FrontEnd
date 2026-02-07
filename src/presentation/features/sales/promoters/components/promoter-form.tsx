@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
@@ -8,7 +8,10 @@ import {
 import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
-import { useEmployeeClientsSearch } from '@/presentation/features/sales/promoters/hooks/use-employee-clients-search'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
+import { useEmployeeClientsSelect } from '@/presentation/features/sales/promoters/hooks/use-employee-clients-select'
 
 interface PromoterFormProps {
   initialValues?: PromoterFormValues
@@ -40,7 +43,6 @@ export const PromoterForm = ({
     handleSubmit,
     reset,
     setValue,
-    watch,
     formState: { errors },
   } = useForm<PromoterFormValues>({
     resolver: zodResolver(promoterFormSchema),
@@ -59,20 +61,10 @@ export const PromoterForm = ({
     }
   }, [initialValues, reset])
 
-  const selectedClientId = watch('clientId')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedClient, setSelectedClient] = useState<ClientListItem | null>(
-    null,
-  )
-  const [showResults, setShowResults] = useState(false)
-  const lastAppliedSearch = useRef('')
-  const {
-    results,
-    isLoading: isSearching,
-    error: searchError,
-    searchEmployees,
-    clear,
-  } = useEmployeeClientsSearch()
+  const { loadOptions } = useEmployeeClientsSelect()
+  const [selectedClient, setSelectedClient] = useState<
+    AsyncSelectOption<ClientListItem> | null
+  >(null)
 
   const sortedAgencies = useMemo(
     () => [...agencies].sort((a, b) => a.name.localeCompare(b.name, 'es')),
@@ -81,40 +73,16 @@ export const PromoterForm = ({
 
   useEffect(() => {
     if (promoter?.clientId) {
-      setValue('clientId', promoter.clientId)
+      const label = `${promoter.clientFullName ?? 'Sin nombre'}${
+        promoter.clientIdentityNo ? ` - ${promoter.clientIdentityNo}` : ''
+      }`.trim()
       setSelectedClient({
-        id: promoter.clientId,
-        nombreCompleto: promoter.clientFullName ?? 'Sin nombre',
-        identidad: promoter.clientIdentityNo ?? '',
-        activo: true,
+        value: promoter.clientId,
+        label,
       })
+      setValue('clientId', promoter.clientId, { shouldValidate: true })
     }
   }, [promoter, setValue])
-
-  useEffect(() => {
-    if (isEdit) return
-    const trimmed = searchTerm.trim()
-    if (!trimmed) {
-      if (lastAppliedSearch.current !== '') {
-        lastAppliedSearch.current = ''
-        clear()
-        setShowResults(false)
-      }
-      return
-    }
-    const timer = setTimeout(() => {
-      if (lastAppliedSearch.current === trimmed) return
-      lastAppliedSearch.current = trimmed
-      void searchEmployees(trimmed)
-      setShowResults(true)
-    }, 450)
-    return () => clearTimeout(timer)
-  }, [searchTerm, searchEmployees, clear, isEdit])
-
-  const selectedLabel = useMemo(() => {
-    if (!selectedClient) return null
-    return `${selectedClient.nombreCompleto} ${selectedClient.identidad ? `- ${selectedClient.identidad}` : ''}`.trim()
-  }, [selectedClient])
 
   const submitHandler = handleSubmit(async (values) => {
     await onSubmit(values)
@@ -149,71 +117,19 @@ export const PromoterForm = ({
           >
             Cliente empleado
           </label>
-          <div className="relative">
-            <input
-              id="clientSearch"
-              type="text"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              placeholder="Buscar por nombre o identidad..."
-              value={isEdit ? selectedLabel ?? '' : searchTerm}
-              onChange={(event) => {
-                setSearchTerm(event.target.value)
-                setSelectedClient(null)
-                setValue('clientId', '')
-              }}
-              onFocus={() => {
-                if (!isEdit && results.length) setShowResults(true)
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') {
-                  setShowResults(false)
-                }
-              }}
-              disabled={isSaving || isEdit}
-            />
-            {!isEdit && showResults ? (
-              <div className="absolute z-20 mt-2 w-full rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900">
-                {isSearching ? (
-                  <div className="px-3 py-2 text-sm text-slate-600 dark:text-slate-300">
-                    Buscando clientes...
-                  </div>
-                ) : searchError ? (
-                  <div className="px-3 py-2 text-sm text-red-600 dark:text-red-300">
-                    {searchError}
-                  </div>
-                ) : results.length ? (
-                  <ul className="max-h-60 overflow-auto py-1">
-                    {results.map((client) => (
-                      <li key={client.id}>
-                        <button
-                          type="button"
-                          className="flex w-full flex-col gap-1 px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
-                          onMouseDown={(event) => event.preventDefault()}
-                          onClick={() => {
-                            setSelectedClient(client)
-                            setValue('clientId', client.id, { shouldValidate: true })
-                            setSearchTerm(
-                              `${client.nombreCompleto} ${client.identidad ? `- ${client.identidad}` : ''}`.trim(),
-                            )
-                            setShowResults(false)
-                          }}
-                        >
-                          <span className="font-medium">{client.nombreCompleto}</span>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">
-                            {client.identidad || 'Sin identidad'}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="px-3 py-2 text-sm text-slate-600 dark:text-slate-300">
-                    No hay resultados.
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </div>
+          <AsyncSelect<ClientListItem>
+            value={selectedClient}
+            onChange={(option) => {
+              setSelectedClient(option)
+              setValue('clientId', option?.value ?? '', { shouldValidate: true })
+            }}
+            loadOptions={loadOptions}
+            placeholder="Buscar por nombre o identidad..."
+            inputId="clientSearch"
+            instanceId="promoter-client-select"
+            isDisabled={isSaving || isEdit}
+            noOptionsMessage="Sin coincidencias"
+          />
           <input type="hidden" {...register('clientId')} />
           {!isEdit ? (
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -223,9 +139,9 @@ export const PromoterForm = ({
           {errors.clientId ? (
             <p className="text-xs text-red-500">{errors.clientId.message}</p>
           ) : null}
-          {!isEdit && selectedClientId && selectedClient ? (
+          {!isEdit && selectedClient ? (
             <p className="text-xs text-emerald-600 dark:text-emerald-300">
-              Seleccionado: {selectedClient.nombreCompleto}
+              Seleccionado: {selectedClient.label}
             </p>
           ) : null}
         </div>

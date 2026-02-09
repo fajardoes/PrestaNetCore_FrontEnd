@@ -35,6 +35,9 @@ export const ChartAccountsTable = ({
   onEdit,
   onCreateChild,
 }: ChartAccountsTableProps) => {
+  void page
+  void totalPages
+
   const renderRows = (
     items: ChartAccountListItem[],
     level: number,

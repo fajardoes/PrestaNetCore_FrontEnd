@@ -1,4 +1,5 @@
 ﻿import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
+import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface PromotersTableProps {
@@ -88,7 +89,7 @@ export const PromotersTable = ({
                     {promoter.clientFullName ?? 'Sin nombre'}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                    {promoter.clientIdentityNo ?? '--'}
+                    <HnIdentityText value={promoter.clientIdentityNo} fallback="--" />
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
                     {promoter.agencyName ?? '--'}

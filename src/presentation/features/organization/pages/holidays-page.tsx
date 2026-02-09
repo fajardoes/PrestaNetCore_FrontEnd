@@ -49,7 +49,7 @@ export const HolidaysPage = () => {
     return visibleHolidays.filter((holiday) => {
       return (
         holiday.name.toLowerCase().includes(term) ||
-        holiday.type.toLowerCase().includes(term) ||
+        String(holiday.type).toLowerCase().includes(term) ||
         holiday.date.toLowerCase().includes(term)
       )
     })

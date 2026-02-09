@@ -1,27 +1,40 @@
-﻿## IMPORTANTE (reglas de trabajo)
+## IMPORTANTE (reglas de trabajo)
 - NO ejecutes `npm`, `pnpm`, `yarn`, `vite`, `eslint`.
 - NO uses `git`.
 - Solo genera o modifica archivos de FRONTEND en este repo.
 
 ## Development Commands
 
-- **Development server**: `npm run dev` â€“ Starts the Vite development server
-- **Build**: `npm run build` â€“ Type-check (`tsc -b`) and bundle for production
-- **Lint**: `npm run lint` â€“ Run ESLint across the project
-- **Preview**: `npm run preview` â€“ Serve the production build locally
+- **Development server**: `npm run dev` - Starts the Vite development server
+- **Build**: `npm run build` - Type-check (`tsc -b`) and bundle for production
+- **Lint**: `npm run lint` - Run ESLint across the project
+- **Preview**: `npm run preview` - Serve the production build locally
 
 ## Componentes compartidos de listas/tablas
 
-- `src/presentation/share/components/list-filters-bar.tsx`: barra estÃ¡ndar de filtros con buscador y selector de estado (activos/inactivos/todos). Recibe `search`, `onSearchChange`, `status`, `onStatusChange`, `placeholder`, `children` para filtros adicionales (por ejemplo selects) y `actions` para botones (crear, limpiar filtros, etc.). Ãšsalo en pÃ¡ginas de listados para mantener consistencia.
-- `src/presentation/share/components/table-pagination.tsx`: pie de paginaciÃ³n uniforme para tablas. Recibe `page`, `totalPages`, `onPageChange` y opcional `label`. Integrarlo en tablas para la navegaciÃ³n de pÃ¡ginas.
+- `src/presentation/share/components/list-filters-bar.tsx`: barra estándar de filtros con buscador y selector de estado (activos/inactivos/todos). Recibe `search`, `onSearchChange`, `status`, `onStatusChange`, `placeholder`, `children` para filtros adicionales (por ejemplo selects) y `actions` para botones (crear, limpiar filtros, etc.). Úsalo en páginas de listados para mantener consistencia.
+- `src/presentation/share/components/table-pagination.tsx`: pie de paginación uniforme para tablas. Recibe `page`, `totalPages`, `onPageChange` y opcional `label`. Integrarlo en tablas para la navegación de páginas.
 
 ## Componentes compartidos de selects
 
-- `src/presentation/share/components/async-select.tsx`: wrapper de `react-select/async` con estilos Tailwind (claro/oscuro). Usar este componente para selects asÃ­ncronos con bÃºsqueda remota. No usar `react-select` directamente en componentes de features.
+- `src/presentation/share/components/async-select.tsx`: wrapper de `react-select/async` con estilos Tailwind (claro/oscuro). Usar este componente para selects asíncronos con búsqueda remota. No usar `react-select` directamente en componentes de features.
 
 ## Componentes compartidos de fecha
 
-- `src/presentation/share/components/date-picker.tsx`: componente global estÃ¡ndar para selecciÃ³n de fechas. Debe usarse en todos los mÃ³dulos para campos de fecha (por ejemplo fecha de nacimiento, emisiÃ³n, vencimiento, etc.) en lugar de `input type="date"` u otros date pickers.
+- `src/presentation/share/components/date-picker.tsx`: componente global estándar para selección de fechas. Debe usarse en todos los módulos para campos de fecha (por ejemplo fecha de nacimiento, emisión, vencimiento, etc.) en lugar de `input type="date"` u otros date pickers.
+
+## Componentes compartidos de identidad
+
+- `src/presentation/share/components/hn-identity-text.tsx`: componente global para mostrar identidades hondureñas con máscara `####-####-#####` (ejemplo: `0401-1989-00485`). Debe usarse en tablas, detalles, badges y labels de UI donde se renderice identidad/DNI.
+- `src/core/helpers/hn-identity.ts`: helper `formatHnIdentity` para formatear identidad en textos concatenados (por ejemplo labels de selects). Este formato es solo de presentación; el backend mantiene y recibe la identidad sin guiones.
+
+## Componentes compartidos de confirmación
+
+- `src/presentation/features/loans/products/components/confirm-modal.tsx`: modal reutilizable de confirmación para acciones destructivas o sensibles (eliminar, desactivar, etc.). Debe preferirse sobre `window.confirm` para mantener consistencia visual y de UX.
+
+## Componentes compartidos de vista previa de archivos
+
+- `src/presentation/share/components/file-preview-modal.tsx`: modal global para vista previa de archivos (PDF e imágenes) y acción de descarga. Úsalo para previsualizar adjuntos/documentos antes de descargar, especialmente cuando la descarga requiere autenticación.
 
 ## Architecture Overview
 
@@ -31,34 +44,34 @@ The frontend follows a Clean Architecture separation: core business logic, infra
 
 ```
 src/
-â”œâ”€ core/                         # Pure domain/business logic
-â”‚  â”œâ”€ actions/                   # Application use-cases calling APIs
-â”‚  â”œâ”€ api/                       # Low-level HTTP wrappers
-â”‚  â””â”€ helpers/                   # Shared domain utilities (formatters, errors)
-â”œâ”€ infrastructure/               # External contracts & adapters
-â”‚  â”œâ”€ api/                       # Axios client & token utilities
-â”‚  â”œâ”€ interfaces/                # Shared TypeScript interfaces/types
-â”‚  â””â”€ validations/               # Yup/Zod schemas per feature
-â”œâ”€ presentation/                 # UI composition
-â”‚  â”œâ”€ features/                  # Feature slices (e.g. security)
-â”‚  â”‚  â””â”€ <feature>/
-â”‚  â”‚     â”œâ”€ components/          # Pure presentational components
-â”‚  â”‚     â”œâ”€ hooks/               # Feature hooks that talk to actions
-â”‚  â”‚     â””â”€ pages/               # Page-level orchestrators
-â”‚  â”œâ”€ pages/                     # Legacy/high-level pages (migrate over time)
-â”‚  â””â”€ share/                     # Reusable UI elements (modals, feedback, etc.)
-â”œâ”€ providers/                    # React context providers
-â”œâ”€ routes/                       # Routing definitions
-â””â”€ types/                        # Cross-cutting type definitions
+|-- core/                         # Pure domain/business logic
+|   |-- actions/                  # Application use-cases calling APIs
+|   |-- api/                      # Low-level HTTP wrappers
+|   `-- helpers/                  # Shared domain utilities (formatters, errors)
+|-- infrastructure/               # External contracts & adapters
+|   |-- api/                      # Axios client & token utilities
+|   |-- interfaces/               # Shared TypeScript interfaces/types
+|   `-- validations/              # Yup/Zod schemas per feature
+|-- presentation/                 # UI composition
+|   |-- features/                 # Feature slices (e.g. security)
+|   |   `-- <feature>/
+|   |      |-- components/        # Pure presentational components
+|   |      |-- hooks/             # Feature hooks that talk to actions
+|   |      `-- pages/             # Page-level orchestrators
+|   |-- pages/                    # Legacy/high-level pages (migrate over time)
+|   `-- share/                    # Reusable UI elements (modals, feedback, etc.)
+|-- providers/                    # React context providers
+|-- routes/                       # Routing definitions
+`-- types/                        # Cross-cutting type definitions
 ```
 
 ### Implementation Rules (aplican a cada nuevo componente/feature)
 
-1. **Pages solo orquestan**: manejan estado de UI (modales, selecciÃ³n, feedback), invocan hooks y pasan props. Nada de llamadas HTTP directas ni lÃ³gica de dominio compleja.
+1. **Pages solo orquestan**: manejan estado de UI (modales, selección, feedback), invocan hooks y pasan props. Nada de llamadas HTTP directas ni lógica de dominio compleja.
 2. **Components = UI pura**: reciben props, renderizan y emiten callbacks. Sin Axios, acciones ni efectos secundarios.
 3. **Hooks = puente con acciones**: viven en `presentation/features/<feature>/hooks`, llaman a acciones, manejan estados `{ mutate, isLoading, error }` y exponen una API clara al UI.
 4. **Actions = casos de uso**: residen en `core/actions`, invocan funciones del API, unifican manejo de errores y devuelven `ApiResult<T>`.
-5. **API layer**: `core/api` hace las llamadas HTTP (Axios) y mapea respuestas a las interfaces del dominio. No contiene lÃ³gica de UI.
+5. **API layer**: `core/api` hace las llamadas HTTP (Axios) y mapea respuestas a las interfaces del dominio. No contiene lógica de UI.
 6. **Validations**: esquemas en `infrastructure/validations/<feature>/` usando Yup (o Zod si aplica). Exportar `type` derivados (`InferType`) para reutilizarlo en el UI.
 7. **Helpers**: colocarlos en `core/helpers` y mantenerlos reutilizables (formatters, manejo de errores, etc.).
 8. **Nomenclatura consistente**: archivos en snake-kebab (`users-table.tsx`, `use-users.ts`) y agrupar por feature para que los imports sean predecibles.
@@ -69,39 +82,39 @@ src/
 - **React 18** con TypeScript
 - **Vite 5** como bundler
 - **Tailwind CSS 3** para estilos (dark mode incluido)
-- **React Router 6** para navegaciÃ³n
+- **React Router 6** para navegación
 - **Axios** envuelto en `infrastructure/api/httpClient`
 - **React Hook Form** + `@hookform/resolvers`
-- **Yup** y **Zod** para validaciones segÃºn lo requiera el feature
+- **Yup** y **Zod** para validaciones según lo requiera el feature
 - **jwt-decode** para parsing de tokens
 
 ### Path Aliases
 
 Configurados en `tsconfig.app.json` y `vite.config.ts`:
 
-- `@/*` â†’ `src/*`
-- `@/core/*` â†’ `src/core/*`
-- `@/infrastructure/*` â†’ `src/infrastructure/*`
-- `@/presentation/*` â†’ `src/presentation/*`
-- `@/routes/*` â†’ `src/routes/*`
-- `@/providers/*` â†’ `src/providers/*`
-- `@/hooks/*` â†’ `src/hooks/*` (solo legado; preferir hooks por feature)
-- `@/types/*` â†’ `src/types/*`
+- `@/*` -> `src/*`
+- `@/core/*` -> `src/core/*`
+- `@/infrastructure/*` -> `src/infrastructure/*`
+- `@/presentation/*` -> `src/presentation/*`
+- `@/routes/*` -> `src/routes/*`
+- `@/providers/*` -> `src/providers/*`
+- `@/hooks/*` -> `src/hooks/*` (solo legado; preferir hooks por feature)
+- `@/types/*` -> `src/types/*`
 
 ### TypeScript & Code Quality
 
-- Target **ES2022**, modo estricto, sin locales/parÃ¡metros sin usar
+- Target **ES2022**, modo estricto, sin locales/parámetros sin usar
 - JSX runtime: `react-jsx`
 - ESLint con plugins de TypeScript, React Hooks y React Refresh
-- Mantener la lÃ³gica de negocio testeable limitando dependencias de UI al layer de presentaciÃ³n
+- Mantener la lógica de negocio testeable limitando dependencias de UI al layer de presentación
 
 ### Notas de UI
 
 - Siempre ofrecer soporte para tema claro/oscuro mediante utilidades Tailwind.
 - Formularios nuevos deben integrarse con `react-hook-form` y un esquema Yup/Zod correspondiente.
-- Centralizar feedback (Ã©xito/error) usando componentes compartidos dentro de `presentation/share/components`.
-- En listas tipo tarjetas con estado (ej. referencias, actividades, comisiones, seguros, garantÃ­as): usar tarjeta con etiqueta Activo/Inactivo, botÃ³n Agregar que abre modal con toggle Activo, y fondo tenue rojo para items inactivos (`bg-red-50` y variante `dark:bg-red-500/10`).
+- Centralizar feedback (éxito/error) usando componentes compartidos dentro de `presentation/share/components`.
+- En listas tipo tarjetas con estado (ej. referencias, actividades, comisiones, seguros, garantías): usar tarjeta con etiqueta Activo/Inactivo, botón Agregar que abre modal con toggle Activo, y fondo tenue rojo para items inactivos (`bg-red-50` y variante `dark:bg-red-500/10`).
 - No hagas pruebas de eslint ni intentes correr la aplicacion
 - No hagas pruebas con git ni intentes ejecutarlo
 
-Cuando agregues nuevas funcionalidades replica esta arquitectura: define contratos en infraestructura, casos de uso en core, hooks y componentes dentro de `presentation/features/<feature>` y deja que las pÃ¡ginas se encarguen Ãºnicamente de coordinar esas piezas.
+Cuando agregues nuevas funcionalidades replica esta arquitectura: define contratos en infraestructura, casos de uso en core, hooks y componentes dentro de `presentation/features/<feature>` y deja que las páginas se encarguen únicamente de coordinar esas piezas.

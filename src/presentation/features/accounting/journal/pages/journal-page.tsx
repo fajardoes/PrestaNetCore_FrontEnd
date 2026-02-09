@@ -193,7 +193,7 @@ export const JournalPage = () => {
             setPostEntryId(null)
             postDetailHook.clear()
           } else {
-            notify(result.error, 'error')
+            notify(result.error ?? 'No fue posible contabilizar el asiento.', 'error')
           }
         }}
       />
@@ -213,7 +213,7 @@ export const JournalPage = () => {
           if (result.success) {
             setVoidEntry(null)
           } else {
-            notify(result.error, 'error')
+            notify(result.error ?? 'No fue posible anular el asiento.', 'error')
           }
         }}
         isSubmitting={voidHook.isLoading}

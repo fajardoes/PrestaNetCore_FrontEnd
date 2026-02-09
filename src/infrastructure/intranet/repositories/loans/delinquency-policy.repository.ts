@@ -1,4 +1,4 @@
-import { pilarhToolsApi } from '@/infrastructure/api/pilarh-tools-api'
+import { prestanetApi } from '@/infrastructure/api/prestanet-api'
 import type { GetDelinquencyPoliciesRequestDto } from '@/infrastructure/intranet/requests/loans/get-delinquency-policies.request'
 import type { CreateDelinquencyPolicyRequestDto } from '@/infrastructure/intranet/requests/loans/create-delinquency-policy.request'
 import type { UpdateDelinquencyPolicyRequestDto } from '@/infrastructure/intranet/requests/loans/update-delinquency-policy.request'
@@ -14,7 +14,7 @@ export class DelinquencyPolicyRepository {
   async list(
     query: GetDelinquencyPoliciesRequestDto,
   ): Promise<DelinquencyPolicyListItemDto[]> {
-    const { data } = await pilarhToolsApi.get<DelinquencyPolicyListItemDto[]>(
+    const { data } = await prestanetApi.get<DelinquencyPolicyListItemDto[]>(
       basePath,
       { params: query },
     )
@@ -22,7 +22,7 @@ export class DelinquencyPolicyRepository {
   }
 
   async getById(id: string): Promise<DelinquencyPolicyDetailDto> {
-    const { data } = await pilarhToolsApi.get<DelinquencyPolicyDetailDto>(
+    const { data } = await prestanetApi.get<DelinquencyPolicyDetailDto>(
       `${basePath}/${id}`,
     )
     return data
@@ -31,7 +31,7 @@ export class DelinquencyPolicyRepository {
   async create(
     payload: CreateDelinquencyPolicyRequestDto,
   ): Promise<DelinquencyPolicyDetailDto> {
-    const { data } = await pilarhToolsApi.post<DelinquencyPolicyDetailDto>(
+    const { data } = await prestanetApi.post<DelinquencyPolicyDetailDto>(
       basePath,
       payload,
     )
@@ -42,7 +42,7 @@ export class DelinquencyPolicyRepository {
     id: string,
     payload: UpdateDelinquencyPolicyRequestDto,
   ): Promise<DelinquencyPolicyDetailDto> {
-    const { data } = await pilarhToolsApi.put<DelinquencyPolicyDetailDto>(
+    const { data } = await prestanetApi.put<DelinquencyPolicyDetailDto>(
       `${basePath}/${id}`,
       payload,
     )
@@ -53,13 +53,13 @@ export class DelinquencyPolicyRepository {
     id: string,
     payload: UpdateDelinquencyPolicyStatusRequestDto,
   ): Promise<void> {
-    await pilarhToolsApi.patch(`${basePath}/${id}/status`, payload)
+    await prestanetApi.patch(`${basePath}/${id}/status`, payload)
   }
 
   async resolve(
     payload: ResolveDelinquencyPolicyRequestDto,
   ): Promise<ResolveDelinquencyPolicyResponseDto> {
-    const { data } = await pilarhToolsApi.post<ResolveDelinquencyPolicyResponseDto>(
+    const { data } = await prestanetApi.post<ResolveDelinquencyPolicyResponseDto>(
       `${basePath}/resolve`,
       payload,
     )

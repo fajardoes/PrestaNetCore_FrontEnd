@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { saveClientAction } from '@/core/actions/clients/save-client.action'
-import type { ClientCreatePayload, ClientDetail } from '@/infrastructure/interfaces/clients/client'
+import type { ClientCreatePayload } from '@/infrastructure/interfaces/clients/client'
 
 interface UseSaveClientState {
   isSaving: boolean

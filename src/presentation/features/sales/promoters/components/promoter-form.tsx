@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { formatHnIdentity } from '@/core/helpers/hn-identity'
 import {
   promoterFormSchema,
   type PromoterFormValues,
@@ -74,7 +75,9 @@ export const PromoterForm = ({
   useEffect(() => {
     if (promoter?.clientId) {
       const label = `${promoter.clientFullName ?? 'Sin nombre'}${
-        promoter.clientIdentityNo ? ` - ${promoter.clientIdentityNo}` : ''
+        promoter.clientIdentityNo
+          ? ` - ${formatHnIdentity(promoter.clientIdentityNo)}`
+          : ''
       }`.trim()
       setSelectedClient({
         value: promoter.clientId,
@@ -98,7 +101,7 @@ export const PromoterForm = ({
           <p>
             {promoter.clientFullName ?? 'Sin nombre'}
             {promoter.clientIdentityNo
-              ? ` - ${promoter.clientIdentityNo}`
+              ? ` - ${formatHnIdentity(promoter.clientIdentityNo)}`
               : ''}
           </p>
           {promoter.clientEmail ? (

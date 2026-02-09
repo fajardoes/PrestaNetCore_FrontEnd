@@ -68,7 +68,7 @@ const defaultValues: LoanProductFormValues = {
   gracePrincipal: 0,
   graceInterest: 0,
   requiresCollateral: false,
-  minCollateralRatio: null,
+  minCollateralRatio: undefined,
   hasInsurance: false,
   portfolioTypeId: '',
   glLoanPortfolioAccountId: '',
@@ -82,7 +82,7 @@ const defaultValues: LoanProductFormValues = {
 }
 
 const toNumberValue = (value: string) => (value === '' ? undefined : Number(value))
-const toOptionalNumber = (value: string) => (value === '' ? null : Number(value))
+const toOptionalNumber = (value: string) => (value === '' ? undefined : Number(value))
 const toOptionalText = (value?: string | null) => {
   const trimmed = value?.trim()
   return trimmed ? trimmed : null
@@ -228,7 +228,7 @@ export const LoanProductForm = ({
       glInsurancePayableAccountId: toOptionalText(values.glInsurancePayableAccountId),
       minCollateralRatio: values.requiresCollateral
         ? values.minCollateralRatio
-        : null,
+        : undefined,
     }
     void onSubmit(normalized)
   })
@@ -769,7 +769,6 @@ export const LoanProductForm = ({
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <FeesEditor
           control={control}
-          register={register}
           errors={errors}
           disabled={isSaving || isLoadingCatalogs}
           allowRemove={!isEdit}
@@ -783,7 +782,6 @@ export const LoanProductForm = ({
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <InsurancesEditor
           control={control}
-          register={register}
           errors={errors}
           disabled={isSaving || isLoadingCatalogs || !hasInsurance}
           allowRemove={!isEdit}
@@ -797,7 +795,6 @@ export const LoanProductForm = ({
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <CollateralRulesEditor
           control={control}
-          register={register}
           errors={errors}
           disabled={isSaving || isLoadingCatalogs || !requiresCollateral}
           allowRemove={!isEdit}

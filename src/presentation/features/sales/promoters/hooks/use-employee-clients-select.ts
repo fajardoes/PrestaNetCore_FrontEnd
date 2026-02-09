@@ -1,5 +1,6 @@
 ﻿import { useCallback, useRef } from 'react'
 import { listClientsAction } from '@/core/actions/clients/list-clients.action'
+import { formatHnIdentity } from '@/core/helpers/hn-identity'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { AsyncSelectOption } from '@/presentation/share/components/async-select'
 
@@ -51,7 +52,9 @@ export const useEmployeeClientsSelect = () => {
 
           const options = (result.data.items ?? []).map((client) => ({
             value: client.id,
-            label: `${client.nombreCompleto}${client.identidad ? ` - ${client.identidad}` : ''}`.trim(),
+            label: `${client.nombreCompleto}${
+              client.identidad ? ` - ${formatHnIdentity(client.identidad)}` : ''
+            }`.trim(),
             meta: client,
           }))
 

@@ -117,7 +117,7 @@ export const JournalEntryVoidModal = ({
               Fecha de anulación (opcional)
             </label>
             <DatePicker
-              value={date}
+              value={date ?? ''}
               onChange={(value) =>
                 setValue('date', value, {
                   shouldValidate: true,
@@ -126,7 +126,7 @@ export const JournalEntryVoidModal = ({
                 })
               }
               onBlur={() =>
-                setValue('date', getValues('date'), {
+                setValue('date', getValues('date') ?? '', {
                   shouldValidate: true,
                   shouldTouch: true,
                 })

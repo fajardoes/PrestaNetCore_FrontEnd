@@ -270,6 +270,8 @@ export const DatePicker = ({
   }
 
   const displayValue = formatDisplayValue(selectedDate)
+  const navButtonClass =
+    'inline-flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-slate-600 transition hover:border-slate-200 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-100'
 
   const isDateDisabled = (day: number | null) => {
     if (!day) return true
@@ -349,21 +351,46 @@ export const DatePicker = ({
                 <button
                   type="button"
                   onClick={goToPreviousYear}
-                  className="rounded-full p-1 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className={navButtonClass}
                   aria-label="Año anterior"
+                  title="Año anterior"
                 >
-                  «
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m19 17-5-5 5-5" />
+                    <path d="m12 17-5-5 5-5" />
+                  </svg>
                 </button>
                 <button
                   type="button"
                   onClick={goToPreviousMonth}
-                  className="rounded-full p-1 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className={navButtonClass}
                   aria-label="Mes anterior"
+                  title="Mes anterior"
                 >
-                  ‹
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m15 18-6-6 6-6" />
+                  </svg>
                 </button>
               </div>
-              <p className="text-sm font-semibold capitalize text-slate-700 dark:text-slate-100">
+              <p className="text-xs font-semibold capitalize text-slate-700 dark:text-slate-100">
                 {new Intl.DateTimeFormat('es', {
                   month: 'long',
                   year: 'numeric',
@@ -373,18 +400,43 @@ export const DatePicker = ({
                 <button
                   type="button"
                   onClick={goToNextMonth}
-                  className="rounded-full p-1 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className={navButtonClass}
                   aria-label="Mes siguiente"
+                  title="Mes siguiente"
                 >
-                  ›
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m9 18 6-6-6-6" />
+                  </svg>
                 </button>
                 <button
                   type="button"
                   onClick={goToNextYear}
-                  className="rounded-full p-1 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className={navButtonClass}
                   aria-label="Año siguiente"
+                  title="Año siguiente"
                 >
-                  »
+                  <svg
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m5 17 5-5-5-5" />
+                    <path d="m12 17 5-5-5-5" />
+                  </svg>
                 </button>
               </div>
             </div>

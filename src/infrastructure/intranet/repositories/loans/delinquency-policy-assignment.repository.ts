@@ -1,4 +1,4 @@
-import { pilarhToolsApi } from '@/infrastructure/api/pilarh-tools-api'
+import { prestanetApi } from '@/infrastructure/api/prestanet-api'
 import type { GetDelinquencyPolicyAssignmentsRequestDto } from '@/infrastructure/intranet/requests/loans/get-delinquency-policy-assignments.request'
 import type { CreateDelinquencyPolicyAssignmentRequestDto } from '@/infrastructure/intranet/requests/loans/create-delinquency-policy-assignment.request'
 import type { UpdateDelinquencyPolicyAssignmentRequestDto } from '@/infrastructure/intranet/requests/loans/update-delinquency-policy-assignment.request'
@@ -11,7 +11,7 @@ export class DelinquencyPolicyAssignmentRepository {
   async list(
     query: GetDelinquencyPolicyAssignmentsRequestDto,
   ): Promise<DelinquencyPolicyAssignmentListItemDto[]> {
-    const { data } = await pilarhToolsApi.get<DelinquencyPolicyAssignmentListItemDto[]>(
+    const { data } = await prestanetApi.get<DelinquencyPolicyAssignmentListItemDto[]>(
       basePath,
       { params: query },
     )
@@ -21,7 +21,7 @@ export class DelinquencyPolicyAssignmentRepository {
   async create(
     payload: CreateDelinquencyPolicyAssignmentRequestDto,
   ): Promise<{ id: string } | DelinquencyPolicyAssignmentListItemDto> {
-    const { data } = await pilarhToolsApi.post<
+    const { data } = await prestanetApi.post<
       { id: string } | DelinquencyPolicyAssignmentListItemDto
     >(basePath, payload)
     return data
@@ -31,13 +31,13 @@ export class DelinquencyPolicyAssignmentRepository {
     id: string,
     payload: UpdateDelinquencyPolicyAssignmentRequestDto,
   ): Promise<void> {
-    await pilarhToolsApi.put(`${basePath}/${id}`, payload)
+    await prestanetApi.put(`${basePath}/${id}`, payload)
   }
 
   async updateStatus(
     id: string,
     payload: UpdateDelinquencyPolicyAssignmentStatusRequestDto,
   ): Promise<void> {
-    await pilarhToolsApi.patch(`${basePath}/${id}/status`, payload)
+    await prestanetApi.patch(`${basePath}/${id}/status`, payload)
   }
 }

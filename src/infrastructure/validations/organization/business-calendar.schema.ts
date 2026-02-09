@@ -1,5 +1,4 @@
 import * as yup from 'yup'
-import type { BusinessDayAdjustmentRule } from '@/infrastructure/interfaces/organization/holidays/business-day-adjustment-rule'
 
 const emptyToUndefined = <T>(value: T, originalValue: T) =>
   originalValue === '' ? undefined : value

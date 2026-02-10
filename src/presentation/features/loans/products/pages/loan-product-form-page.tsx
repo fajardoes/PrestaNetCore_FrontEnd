@@ -44,7 +44,7 @@ export const LoanProductFormPage = () => {
       ...data,
       currencyCode: 'HNL',
       description: data.description ?? '',
-      minCollateralRatio: data.minCollateralRatio ?? null,
+      minCollateralRatio: data.minCollateralRatio ?? undefined,
       glInterestSuspenseAccountId: data.glInterestSuspenseAccountId ?? null,
       glFeeIncomeAccountId: data.glFeeIncomeAccountId ?? null,
       glInsurancePayableAccountId: data.glInsurancePayableAccountId ?? null,

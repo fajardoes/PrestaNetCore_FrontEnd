@@ -1,6 +1,9 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
 import type { CostCenterFormValues } from '@/infrastructure/validations/accounting/cost-center.schema'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface CostCenterFormModalProps {
   open: boolean
@@ -25,8 +28,24 @@ export const CostCenterFormModal = ({
 }: CostCenterFormModalProps) => {
   const {
     register,
+    setValue,
+    watch,
     formState: { errors },
   } = form
+
+  const agencyId = watch('agencyId')
+  const agencyOptions: AsyncSelectOption<Agency>[] = agencies.map((agency) => ({
+    value: agency.id,
+    label: `${agency.name} (${agency.code})`,
+    meta: agency,
+  }))
+  const loadAgencyOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return agencyOptions
+    return agencyOptions.filter((option) =>
+      option.label.toLowerCase().includes(term),
+    )
+  }
 
   if (!open) return null
 
@@ -119,19 +138,20 @@ export const CostCenterFormModal = ({
             >
               Agencia
             </label>
-            <select
-              id="agencyId"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('agencyId')}
-              disabled={isSaving}
-            >
-              <option value="">Selecciona una agencia</option>
-              {agencies.map((agency) => (
-                <option key={agency.id} value={agency.id}>
-                  {agency.name} ({agency.code})
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<Agency>
+              value={agencyOptions.find((option) => option.value === agencyId) ?? null}
+              onChange={(option) =>
+                setValue('agencyId', option?.value ?? '', { shouldValidate: true })
+              }
+              loadOptions={loadAgencyOptions}
+              placeholder="Selecciona una agencia"
+              inputId="agencyId"
+              instanceId="accounting-cost-center-agency-id"
+              isDisabled={isSaving}
+              defaultOptions={agencyOptions}
+              noOptionsMessage="Sin agencias"
+            />
+            <input type="hidden" {...register('agencyId')} />
             {errors.agencyId ? (
               <p className="text-xs text-red-500">{errors.agencyId.message}</p>
             ) : null}

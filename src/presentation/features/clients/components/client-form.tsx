@@ -15,6 +15,10 @@ import {
 } from '@/infrastructure/validations/clients/client.schema'
 import { ReferenceModal } from '@/presentation/features/clients/components/reference-modal'
 import { ActivityModal } from '@/presentation/features/clients/components/activity-modal'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
+import { DatePicker } from '@/presentation/share/components/date-picker'
 
 interface ClientFormProps {
   initialValues?: Partial<ClientFormValues>
@@ -40,6 +44,15 @@ interface ClientFormProps {
 const toSafeDateInput = (value?: string | null) => {
   if (!value) return ''
   return value.slice(0, 10)
+}
+
+const filterOptions = <TMeta,>(
+  options: AsyncSelectOption<TMeta>[],
+  inputValue: string,
+) => {
+  const term = inputValue.trim().toLowerCase()
+  if (!term) return options
+  return options.filter((option) => option.label.toLowerCase().includes(term))
 }
 
 export const ClientForm = ({
@@ -189,6 +202,77 @@ export const ClientForm = ({
     })
     return options.sort((a, b) => a.name.localeCompare(b.name, 'es'))
   }, [catalogs.municipalities, municipalityId, selectedDepartmentId])
+
+  const generoId = watch('generoId')
+  const estadoCivilId = watch('estadoCivilId')
+  const profesionId = watch('profesionId')
+  const fechaNacimiento = watch('fechaNacimiento')
+  const dependientesId = watch('dependientesId')
+  const tipoViviendaId = watch('tipoViviendaId')
+
+  const genderOptions = useMemo(
+    () =>
+      catalogs.genders.map((gender) => ({
+        value: gender.id,
+        label: gender.nombre,
+        meta: gender,
+      })),
+    [catalogs.genders],
+  )
+  const civilStatusOptions = useMemo(
+    () =>
+      catalogs.civilStatus.map((item) => ({
+        value: item.id,
+        label: item.nombre,
+        meta: item,
+      })),
+    [catalogs.civilStatus],
+  )
+  const professionOptions = useMemo(
+    () =>
+      catalogs.professions.map((item) => ({
+        value: item.id,
+        label: item.nombre,
+        meta: item,
+      })),
+    [catalogs.professions],
+  )
+  const dependentOptions = useMemo(
+    () =>
+      catalogs.dependents.map((item) => ({
+        value: item.id,
+        label: item.nombre,
+        meta: item,
+      })),
+    [catalogs.dependents],
+  )
+  const housingTypeOptions = useMemo(
+    () =>
+      catalogs.housingTypes.map((item) => ({
+        value: item.id,
+        label: item.nombre,
+        meta: item,
+      })),
+    [catalogs.housingTypes],
+  )
+  const departmentOptions = useMemo(
+    () =>
+      sortedDepartments.map((department) => ({
+        value: department.id,
+        label: department.name,
+        meta: department,
+      })),
+    [sortedDepartments],
+  )
+  const municipalityAsyncOptions = useMemo(
+    () =>
+      municipalityOptions.map((item) => ({
+        value: item.id,
+        label: `${item.name} · ${item.departmentName}`,
+        meta: item,
+      })),
+    [municipalityOptions],
+  )
 
   const openNewReferenceModal = () => {
     setEditingReferenceIndex(null)
@@ -395,22 +479,20 @@ export const ClientForm = ({
           >
             Género
           </label>
-          <select
-            id="generoId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('generoId')}
-            disabled={isSaving}
-          >
-            <option value="">Selecciona...</option>
-            {catalogs.genders.map((gender) => (
-              <option
-                key={gender.id}
-                value={gender.id}
-              >
-                {gender.nombre}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect<ClientCatalogItem>
+            value={genderOptions.find((option) => option.value === generoId) ?? null}
+            onChange={(option) =>
+              setValue('generoId', option?.value ?? '', { shouldValidate: true })
+            }
+            loadOptions={(inputValue) => Promise.resolve(filterOptions(genderOptions, inputValue))}
+            placeholder="Selecciona..."
+            inputId="generoId"
+            instanceId="client-genero-id"
+            isDisabled={isSaving}
+            defaultOptions={genderOptions}
+            noOptionsMessage="Sin géneros"
+          />
+          <input type="hidden" {...register('generoId')} />
           {errors.generoId ? (
             <p className="text-xs text-red-500">{errors.generoId.message}</p>
           ) : null}
@@ -423,19 +505,22 @@ export const ClientForm = ({
           >
             Estado civil
           </label>
-          <select
-            id="estadoCivilId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('estadoCivilId')}
-            disabled={isSaving}
-          >
-            <option value="">Selecciona...</option>
-            {catalogs.civilStatus.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect<ClientCatalogItem>
+            value={civilStatusOptions.find((option) => option.value === estadoCivilId) ?? null}
+            onChange={(option) =>
+              setValue('estadoCivilId', option?.value ?? '', { shouldValidate: true })
+            }
+            loadOptions={(inputValue) =>
+              Promise.resolve(filterOptions(civilStatusOptions, inputValue))
+            }
+            placeholder="Selecciona..."
+            inputId="estadoCivilId"
+            instanceId="client-estado-civil-id"
+            isDisabled={isSaving}
+            defaultOptions={civilStatusOptions}
+            noOptionsMessage="Sin estados civiles"
+          />
+          <input type="hidden" {...register('estadoCivilId')} />
           {errors.estadoCivilId ? (
             <p className="text-xs text-red-500">
               {errors.estadoCivilId.message}
@@ -450,19 +535,22 @@ export const ClientForm = ({
           >
             Profesión
           </label>
-          <select
-            id="profesionId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('profesionId')}
-            disabled={isSaving}
-          >
-            <option value="">Selecciona...</option>
-            {catalogs.professions.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect<ClientCatalogItem>
+            value={professionOptions.find((option) => option.value === profesionId) ?? null}
+            onChange={(option) =>
+              setValue('profesionId', option?.value ?? '', { shouldValidate: true })
+            }
+            loadOptions={(inputValue) =>
+              Promise.resolve(filterOptions(professionOptions, inputValue))
+            }
+            placeholder="Selecciona..."
+            inputId="profesionId"
+            instanceId="client-profesion-id"
+            isDisabled={isSaving}
+            defaultOptions={professionOptions}
+            noOptionsMessage="Sin profesiones"
+          />
+          <input type="hidden" {...register('profesionId')} />
           {errors.profesionId ? (
             <p className="text-xs text-red-500">
               {errors.profesionId.message}
@@ -477,18 +565,27 @@ export const ClientForm = ({
           >
             Fecha de nacimiento
           </label>
-          <input
-            id="fechaNacimiento"
-            type="date"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('fechaNacimiento')}
+          <DatePicker
+            value={fechaNacimiento}
+            onChange={(dateValue) =>
+              setValue('fechaNacimiento', dateValue, {
+                shouldValidate: true,
+                shouldDirty: true,
+                shouldTouch: true,
+              })
+            }
+            onBlur={() =>
+              setValue('fechaNacimiento', getValues('fechaNacimiento'), {
+                shouldValidate: true,
+                shouldTouch: true,
+              })
+            }
+            placeholder="Selecciona la fecha de nacimiento"
+            error={errors.fechaNacimiento?.message}
             disabled={isSaving}
+            maxDate={new Date()}
           />
-          {errors.fechaNacimiento ? (
-            <p className="text-xs text-red-500">
-              {errors.fechaNacimiento.message}
-            </p>
-          ) : null}
+          <input type="hidden" {...register('fechaNacimiento')} />
         </div>
 
         <div className="space-y-2">
@@ -498,20 +595,21 @@ export const ClientForm = ({
           >
             Departamento
           </label>
-          <select
-            id="departmentId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            value={selectedDepartmentId}
-            onChange={(event) => handleDepartmentChange(event.target.value)}
-            disabled={isSaving}
-          >
-            <option value="">Selecciona...</option>
-            {sortedDepartments.map((department) => (
-              <option key={department.id} value={department.id}>
-                {department.name}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect<Department>
+            value={
+              departmentOptions.find((option) => option.value === selectedDepartmentId) ?? null
+            }
+            onChange={(option) => handleDepartmentChange(option?.value ?? '')}
+            loadOptions={(inputValue) =>
+              Promise.resolve(filterOptions(departmentOptions, inputValue))
+            }
+            placeholder="Selecciona..."
+            inputId="departmentId"
+            instanceId="client-department-id"
+            isDisabled={isSaving}
+            defaultOptions={departmentOptions}
+            noOptionsMessage="Sin departamentos"
+          />
         </div>
 
         <div className="space-y-2">
@@ -521,19 +619,28 @@ export const ClientForm = ({
           >
             Municipio
           </label>
-          <select
-            id="municipioId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('municipioId')}
-            disabled={isSaving || (!municipalityOptions.length && !municipalityId)}
-          >
-            <option value="">Selecciona...</option>
-            {municipalityOptions.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} · {item.departmentName}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect<Municipality>
+            value={
+              municipalityAsyncOptions.find((option) => option.value === municipalityId) ?? null
+            }
+            onChange={(option) =>
+              setValue('municipioId', option?.value ?? '', { shouldValidate: true })
+            }
+            loadOptions={(inputValue) =>
+              Promise.resolve(filterOptions(municipalityAsyncOptions, inputValue))
+            }
+            placeholder="Selecciona..."
+            inputId="municipioId"
+            instanceId="client-municipio-id"
+            isDisabled={isSaving || (!municipalityOptions.length && !municipalityId)}
+            defaultOptions={municipalityAsyncOptions}
+            noOptionsMessage={
+              selectedDepartmentId
+                ? 'Sin municipios para este departamento'
+                : 'Selecciona un departamento'
+            }
+          />
+          <input type="hidden" {...register('municipioId')} />
           {errors.municipioId ? (
             <p className="text-xs text-red-500">
               {errors.municipioId.message}
@@ -552,19 +659,22 @@ export const ClientForm = ({
           >
             Dependientes
           </label>
-          <select
-            id="dependientesId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('dependientesId')}
-            disabled={isSaving}
-          >
-            <option value="">Selecciona...</option>
-            {catalogs.dependents.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect<ClientCatalogItem>
+            value={dependentOptions.find((option) => option.value === dependientesId) ?? null}
+            onChange={(option) =>
+              setValue('dependientesId', option?.value ?? '', { shouldValidate: true })
+            }
+            loadOptions={(inputValue) =>
+              Promise.resolve(filterOptions(dependentOptions, inputValue))
+            }
+            placeholder="Selecciona..."
+            inputId="dependientesId"
+            instanceId="client-dependientes-id"
+            isDisabled={isSaving}
+            defaultOptions={dependentOptions}
+            noOptionsMessage="Sin dependientes"
+          />
+          <input type="hidden" {...register('dependientesId')} />
           {errors.dependientesId ? (
             <p className="text-xs text-red-500">
               {errors.dependientesId.message}
@@ -579,19 +689,22 @@ export const ClientForm = ({
           >
             Tipo de vivienda
           </label>
-          <select
-            id="tipoViviendaId"
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-            {...register('tipoViviendaId')}
-            disabled={isSaving}
-          >
-            <option value="">Selecciona...</option>
-            {catalogs.housingTypes.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nombre}
-              </option>
-            ))}
-          </select>
+          <AsyncSelect<ClientCatalogItem>
+            value={housingTypeOptions.find((option) => option.value === tipoViviendaId) ?? null}
+            onChange={(option) =>
+              setValue('tipoViviendaId', option?.value ?? '', { shouldValidate: true })
+            }
+            loadOptions={(inputValue) =>
+              Promise.resolve(filterOptions(housingTypeOptions, inputValue))
+            }
+            placeholder="Selecciona..."
+            inputId="tipoViviendaId"
+            instanceId="client-tipo-vivienda-id"
+            isDisabled={isSaving}
+            defaultOptions={housingTypeOptions}
+            noOptionsMessage="Sin tipos de vivienda"
+          />
+          <input type="hidden" {...register('tipoViviendaId')} />
           {errors.tipoViviendaId ? (
             <p className="text-xs text-red-500">
               {errors.tipoViviendaId.message}

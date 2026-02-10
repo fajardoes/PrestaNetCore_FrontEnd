@@ -12,7 +12,7 @@ interface CollateralRulesEditorProps {
   collateralTypes: LoanCatalogItemDto[]
 }
 
-const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
+const getOptionLabel = (item: LoanCatalogItemDto) => item.name
 
 export const CollateralRulesEditor = ({
   control,

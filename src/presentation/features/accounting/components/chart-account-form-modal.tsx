@@ -1,6 +1,9 @@
 import type { UseFormReturn } from 'react-hook-form'
 import type { ChartAccountFormValues } from '@/infrastructure/validations/accounting/chart-account.schema'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface ChartAccountFormModalProps {
   open: boolean
@@ -25,8 +28,37 @@ export const ChartAccountFormModal = ({
 }: ChartAccountFormModalProps) => {
   const {
     register,
+    setValue,
+    watch,
     formState: { errors },
   } = form
+
+  const parentId = watch('parentId')
+  const normalBalance = watch('normalBalance')
+  const parentOptionsForSelect: AsyncSelectOption<ChartAccountListItem>[] =
+    parentOptions.map((parent) => ({
+      value: parent.id,
+      label: `${parent.code} - ${parent.name}`,
+      meta: parent,
+    }))
+  const normalBalanceOptions: AsyncSelectOption<'debit' | 'credit'>[] = [
+    { value: 'debit', label: 'Debe', meta: 'debit' },
+    { value: 'credit', label: 'Haber', meta: 'credit' },
+  ]
+  const loadParentOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return parentOptionsForSelect
+    return parentOptionsForSelect.filter((option) =>
+      option.label.toLowerCase().includes(term),
+    )
+  }
+  const loadNormalBalanceOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return normalBalanceOptions
+    return normalBalanceOptions.filter((option) =>
+      option.label.toLowerCase().includes(term),
+    )
+  }
 
   if (!open) return null
 
@@ -137,19 +169,24 @@ export const ChartAccountFormModal = ({
             >
               Padre (opcional)
             </label>
-            <select
-              id="parentId"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('parentId')}
-              disabled={isSaving}
-            >
-              <option value="">Sin padre</option>
-              {parentOptions.map((parent) => (
-                <option key={parent.id} value={parent.id}>
-                  {parent.code} - {parent.name}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<ChartAccountListItem>
+              value={
+                parentOptionsForSelect.find((option) => option.value === parentId) ??
+                null
+              }
+              onChange={(option) =>
+                setValue('parentId', option?.value ?? '', { shouldValidate: true })
+              }
+              loadOptions={loadParentOptions}
+              placeholder="Sin padre"
+              inputId="parentId"
+              instanceId="accounting-chart-account-parent-id"
+              isDisabled={isSaving}
+              defaultOptions={parentOptionsForSelect}
+              isClearable
+              noOptionsMessage="Sin cuentas padre"
+            />
+            <input type="hidden" {...register('parentId')} />
             {errors.parentId ? (
               <p className="text-xs text-red-500">{errors.parentId.message}</p>
             ) : null}
@@ -162,15 +199,25 @@ export const ChartAccountFormModal = ({
             >
               Naturaleza
             </label>
-            <select
-              id="normalBalance"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('normalBalance')}
-              disabled={isSaving}
-            >
-              <option value="debit">Debe</option>
-              <option value="credit">Haber</option>
-            </select>
+            <AsyncSelect<'debit' | 'credit'>
+              value={
+                normalBalanceOptions.find((option) => option.value === normalBalance) ??
+                null
+              }
+              onChange={(option) =>
+                setValue('normalBalance', (option?.value as 'debit' | 'credit') ?? 'debit', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={loadNormalBalanceOptions}
+              placeholder="Selecciona naturaleza"
+              inputId="normalBalance"
+              instanceId="accounting-chart-account-normal-balance"
+              isDisabled={isSaving}
+              defaultOptions={normalBalanceOptions}
+              noOptionsMessage="Sin opciones"
+            />
+            <input type="hidden" {...register('normalBalance')} />
             {errors.normalBalance ? (
               <p className="text-xs text-red-500">
                 {errors.normalBalance.message}

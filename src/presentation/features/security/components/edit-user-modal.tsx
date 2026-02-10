@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { SecurityRole } from '@/infrastructure/interfaces/security/role'
@@ -9,6 +9,9 @@ import {
 } from '@/infrastructure/validations/security/edit-user.schema'
 import { UserRolesSelector } from './user-roles-selector'
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface EditUserModalProps {
   user: SecurityUser | null
@@ -57,22 +60,48 @@ export const EditUserModal = ({
   })
 
   const selectedRoles = watch('roles')
-  const agenciesForSelect = useMemo(
-    () => availableAgencies ?? [],
-    [availableAgencies],
-  )
+  const agenciesForSelect = useMemo(() => availableAgencies ?? [], [availableAgencies])
+  const [selectedAgency, setSelectedAgency] = useState<
+    AsyncSelectOption<Agency> | null
+  >(null)
 
   useEffect(() => {
-    if (user) {
-      reset({
-        email: user.email,
-        phoneNumber: user.phoneNumber ?? '',
-        isDeleted: user.isDeleted,
-        roles: user.roles ?? [],
-        agencyId: user.agencyId ?? '',
-      })
+    if (!user) return
+
+    reset({
+      email: user.email,
+      phoneNumber: user.phoneNumber ?? '',
+      isDeleted: user.isDeleted,
+      roles: user.roles ?? [],
+      agencyId: user.agencyId ?? '',
+    })
+
+    if (!user.agencyId) {
+      setSelectedAgency(null)
+      return
     }
-  }, [reset, user])
+
+    const match = agenciesForSelect.find((agency) => agency.id === user.agencyId)
+    if (match) {
+      setSelectedAgency({
+        value: match.id,
+        label: `${match.code} - ${match.name}`,
+        meta: match,
+      })
+      return
+    }
+
+    const fallbackLabel = `${user.agencyCode ?? ''}${
+      user.agencyName ? ` - ${user.agencyName}` : ''
+    }`
+      .replace(/^ - /, '')
+      .trim()
+
+    setSelectedAgency({
+      value: user.agencyId,
+      label: fallbackLabel || user.agencyId,
+    })
+  }, [reset, user, agenciesForSelect])
 
   if (!open || !user) {
     return null
@@ -81,6 +110,22 @@ export const EditUserModal = ({
   const submitHandler = handleSubmit(async (values) => {
     await onSubmit(user.id, values)
   })
+
+  const loadAgencyOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    const filtered = agenciesForSelect.filter((agency) => {
+      if (!term) return true
+      return (
+        agency.name.toLowerCase().includes(term) ||
+        agency.code.toLowerCase().includes(term)
+      )
+    })
+    return filtered.map((agency) => ({
+      value: agency.id,
+      label: `${agency.code} - ${agency.name}`,
+      meta: agency,
+    }))
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
@@ -132,19 +177,25 @@ export const EditUserModal = ({
               >
                 Agencia
               </label>
-              <select
-                id="agencyId"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('agencyId')}
-                disabled={isSaving || agenciesLoading}
-              >
-                <option value="">Selecciona una agencia</option>
-                {agenciesForSelect.map((agency) => (
-                  <option key={agency.id} value={agency.id}>
-                    {agency.code} - {agency.name}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<Agency>
+                value={selectedAgency}
+                onChange={(option) => {
+                  setSelectedAgency(option)
+                  setValue('agencyId', option?.value ?? '', { shouldValidate: true })
+                }}
+                loadOptions={loadAgencyOptions}
+                placeholder="Buscar agencia..."
+                inputId="agencyId"
+                instanceId="security-user-agency-edit"
+                isDisabled={isSaving || agenciesLoading}
+                defaultOptions={agenciesForSelect.map((agency) => ({
+                  value: agency.id,
+                  label: `${agency.code} - ${agency.name}`,
+                  meta: agency,
+                }))}
+                noOptionsMessage="Sin agencias"
+              />
+              <input type="hidden" {...register('agencyId')} />
               {errors.agencyId ? (
                 <p className="text-xs text-red-500">{errors.agencyId.message}</p>
               ) : null}
@@ -155,7 +206,7 @@ export const EditUserModal = ({
                 htmlFor="phoneNumber"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
-                Teléfono
+                Telefono
               </label>
               <input
                 id="phoneNumber"
@@ -183,8 +234,7 @@ export const EditUserModal = ({
               Marcar como inactivo
             </label>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Un usuario inactivo no podrá autenticarse hasta que sea
-              reactivado.
+              Un usuario inactivo no podra autenticarse hasta que sea reactivado.
             </p>
           </div>
 

@@ -5,16 +5,16 @@ export interface ApiSuccess<T> {
   data: T
 }
 
-export interface ApiFailure<T = undefined> {
+export interface ApiFailure<T = unknown> {
   success: false
   error: string
   status?: number
   data?: T
 }
 
-export type ApiResult<T, E = undefined> = ApiSuccess<T> | ApiFailure<E>
+export type ApiResult<T, E = unknown> = ApiSuccess<T> | ApiFailure<E>
 
-export const toApiError = <T = undefined>(
+export const toApiError = <T = unknown>(
   error: unknown,
   fallbackMessage: string,
 ): ApiFailure<T> => {

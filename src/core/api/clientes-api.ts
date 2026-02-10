@@ -36,6 +36,8 @@ export interface ListClientsFilters {
   municipioId?: string
   generoId?: string
   activo?: boolean
+  is_employee?: boolean
+  esEmpleado?: boolean
 }
 
 export interface ChildListFilters {

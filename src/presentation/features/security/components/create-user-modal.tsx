@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { SecurityRole } from '@/infrastructure/interfaces/security/role'
@@ -8,6 +8,9 @@ import {
 } from '@/infrastructure/validations/security/create-user.schema'
 import { UserRolesSelector } from '@/presentation/features/security/components/user-roles-selector'
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface CreateUserModalProps {
   open: boolean
@@ -56,6 +59,9 @@ export const CreateUserModal = ({
     () => availableAgencies ?? [],
     [availableAgencies],
   )
+  const [selectedAgency, setSelectedAgency] = useState<
+    AsyncSelectOption<Agency> | null
+  >(null)
 
   useEffect(() => {
     if (open) {
@@ -67,6 +73,7 @@ export const CreateUserModal = ({
         agencyId: '',
         roles: [],
       })
+      setSelectedAgency(null)
     }
   }, [open, reset])
 
@@ -75,6 +82,22 @@ export const CreateUserModal = ({
   const submitHandler = handleSubmit(async (values) => {
     await onSubmit(values)
   })
+
+  const loadAgencyOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    const filtered = agenciesForSelect.filter((agency) => {
+      if (!term) return true
+      return (
+        agency.name.toLowerCase().includes(term) ||
+        agency.code.toLowerCase().includes(term)
+      )
+    })
+    return filtered.map((agency) => ({
+      value: agency.id,
+      label: `${agency.code} - ${agency.name}`,
+      meta: agency,
+    }))
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
@@ -191,19 +214,25 @@ export const CreateUserModal = ({
               >
                 Agencia
               </label>
-              <select
-                id="agencyId"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('agencyId')}
-                disabled={isSaving || agenciesLoading}
-              >
-                <option value="">Selecciona una agencia</option>
-                {agenciesForSelect.map((agency) => (
-                  <option key={agency.id} value={agency.id}>
-                    {agency.code} - {agency.name}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<Agency>
+                value={selectedAgency}
+                onChange={(option) => {
+                  setSelectedAgency(option)
+                  setValue('agencyId', option?.value ?? '', { shouldValidate: true })
+                }}
+                loadOptions={loadAgencyOptions}
+                placeholder="Buscar agencia..."
+                inputId="agencyId"
+                instanceId="security-user-agency"
+                isDisabled={isSaving || agenciesLoading}
+                defaultOptions={agenciesForSelect.map((agency) => ({
+                  value: agency.id,
+                  label: `${agency.code} - ${agency.name}`,
+                  meta: agency,
+                }))}
+                noOptionsMessage="Sin agencias"
+              />
+              <input type="hidden" {...register('agencyId')} />
               {errors.agencyId ? (
                 <p className="text-xs text-red-500">{errors.agencyId.message}</p>
               ) : null}

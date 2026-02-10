@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { listLoanCatalogItemsAction } from '@/core/actions/loans/list-loan-catalog-items.action'
+import { listCollateralTypesAction } from '@/core/actions/collaterals/list-collateral-types-action'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 
 interface LoanCatalogsCacheState {
@@ -60,6 +61,14 @@ export const useLoanCatalogsCache = () => {
     throw new Error(result.error ?? 'No fue posible cargar los catálogos.')
   }, [])
 
+  const loadCollateralTypes = useCallback(async () => {
+    const result = await listCollateralTypesAction(true)
+    if (result.success) {
+      return sortCatalogItems(result.data)
+    }
+    throw new Error(result.error ?? 'No fue posible cargar los tipos de garantía.')
+  }, [])
+
   const loadAll = useCallback(async () => {
     setIsLoading(true)
     setError(null)
@@ -95,7 +104,7 @@ export const useLoanCatalogsCache = () => {
         loadCatalog('insurance-calculation-bases'),
         loadCatalog('insurance-coverage-periods'),
         loadCatalog('insurance-charge-timings'),
-        loadCatalog('collateral-types'),
+        loadCollateralTypes(),
       ])
 
       setState({
@@ -121,7 +130,7 @@ export const useLoanCatalogsCache = () => {
       setError(message)
       setIsLoading(false)
     }
-  }, [loadCatalog])
+  }, [loadCatalog, loadCollateralTypes])
 
   useEffect(() => {
     void loadAll()

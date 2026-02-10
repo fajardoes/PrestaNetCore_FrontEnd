@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { Department, Municipality } from '@/infrastructure/interfaces/organization/geography'
@@ -6,6 +6,7 @@ import {
   municipalitySchema,
   type MunicipalityFormValues,
 } from '@/infrastructure/validations/organization/municipality.schema'
+import AsyncSelect from '@/presentation/share/components/async-select'
 
 interface MunicipalityModalProps {
   open: boolean
@@ -30,6 +31,8 @@ export const MunicipalityModal = ({
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<MunicipalityFormValues>({
     resolver: zodResolver(municipalitySchema),
@@ -58,6 +61,25 @@ export const MunicipalityModal = ({
       })
     }
   }, [municipality, open, reset])
+
+  const selectedDepartmentId = watch('departmentId')
+  const departmentOptions = useMemo(
+    () =>
+      departments.map((department) => ({
+        value: department.id,
+        label: department.name,
+        meta: department,
+      })),
+    [departments],
+  )
+
+  const loadDepartmentOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return departmentOptions
+    return departmentOptions.filter((option) =>
+      option.label.toLowerCase().includes(term),
+    )
+  }
 
   if (!open) return null
 
@@ -95,19 +117,26 @@ export const MunicipalityModal = ({
             >
               Departamento
             </label>
-            <select
-              id="departmentId"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('departmentId')}
-              disabled={isSaving}
-            >
-              <option value="">Selecciona...</option>
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
+            <AsyncSelect<Department>
+              value={
+                departmentOptions.find(
+                  (option) => option.value === selectedDepartmentId,
+                ) ?? null
+              }
+              onChange={(option) =>
+                setValue('departmentId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={loadDepartmentOptions}
+              placeholder="Selecciona..."
+              inputId="departmentId"
+              instanceId="organization-municipality-department-id"
+              isDisabled={isSaving}
+              defaultOptions={departmentOptions}
+              noOptionsMessage="Sin departamentos"
+            />
+            <input type="hidden" {...register('departmentId')} />
             {errors.departmentId ? (
               <p className="text-xs text-red-500">
                 {errors.departmentId.message}

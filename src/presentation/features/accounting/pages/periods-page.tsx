@@ -10,6 +10,7 @@ import { ClosePeriodModal } from '@/presentation/features/accounting/components/
 import { OpenPeriodCard } from '@/presentation/features/accounting/components/open-period-card'
 import { AdvancedPeriodActions } from '@/presentation/features/accounting/components/advanced-period-actions'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
+import AsyncSelect from '@/presentation/share/components/async-select'
 import type { AccountingPeriodDto, AccountingPeriodState } from '@/infrastructure/interfaces/accounting/accounting-period'
 
 export const PeriodsPage = () => {
@@ -55,6 +56,21 @@ export const PeriodsPage = () => {
     }),
     [],
   )
+  const periodStateOptions = useMemo(
+    () =>
+      Object.entries(stateLabel).map(([value, label]) => ({
+        value,
+        label,
+      })),
+    [stateLabel],
+  )
+  const loadPeriodStateOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return periodStateOptions
+    return periodStateOptions.filter((option) =>
+      option.label.toLowerCase().includes(term),
+    )
+  }
 
   if (!isAdmin) {
     return (
@@ -130,19 +146,24 @@ export const PeriodsPage = () => {
               <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Estado
               </label>
-              <select
-                value={periodState}
-                onChange={(event) =>
-                  handleStateChange(event.target.value as AccountingPeriodState | 'all')
-                }
-                className="w-44 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              >
-                {Object.entries(stateLabel).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+              <div className="w-44">
+                <AsyncSelect
+                  value={
+                    periodStateOptions.find((option) => option.value === periodState) ??
+                    null
+                  }
+                  onChange={(option) =>
+                    handleStateChange(
+                      (option?.value as AccountingPeriodState | 'all') ?? 'all',
+                    )
+                  }
+                  loadOptions={loadPeriodStateOptions}
+                  defaultOptions={periodStateOptions}
+                  isClearable={false}
+                  noOptionsMessage="Sin estados"
+                  instanceId="accounting-periods-state-filter"
+                />
+              </div>
             </div>
           </div>
         }

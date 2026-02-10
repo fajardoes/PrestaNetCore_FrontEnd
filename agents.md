@@ -5,15 +5,36 @@
 
 ## Development Commands
 
-- **Development server**: `npm run dev` – Starts the Vite development server
-- **Build**: `npm run build` – Type-check (`tsc -b`) and bundle for production
-- **Lint**: `npm run lint` – Run ESLint across the project
-- **Preview**: `npm run preview` – Serve the production build locally
+- **Development server**: `npm run dev` - Starts the Vite development server
+- **Build**: `npm run build` - Type-check (`tsc -b`) and bundle for production
+- **Lint**: `npm run lint` - Run ESLint across the project
+- **Preview**: `npm run preview` - Serve the production build locally
 
 ## Componentes compartidos de listas/tablas
 
 - `src/presentation/share/components/list-filters-bar.tsx`: barra estándar de filtros con buscador y selector de estado (activos/inactivos/todos). Recibe `search`, `onSearchChange`, `status`, `onStatusChange`, `placeholder`, `children` para filtros adicionales (por ejemplo selects) y `actions` para botones (crear, limpiar filtros, etc.). Úsalo en páginas de listados para mantener consistencia.
 - `src/presentation/share/components/table-pagination.tsx`: pie de paginación uniforme para tablas. Recibe `page`, `totalPages`, `onPageChange` y opcional `label`. Integrarlo en tablas para la navegación de páginas.
+
+## Componentes compartidos de selects
+
+- `src/presentation/share/components/async-select.tsx`: wrapper de `react-select/async` con estilos Tailwind (claro/oscuro). Usar este componente para selects asíncronos con búsqueda remota. No usar `react-select` directamente en componentes de features.
+
+## Componentes compartidos de fecha
+
+- `src/presentation/share/components/date-picker.tsx`: componente global estándar para selección de fechas. Debe usarse en todos los módulos para campos de fecha (por ejemplo fecha de nacimiento, emisión, vencimiento, etc.) en lugar de `input type="date"` u otros date pickers.
+
+## Componentes compartidos de identidad
+
+- `src/presentation/share/components/hn-identity-text.tsx`: componente global para mostrar identidades hondureñas con máscara `####-####-#####` (ejemplo: `0401-1989-00485`). Debe usarse en tablas, detalles, badges y labels de UI donde se renderice identidad/DNI.
+- `src/core/helpers/hn-identity.ts`: helper `formatHnIdentity` para formatear identidad en textos concatenados (por ejemplo labels de selects). Este formato es solo de presentación; el backend mantiene y recibe la identidad sin guiones.
+
+## Componentes compartidos de confirmación
+
+- `src/presentation/features/loans/products/components/confirm-modal.tsx`: modal reutilizable de confirmación para acciones destructivas o sensibles (eliminar, desactivar, etc.). Debe preferirse sobre `window.confirm` para mantener consistencia visual y de UX.
+
+## Componentes compartidos de vista previa de archivos
+
+- `src/presentation/share/components/file-preview-modal.tsx`: modal global para vista previa de archivos (PDF e imágenes) y acción de descarga. Úsalo para previsualizar adjuntos/documentos antes de descargar, especialmente cuando la descarga requiere autenticación.
 
 ## Architecture Overview
 
@@ -23,25 +44,25 @@ The frontend follows a Clean Architecture separation: core business logic, infra
 
 ```
 src/
-├─ core/                         # Pure domain/business logic
-│  ├─ actions/                   # Application use-cases calling APIs
-│  ├─ api/                       # Low-level HTTP wrappers
-│  └─ helpers/                   # Shared domain utilities (formatters, errors)
-├─ infrastructure/               # External contracts & adapters
-│  ├─ api/                       # Axios client & token utilities
-│  ├─ interfaces/                # Shared TypeScript interfaces/types
-│  └─ validations/               # Yup/Zod schemas per feature
-├─ presentation/                 # UI composition
-│  ├─ features/                  # Feature slices (e.g. security)
-│  │  └─ <feature>/
-│  │     ├─ components/          # Pure presentational components
-│  │     ├─ hooks/               # Feature hooks that talk to actions
-│  │     └─ pages/               # Page-level orchestrators
-│  ├─ pages/                     # Legacy/high-level pages (migrate over time)
-│  └─ share/                     # Reusable UI elements (modals, feedback, etc.)
-├─ providers/                    # React context providers
-├─ routes/                       # Routing definitions
-└─ types/                        # Cross-cutting type definitions
+|-- core/                         # Pure domain/business logic
+|   |-- actions/                  # Application use-cases calling APIs
+|   |-- api/                      # Low-level HTTP wrappers
+|   `-- helpers/                  # Shared domain utilities (formatters, errors)
+|-- infrastructure/               # External contracts & adapters
+|   |-- api/                      # Axios client & token utilities
+|   |-- interfaces/               # Shared TypeScript interfaces/types
+|   `-- validations/              # Yup/Zod schemas per feature
+|-- presentation/                 # UI composition
+|   |-- features/                 # Feature slices (e.g. security)
+|   |   `-- <feature>/
+|   |      |-- components/        # Pure presentational components
+|   |      |-- hooks/             # Feature hooks that talk to actions
+|   |      `-- pages/             # Page-level orchestrators
+|   |-- pages/                    # Legacy/high-level pages (migrate over time)
+|   `-- share/                    # Reusable UI elements (modals, feedback, etc.)
+|-- providers/                    # React context providers
+|-- routes/                       # Routing definitions
+`-- types/                        # Cross-cutting type definitions
 ```
 
 ### Implementation Rules (aplican a cada nuevo componente/feature)
@@ -71,14 +92,14 @@ src/
 
 Configurados en `tsconfig.app.json` y `vite.config.ts`:
 
-- `@/*` → `src/*`
-- `@/core/*` → `src/core/*`
-- `@/infrastructure/*` → `src/infrastructure/*`
-- `@/presentation/*` → `src/presentation/*`
-- `@/routes/*` → `src/routes/*`
-- `@/providers/*` → `src/providers/*`
-- `@/hooks/*` → `src/hooks/*` (solo legado; preferir hooks por feature)
-- `@/types/*` → `src/types/*`
+- `@/*` -> `src/*`
+- `@/core/*` -> `src/core/*`
+- `@/infrastructure/*` -> `src/infrastructure/*`
+- `@/presentation/*` -> `src/presentation/*`
+- `@/routes/*` -> `src/routes/*`
+- `@/providers/*` -> `src/providers/*`
+- `@/hooks/*` -> `src/hooks/*` (solo legado; preferir hooks por feature)
+- `@/types/*` -> `src/types/*`
 
 ### TypeScript & Code Quality
 

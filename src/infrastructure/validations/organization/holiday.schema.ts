@@ -1,0 +1,25 @@
+import * as yup from 'yup'
+
+export const holidaySchema = yup.object({
+  date: yup
+    .string()
+    .trim()
+    .required('La fecha es requerida.')
+    .test('is-date', 'La fecha no es válida.', (value) => {
+      if (!value) return false
+      const parsed = new Date(value)
+      return !Number.isNaN(parsed.getTime())
+    }),
+  name: yup
+    .string()
+    .trim()
+    .required('El nombre del feriado es requerido.'),
+  description: yup.string().trim().nullable().optional(),
+  type: yup
+    .number()
+    .typeError('El tipo de feriado es requerido.')
+    .required('El tipo de feriado es requerido.'),
+  isActive: yup.boolean().required(),
+})
+
+export type HolidayFormValues = yup.InferType<typeof holidaySchema>

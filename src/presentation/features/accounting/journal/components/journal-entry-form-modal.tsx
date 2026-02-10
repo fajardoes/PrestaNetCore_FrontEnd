@@ -3,6 +3,8 @@ import type { ChangeEvent, KeyboardEvent } from 'react'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
 import type { JournalEntryFormValues } from '@/infrastructure/validations/accounting/journal-entry.schema'
+import AsyncSelect from '@/presentation/share/components/async-select'
+import { DatePicker } from '@/presentation/share/components/date-picker'
 
 interface JournalEntryFormModalProps {
   open: boolean
@@ -44,9 +46,13 @@ export const JournalEntryFormModal = ({
   accounts,
   costCenters = [],
 }: JournalEntryFormModalProps) => {
+  const menuPortalTarget = typeof document !== 'undefined' ? document.body : null
+
   const {
     register,
     control,
+    setValue,
+    getValues,
     formState: { errors },
   } = form
 
@@ -59,7 +65,31 @@ export const JournalEntryFormModal = ({
     control,
     name: 'lines',
   }) ?? []
+  const selectedCostCenterId = useWatch({
+    control,
+    name: 'costCenterId',
+  })
+  const selectedDate = useWatch({
+    control,
+    name: 'date',
+  })
   const linesError = (errors.lines as { message?: string } | undefined)?.message
+  const accountOptions = accounts.map((account) => ({
+    value: account.id,
+    label: `${account.code} - ${account.name}`,
+  }))
+  const costCenterOptions = costCenters.map((center) => ({
+    value: center.id,
+    label: `${center.code} - ${center.name}`,
+  }))
+  const filterOptions = async (
+    options: Array<{ value: string; label: string }>,
+    inputValue: string,
+  ) => {
+    const term = inputValue.trim().toLowerCase()
+    if (!term) return options
+    return options.filter((option) => option.label.toLowerCase().includes(term))
+  }
 
   const totals = watchedLines.reduce(
     (sum, line) => ({
@@ -87,7 +117,7 @@ export const JournalEntryFormModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
-      <div className="w-full max-w-5xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex max-h-[92vh] w-full max-w-[92rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
@@ -112,7 +142,7 @@ export const JournalEntryFormModal = ({
             Cargando información del asiento...
           </div>
         ) : (
-          <form className="space-y-5" onSubmit={onSubmit} noValidate>
+          <form className="flex min-h-0 flex-1 flex-col gap-5" onSubmit={onSubmit} noValidate>
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <label
@@ -121,16 +151,26 @@ export const JournalEntryFormModal = ({
                 >
                   Fecha
                 </label>
-                <input
-                  id="date"
-                  type="date"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                  {...register('date')}
+                <DatePicker
+                  value={selectedDate}
+                  onChange={(value) =>
+                    setValue('date', value, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  onBlur={() =>
+                    setValue('date', getValues('date'), {
+                      shouldValidate: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  placeholder="Selecciona una fecha"
+                  error={errors.date?.message}
                   disabled={isSaving}
                 />
-                {errors.date ? (
-                  <p className="text-xs text-red-500">{errors.date.message}</p>
-                ) : null}
+                <input type="hidden" {...register('date')} />
               </div>
 
               <div className="space-y-2">
@@ -140,19 +180,26 @@ export const JournalEntryFormModal = ({
                 >
                   Centro de costo (opcional)
                 </label>
-                <select
-                  id="costCenterId"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                  {...register('costCenterId')}
-                  disabled={isSaving}
-                >
-                  <option value="">Sin centro</option>
-                  {costCenters.map((center) => (
-                    <option key={center.id} value={center.id}>
-                      {center.code} - {center.name}
-                    </option>
-                  ))}
-                </select>
+                <AsyncSelect
+                  value={
+                    costCenterOptions.find((option) => option.value === selectedCostCenterId) ??
+                    null
+                  }
+                  onChange={(option) =>
+                    setValue('costCenterId', option?.value ?? '', {
+                      shouldValidate: true,
+                    })
+                  }
+                  loadOptions={(inputValue) => filterOptions(costCenterOptions, inputValue)}
+                  inputId="costCenterId"
+                  instanceId="accounting-journal-entry-cost-center-id"
+                  isDisabled={isSaving}
+                  defaultOptions={costCenterOptions}
+                  isClearable
+                  placeholder="Sin centro"
+                  noOptionsMessage="Sin centros de costo"
+                />
+                <input type="hidden" {...register('costCenterId')} />
                 {errors.costCenterId ? (
                   <p className="text-xs text-red-500">
                     {errors.costCenterId.message}
@@ -182,27 +229,27 @@ export const JournalEntryFormModal = ({
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-              <div className="overflow-x-auto">
+            <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+              <div className="h-full overflow-auto">
                 <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                   <thead className="bg-slate-50 dark:bg-slate-900">
                     <tr>
-                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="w-[440px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Cuenta
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="w-[340px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Descripción
                       </th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="w-[150px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Debe
                       </th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="w-[150px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Haber
                       </th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="w-[220px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Referencia
                       </th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="w-[96px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Acción
                       </th>
                     </tr>
@@ -217,37 +264,51 @@ export const JournalEntryFormModal = ({
                           key={field.id}
                           className="hover:bg-slate-50/70 dark:hover:bg-slate-900"
                         >
-                          <td className="px-3 py-2 text-sm">
-                            <select
-                              className="w-full min-w-[180px] rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                          <td className="min-w-[440px] px-4 py-3 text-sm">
+                            <AsyncSelect
+                              value={
+                                accountOptions.find(
+                                  (option) =>
+                                    option.value === watchedLines[index]?.accountId,
+                                ) ?? null
+                              }
+                              onChange={(option) =>
+                                setValue(`lines.${index}.accountId` as const, option?.value ?? '', {
+                                  shouldValidate: true,
+                                })
+                              }
+                              loadOptions={(inputValue) => filterOptions(accountOptions, inputValue)}
+                              instanceId={`accounting-journal-entry-line-account-${index}`}
+                              isDisabled={isSaving}
+                              defaultOptions={accountOptions}
+                              isClearable
+                              menuPortalTarget={menuPortalTarget}
+                              menuPosition="fixed"
+                              placeholder="Selecciona una cuenta"
+                              noOptionsMessage="Sin cuentas"
+                            />
+                            <input
+                              type="hidden"
                               {...register(`lines.${index}.accountId` as const)}
-                              disabled={isSaving}
-                            >
-                              <option value="">Selecciona una cuenta</option>
-                              {accounts.map((account) => (
-                                <option key={account.id} value={account.id}>
-                                  {account.code} - {account.name}
-                                </option>
-                              ))}
-                            </select>
+                            />
                             {lineErrors?.accountId ? (
                               <p className="mt-1 text-xs text-red-500">
                                 {lineErrors.accountId.message}
                               </p>
                             ) : null}
                           </td>
-                          <td className="px-3 py-2 text-sm">
+                          <td className="min-w-[340px] px-4 py-3 text-sm">
                             <input
                               type="text"
-                              className="w-full min-w-[160px] rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              className="w-full min-w-[300px] rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                               {...register(`lines.${index}.description` as const)}
                               disabled={isSaving}
                             />
                           </td>
-                          <td className="px-3 py-2 text-right text-sm">
+                          <td className="px-4 py-3 text-right text-sm">
                             <input
                               type="text"
-                              className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              className="w-32 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                               inputMode="decimal"
                               pattern="[0-9]*[.,]?[0-9]*"
                               onKeyDown={handleNumericKeyDown}
@@ -268,10 +329,10 @@ export const JournalEntryFormModal = ({
                               </p>
                             ) : null}
                           </td>
-                          <td className="px-3 py-2 text-right text-sm">
+                          <td className="px-4 py-3 text-right text-sm">
                             <input
                               type="text"
-                              className="w-28 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              className="w-32 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                               inputMode="decimal"
                               pattern="[0-9]*[.,]?[0-9]*"
                               onKeyDown={handleNumericKeyDown}
@@ -287,15 +348,15 @@ export const JournalEntryFormModal = ({
                               </p>
                             ) : null}
                           </td>
-                          <td className="px-3 py-2 text-sm">
+                          <td className="px-4 py-3 text-sm">
                             <input
                               type="text"
-                              className="w-full min-w-[140px] rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              className="w-full min-w-[180px] rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                               {...register(`lines.${index}.reference` as const)}
                               disabled={isSaving}
                             />
                           </td>
-                          <td className="px-3 py-2 text-right text-sm">
+                          <td className="px-4 py-3 text-right text-sm">
                             <button
                               type="button"
                               onClick={() => remove(index)}

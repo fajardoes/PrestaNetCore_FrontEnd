@@ -148,6 +148,7 @@ export const loanProductFormSchema = yup.object({
   minCollateralRatio: yup
     .number()
     .typeError('El ratio mínimo de garantía es requerido.')
+    .nullable()
     .when('requiresCollateral', {
       is: true,
       then: (schema) =>

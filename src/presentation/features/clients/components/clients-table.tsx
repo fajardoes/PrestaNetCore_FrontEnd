@@ -1,4 +1,5 @@
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
+import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface ClientsTableProps {
@@ -89,7 +90,7 @@ export const ClientsTable = ({
                     {client.nombreCompleto}
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                    {client.identidad}
+                    <HnIdentityText value={client.identidad} />
                   </td>
                   <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
                     {client.municipioNombre ??

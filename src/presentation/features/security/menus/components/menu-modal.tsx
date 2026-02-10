@@ -1,14 +1,15 @@
-import { useEffect } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import {
   menuSchema,
   type MenuFormValues,
 } from '@/infrastructure/validations/security/menu.schema'
-import type {
-  MenuItemAdminDto,
-} from '@/infrastructure/interfaces/security/menu'
+import type { MenuItemAdminDto } from '@/infrastructure/interfaces/security/menu'
 import type { SecurityRole } from '@/infrastructure/interfaces/security/role'
+import AsyncSelect, {
+  type AsyncSelectOption,
+} from '@/presentation/share/components/async-select'
 
 interface ParentOption {
   id: string
@@ -60,6 +61,19 @@ export const MenuModal = ({
   })
 
   const selectedRoles = watch('allowedRoleIds') ?? []
+  const [selectedParent, setSelectedParent] = useState<
+    AsyncSelectOption<ParentOption> | null
+  >(null)
+
+  const parentDefaultOptions = useMemo(
+    () =>
+      parentOptions.map((option) => ({
+        value: option.id,
+        label: option.label,
+        meta: option,
+      })),
+    [parentOptions],
+  )
 
   useEffect(() => {
     if (menu && open) {
@@ -73,6 +87,16 @@ export const MenuModal = ({
         parentId: menu.parentId ?? '',
         allowedRoleIds: menu.allowedRoleIds ?? [],
       })
+      if (menu.parentId) {
+        const match = parentOptions.find((option) => option.id === menu.parentId)
+        if (match) {
+          setSelectedParent({ value: match.id, label: match.label, meta: match })
+        } else {
+          setSelectedParent(null)
+        }
+      } else {
+        setSelectedParent(null)
+      }
     } else if (open) {
       reset({
         title: '',
@@ -84,14 +108,28 @@ export const MenuModal = ({
         parentId: '',
         allowedRoleIds: [],
       })
+      setSelectedParent(null)
     }
-  }, [menu, open, reset])
+  }, [menu, open, reset, parentOptions])
 
   if (!open) return null
 
   const submitHandler = handleSubmit(async (values) => {
     await onSubmit(values)
   })
+
+  const loadParentOptions = async (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    const filtered = parentOptions.filter((option) => {
+      if (!term) return true
+      return option.label.toLowerCase().includes(term)
+    })
+    return filtered.map((option) => ({
+      value: option.id,
+      label: option.label,
+      meta: option,
+    }))
+  }
 
   const toggleRole = (roleId: string) => {
     if (isSaving) return
@@ -233,19 +271,25 @@ export const MenuModal = ({
               >
                 Menu padre
               </label>
-              <select
-                id="parentId"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('parentId')}
-                disabled={isSaving}
-              >
-                <option value="">Sin padre</option>
-                {parentOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <AsyncSelect<ParentOption>
+                value={selectedParent}
+                onChange={(option) => {
+                  setSelectedParent(option)
+                  setValue('parentId', option?.value ?? '', { shouldValidate: true })
+                }}
+                loadOptions={loadParentOptions}
+                placeholder="Buscar menu padre..."
+                inputId="parentId"
+                instanceId="security-menu-parent"
+                isDisabled={isSaving}
+                isClearable
+                defaultOptions={[
+                  { value: '', label: 'Sin padre' },
+                  ...parentDefaultOptions,
+                ]}
+                noOptionsMessage="Sin coincidencias"
+              />
+              <input type="hidden" {...register('parentId')} />
               {errors.parentId ? (
                 <p className="text-xs text-red-500">{errors.parentId.message}</p>
               ) : null}

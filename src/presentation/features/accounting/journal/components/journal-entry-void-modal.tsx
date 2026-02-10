@@ -6,6 +6,7 @@ import {
   type VoidJournalEntryFormValues,
 } from '@/infrastructure/validations/accounting/void-journal-entry.schema'
 import type { JournalEntryListItem } from '@/infrastructure/interfaces/accounting/journal-entry'
+import { DatePicker } from '@/presentation/share/components/date-picker'
 
 interface JournalEntryVoidModalProps {
   open: boolean
@@ -28,6 +29,9 @@ export const JournalEntryVoidModal = ({
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<VoidJournalEntryFormValues>({
     resolver: yupResolver(voidJournalEntrySchema),
@@ -42,6 +46,8 @@ export const JournalEntryVoidModal = ({
       reset({ reason: '', date: '' })
     }
   }, [open, reset])
+
+  const date = watch('date')
 
   if (!open || !entry) return null
 
@@ -110,16 +116,26 @@ export const JournalEntryVoidModal = ({
             >
               Fecha de anulación (opcional)
             </label>
-            <input
-              id="date"
-              type="date"
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('date')}
+            <DatePicker
+              value={date ?? ''}
+              onChange={(value) =>
+                setValue('date', value, {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                  shouldTouch: true,
+                })
+              }
+              onBlur={() =>
+                setValue('date', getValues('date') ?? '', {
+                  shouldValidate: true,
+                  shouldTouch: true,
+                })
+              }
+              placeholder="Selecciona la fecha de anulación"
+              error={errors.date?.message}
               disabled={isSubmitting}
             />
-            {errors.date ? (
-              <p className="text-xs text-red-500">{errors.date.message}</p>
-            ) : null}
+            <input type="hidden" {...register('date')} />
           </div>
 
           {error ? (

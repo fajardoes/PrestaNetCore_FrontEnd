@@ -1,4 +1,5 @@
 import { httpClient } from '@/infrastructure/api/httpClient'
+import type { AxiosRequestConfig } from 'axios'
 import type { LoanProductListQueryDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-list-query.dto'
 import type { LoanProductListItemDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-list-item.dto'
 import type { LoanProductDetailDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-detail.dto'
@@ -11,16 +12,22 @@ const basePath = '/loans/products'
 export const loanProductsApi = {
   async getLoanProducts(
     query: LoanProductListQueryDto,
+    requestConfig?: AxiosRequestConfig,
   ): Promise<LoanProductListItemDto[]> {
     const { data } = await httpClient.get<LoanProductListItemDto[]>(basePath, {
       params: query,
+      ...requestConfig,
     })
     return data
   },
 
-  async getLoanProductById(id: string): Promise<LoanProductDetailDto> {
+  async getLoanProductById(
+    id: string,
+    requestConfig?: AxiosRequestConfig,
+  ): Promise<LoanProductDetailDto> {
     const { data } = await httpClient.get<LoanProductDetailDto>(
       `${basePath}/${id}`,
+      requestConfig,
     )
     return data
   },

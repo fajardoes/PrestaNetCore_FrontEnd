@@ -8,8 +8,12 @@ interface UseAgenciesState {
   error: string | null
 }
 
-export const useAgencies = (options?: { enabled?: boolean }) => {
+export const useAgencies = (options?: {
+  enabled?: boolean
+  onlyLoanApplicationEnabled?: boolean
+}) => {
   const enabled = options?.enabled ?? true
+  const onlyLoanApplicationEnabled = options?.onlyLoanApplicationEnabled ?? false
   const [state, setState] = useState<UseAgenciesState>({
     agencies: [],
     isLoading: false,
@@ -22,7 +26,7 @@ export const useAgencies = (options?: { enabled?: boolean }) => {
       return
     }
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
-    const result = await listAgenciesAction()
+    const result = await listAgenciesAction(onlyLoanApplicationEnabled)
     if (result.success) {
       setState({
         agencies: result.data,
@@ -32,7 +36,7 @@ export const useAgencies = (options?: { enabled?: boolean }) => {
     } else {
       setState({ agencies: [], isLoading: false, error: result.error })
     }
-  }, [enabled])
+  }, [enabled, onlyLoanApplicationEnabled])
 
   useEffect(() => {
     void fetchAgencies()

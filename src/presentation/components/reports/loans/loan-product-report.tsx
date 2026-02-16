@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from '@react-pdf/renderer'
 import { ReportLayout } from '@/presentation/components/reports/report-layout'
 import type { LoanProductDetailDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-detail.dto'
+import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 
 export interface LoanProductReportData {
   product: LoanProductDetailDto
@@ -86,7 +87,7 @@ export const LoanProductReport = ({
         <Text style={styles.sectionTitle}>Interes y amortizacion</Text>
         <View style={styles.grid}>
           <InfoItem label="Tipo de tasa" value={data.labels.interestRateType || product.interestRateTypeId} />
-          <InfoItem label="Tasa nominal" value={`${product.nominalRate}%`} />
+          <InfoItem label="Tasa nominal" value={formatRateAsPercent(product.nominalRate)} />
           <InfoItem label="Base de tasa" value={data.labels.rateBase || product.rateBaseId} />
           <InfoItem label="Metodo" value={data.labels.amortizationMethod || product.amortizationMethodId} />
           <InfoItem label="Frecuencia" value={data.labels.paymentFrequency || product.paymentFrequencyId} />

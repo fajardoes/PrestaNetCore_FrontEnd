@@ -1,5 +1,6 @@
 import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
 import { AccountingStatusBadge } from './accounting-status-badge'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface PeriodsTableProps {
@@ -37,7 +38,7 @@ export const PeriodsTable = ({
   onClosePeriod,
 }: PeriodsTableProps) => {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -117,7 +118,7 @@ export const PeriodsTable = ({
                       <button
                         type="button"
                         onClick={() => onClosePeriod(period)}
-                        className="btn-icon-label"
+                        className="btn-table-action"
                       >
                         Cerrar
                       </button>
@@ -138,6 +139,6 @@ export const PeriodsTable = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </div>
+    </TableContainer>
   )
 }

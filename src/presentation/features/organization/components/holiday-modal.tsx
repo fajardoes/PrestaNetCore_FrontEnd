@@ -1,22 +1,22 @@
 import { useEffect, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import {
   holidaySchema,
   type HolidayFormValues,
 } from '@/infrastructure/validations/organization/holiday.schema'
 import type { HolidayListItemDto } from '@/infrastructure/interfaces/organization/holidays/holiday-list-item.dto'
+import type { HolidayTypeItemDto } from '@/infrastructure/interfaces/organization/holidays/holiday-type-item.dto'
 import AsyncSelect from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
-
-const HOLIDAY_TYPES = [
-  { value: 1, label: 'Nacional' },
-]
 
 interface HolidayModalProps {
   open: boolean
   mode: 'create' | 'edit' | 'view'
   holiday?: HolidayListItemDto | null
+  holidayTypes: HolidayTypeItemDto[]
+  holidayTypesLoading: boolean
+  holidayTypesError?: string | null
   onClose: () => void
   onSubmit: (values: HolidayFormValues) => Promise<void> | void
   isSubmitting: boolean
@@ -29,24 +29,47 @@ export const HolidayModal = ({
   open,
   mode,
   holiday,
+  holidayTypes,
+  holidayTypesLoading,
+  holidayTypesError,
   onClose,
   onSubmit,
   isSubmitting,
   error,
 }: HolidayModalProps) => {
   const isReadOnly = mode === 'view'
-  const typeOptions = useMemo(() => {
-    if (holiday?.type && !HOLIDAY_TYPES.some((item) => item.value === holiday.type)) {
-      return [{ value: holiday.type, label: `Tipo ${holiday.type}` }, ...HOLIDAY_TYPES]
+
+  const selectOptions = useMemo(() => {
+    const baseOptions = holidayTypes.map((item) => ({
+      value: String(item.id),
+      label: item.name,
+    }))
+
+    if (
+      holiday?.holidayTypeId &&
+      !baseOptions.some((item) => item.value === String(holiday.holidayTypeId))
+    ) {
+      return [
+        {
+          value: String(holiday.holidayTypeId),
+          label: holiday.holidayTypeName || holiday.holidayTypeCode || `Tipo ${holiday.holidayTypeId}`,
+        },
+        ...baseOptions,
+      ]
     }
-    return HOLIDAY_TYPES
-  }, [holiday?.type])
-  const typeSelectOptions = useMemo(
-    () => typeOptions.map((type) => ({ value: String(type.value), label: type.label })),
-    [typeOptions],
-  )
+
+    return baseOptions
+  }, [holiday?.holidayTypeCode, holiday?.holidayTypeId, holiday?.holidayTypeName, holidayTypes])
+
+  const defaultTypeId = useMemo(() => {
+    if (holiday?.holidayTypeId) return holiday.holidayTypeId
+    if (holidayTypes[0]) return holidayTypes[0].id
+    return undefined
+  }, [holiday?.holidayTypeId, holidayTypes])
+
   const {
     register,
+    control,
     handleSubmit,
     reset,
     watch,
@@ -59,7 +82,7 @@ export const HolidayModal = ({
       date: holiday?.date ?? todayIso(),
       name: holiday?.name ?? '',
       description: holiday?.description ?? '',
-      type: holiday?.type ?? typeOptions[0]?.value ?? 1,
+      holidayTypeId: defaultTypeId,
       isActive: holiday?.isActive ?? true,
     },
   })
@@ -70,13 +93,14 @@ export const HolidayModal = ({
       date: holiday?.date ?? todayIso(),
       name: holiday?.name ?? '',
       description: holiday?.description ?? '',
-      type: holiday?.type ?? typeOptions[0]?.value ?? 1,
+      holidayTypeId: defaultTypeId,
       isActive: holiday?.isActive ?? true,
     })
-  }, [open, holiday, reset, typeOptions])
+  }, [defaultTypeId, holiday, open, reset])
 
-  const selectedType = watch('type')
+  const selectedHolidayTypeId = watch('holidayTypeId')
   const holidayDate = watch('date')
+
   const filterOptions = async (
     options: Array<{ value: string; label: string }>,
     inputValue: string,
@@ -124,12 +148,12 @@ export const HolidayModal = ({
         >
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-            <label
-              htmlFor="holiday-date"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
-            >
-              Fecha
-            </label>
+              <label
+                htmlFor="holiday-date"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+              >
+                Fecha
+              </label>
               <DatePicker
                 value={holidayDate}
                 onChange={(value) =>
@@ -160,27 +184,36 @@ export const HolidayModal = ({
               >
                 Tipo
               </label>
-              <AsyncSelect
-                value={
-                  typeSelectOptions.find((option) => option.value === String(selectedType)) ??
-                  null
-                }
-                onChange={(option) =>
-                  setValue('type', Number(option?.value ?? String(typeOptions[0]?.value ?? 1)), {
-                    shouldValidate: true,
-                  })
-                }
-                loadOptions={(inputValue) => filterOptions(typeSelectOptions, inputValue)}
-                defaultOptions={typeSelectOptions}
-                inputId="holiday-type"
-                instanceId="organization-holiday-type"
-                isClearable={false}
-                isDisabled={isSubmitting || isReadOnly}
-                noOptionsMessage="Sin tipos"
+              <Controller
+                control={control}
+                name="holidayTypeId"
+                render={({ field }) => (
+                  <AsyncSelect
+                    value={
+                      selectOptions.find(
+                        (option) => option.value === String(field.value ?? selectedHolidayTypeId),
+                      ) ?? null
+                    }
+                    onChange={(option) => {
+                      field.onChange(option ? option.value : undefined)
+                    }}
+                    loadOptions={(inputValue) => filterOptions(selectOptions, inputValue)}
+                    defaultOptions={selectOptions}
+                    inputId="holiday-type"
+                    instanceId="organization-holiday-type"
+                    isClearable={false}
+                    isDisabled={
+                      isSubmitting || isReadOnly || holidayTypesLoading || !selectOptions.length
+                    }
+                    noOptionsMessage="Sin tipos"
+                  />
+                )}
               />
-              <input type="hidden" {...register('type', { valueAsNumber: true })} />
-              {errors.type ? (
-                <p className="text-xs text-red-500">{errors.type.message}</p>
+              {errors.holidayTypeId ? (
+                <p className="text-xs text-red-500">{errors.holidayTypeId.message}</p>
+              ) : null}
+              {holidayTypesError ? (
+                <p className="text-xs text-amber-600 dark:text-amber-300">{holidayTypesError}</p>
               ) : null}
             </div>
           </div>
@@ -249,7 +282,7 @@ export const HolidayModal = ({
               <button
                 type="submit"
                 className="btn-primary px-6 py-2 text-sm shadow-lg shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
-                disabled={isSubmitting}
+                disabled={isSubmitting || holidayTypesLoading || !selectOptions.length}
               >
                 {isSubmitting
                   ? 'Guardando...'

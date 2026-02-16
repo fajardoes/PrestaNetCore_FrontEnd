@@ -7,6 +7,7 @@ export interface UpdateUserPayload {
   phoneNumber?: string | null
   isDeleted: boolean
   agencyId: string
+  queryOfficeIds?: string[]
 }
 
 export interface AssignRolesPayload {
@@ -24,6 +25,7 @@ export interface CreateUserPayload {
   phoneNumber?: string | null
   roles?: string[]
   agencyId: string
+  queryOfficeIds?: string[]
 }
 
 export const securityApi = {

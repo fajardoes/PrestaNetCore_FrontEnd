@@ -1,4 +1,5 @@
 import { StatusBadge } from '@/presentation/features/security/components/status-badge'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
 
@@ -34,7 +35,7 @@ export const UsersTable = ({
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <TableContainer mode="legacy-compact">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900">
@@ -132,14 +133,14 @@ export const UsersTable = ({
                         <button
                           type="button"
                           onClick={() => onEdit(user)}
-                          className="btn-icon-label"
+                          className="btn-table-action"
                         >
                           Editar
                         </button>
                         <button
                           type="button"
                           onClick={() => onGenerateTemporaryPassword(user)}
-                          className="btn-icon"
+                          className="btn-table-action w-7 px-0"
                           aria-label="Generar contraseña temporal"
                         >
                           <KeyIcon className="h-4 w-4" />
@@ -158,7 +159,7 @@ export const UsersTable = ({
           totalPages={totalPages}
           onPageChange={onPageChange}
         />
-      </div>
+      </TableContainer>
     </div>
   )
 }

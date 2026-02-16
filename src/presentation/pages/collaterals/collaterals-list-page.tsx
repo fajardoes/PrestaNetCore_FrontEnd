@@ -7,6 +7,7 @@ import { HnIdentityText } from '@/presentation/share/components/hn-identity-text
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import type { StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { useCollateralCatalogsCache } from '@/presentation/features/collaterals/hooks/use-collateral-catalogs-cache'
 import { useCollateralsList } from '@/presentation/features/collaterals/hooks/use-collaterals-list'
 import { useCollateralClientSearch } from '@/presentation/features/collaterals/hooks/use-collateral-client-search'
@@ -192,7 +193,7 @@ export const CollateralsListPage = () => {
         </ListFiltersBar>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <TableContainer mode="legacy-compact">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900">
@@ -292,14 +293,14 @@ export const CollateralsListPage = () => {
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          className="btn-icon-label text-xs"
+                          className="btn-table-action"
                           onClick={() => navigate(`/clients/collaterals/${item.id}`)}
                         >
                           Ver
                         </button>
                         <button
                           type="button"
-                          className="btn-icon-label text-xs"
+                          className="btn-table-action"
                           onClick={() => navigate(`/clients/collaterals/${item.id}/edit`)}
                         >
                           Editar
@@ -335,7 +336,7 @@ export const CollateralsListPage = () => {
 
           <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} label="Página" />
         </div>
-      </div>
+      </TableContainer>
     </div>
   )
 }

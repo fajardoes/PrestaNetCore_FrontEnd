@@ -10,10 +10,10 @@ import { HolidayModal } from '@/presentation/features/organization/components/ho
 import { BusinessCalendarUtilities } from '@/presentation/features/organization/components/business-calendar-utilities'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { useHolidays } from '@/presentation/features/organization/hooks/use-holidays'
+import { useHolidayTypes } from '@/presentation/features/organization/hooks/use-holiday-types'
 import { useSaveHoliday } from '@/presentation/features/organization/hooks/use-save-holiday'
 import { useToggleHolidayStatus } from '@/presentation/features/organization/hooks/use-toggle-holiday-status'
 import { useBusinessCalendar } from '@/presentation/features/organization/hooks/use-business-calendar'
-import type { BusinessDayAdjustmentRule } from '@/infrastructure/interfaces/organization/holidays/business-day-adjustment-rule'
 
 const PAGE_SIZE = 10
 
@@ -24,6 +24,12 @@ export const HolidaysPage = () => {
     user?.roles.some((role) => role.toLowerCase() === 'admin') ?? false
 
   const { holidays, isLoading, error, refresh } = useHolidays({ enabled: isAdmin })
+  const {
+    holidayTypes,
+    isLoading: holidayTypesLoading,
+    error: holidayTypesError,
+    refresh: refreshHolidayTypes,
+  } = useHolidayTypes({ enabled: isAdmin })
   const { create, update, isSaving, error: saveError, clearError } = useSaveHoliday()
   const { toggleStatus, isLoading: isToggling, error: toggleError, clearError: clearToggleError } =
     useToggleHolidayStatus()
@@ -49,7 +55,9 @@ export const HolidaysPage = () => {
     return visibleHolidays.filter((holiday) => {
       return (
         holiday.name.toLowerCase().includes(term) ||
-        String(holiday.type).toLowerCase().includes(term) ||
+        holiday.holidayTypeName.toLowerCase().includes(term) ||
+        holiday.holidayTypeCode.toLowerCase().includes(term) ||
+        String(holiday.holidayTypeId).toLowerCase().includes(term) ||
         holiday.date.toLowerCase().includes(term)
       )
     })
@@ -85,7 +93,7 @@ export const HolidaysPage = () => {
       date: values.date,
       name: values.name.trim(),
       description: values.description?.trim() || null,
-      type: Number(values.type),
+      holidayTypeId: values.holidayTypeId,
       isActive: values.isActive,
     }
     if (modalMode === 'edit' && selectedHoliday) {
@@ -176,8 +184,9 @@ export const HolidaysPage = () => {
                   className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
                   onClick={() => {
                     void refresh()
+                    void refreshHolidayTypes()
                   }}
-                  disabled={isLoading}
+                  disabled={isLoading || holidayTypesLoading}
                 >
                   Refrescar
                 </button>
@@ -190,12 +199,19 @@ export const HolidaysPage = () => {
                     setSelectedHoliday(null)
                     setIsModalOpen(true)
                   }}
+                  disabled={holidayTypesLoading}
                 >
                   Crear feriado
                 </button>
               </div>
             }
           />
+
+          {holidayTypesError ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-200">
+              {holidayTypesError}
+            </div>
+          ) : null}
 
           {toggleError ? (
             <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 shadow-sm dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
@@ -245,7 +261,7 @@ export const HolidaysPage = () => {
           onAdjust={async (values) => {
             await calendar.adjustDate({
               date: values.date,
-              rule: values.rule as BusinessDayAdjustmentRule,
+              holidayAdjustmentRuleCode: values.holidayAdjustmentRuleCode,
               agencyId: values.agencyId || undefined,
               portfolioTypeId: values.portfolioTypeId || undefined,
             })
@@ -257,6 +273,9 @@ export const HolidaysPage = () => {
         open={isModalOpen}
         mode={modalMode}
         holiday={selectedHoliday}
+        holidayTypes={holidayTypes}
+        holidayTypesLoading={holidayTypesLoading}
+        holidayTypesError={holidayTypesError}
         onClose={() => {
           setSelectedHoliday(null)
           setIsModalOpen(false)

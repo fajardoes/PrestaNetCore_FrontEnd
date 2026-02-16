@@ -1,4 +1,5 @@
 import type { Municipality } from '@/infrastructure/interfaces/organization/geography'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface MunicipalitiesTableProps {
@@ -21,7 +22,7 @@ export const MunicipalitiesTable = ({
   onPageChange,
 }: MunicipalitiesTableProps) => {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -101,7 +102,7 @@ export const MunicipalitiesTable = ({
                     <button
                       type="button"
                       onClick={() => onEdit(municipality)}
-                      className="btn-icon-label"
+                      className="btn-table-action"
                     >
                       Editar
                     </button>
@@ -117,6 +118,6 @@ export const MunicipalitiesTable = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </div>
+    </TableContainer>
   )
 }

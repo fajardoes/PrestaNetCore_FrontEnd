@@ -4,4 +4,5 @@ export interface Agency {
   slug: string
   code: string
   isActive: boolean
+  canCreateLoanApplications: boolean
 }

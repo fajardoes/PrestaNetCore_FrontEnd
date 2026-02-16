@@ -14,6 +14,8 @@
 
 - `src/presentation/share/components/list-filters-bar.tsx`: barra estándar de filtros con buscador y selector de estado (activos/inactivos/todos). Recibe `search`, `onSearchChange`, `status`, `onStatusChange`, `placeholder`, `children` para filtros adicionales (por ejemplo selects) y `actions` para botones (crear, limpiar filtros, etc.). Úsalo en páginas de listados para mantener consistencia.
 - `src/presentation/share/components/table-pagination.tsx`: pie de paginación uniforme para tablas. Recibe `page`, `totalPages`, `onPageChange` y opcional `label`. Integrarlo en tablas para la navegación de páginas.
+- `src/presentation/share/components/table-container.tsx`: contenedor global para tablas con variantes visuales consistentes. Para tablas administrativas usar `mode="legacy-compact"` y borde marcado (`variant="strong"` cuando aplique) para mantener densidad y legibilidad homogénea.
+- `src/index.css` (`.btn-table-action`): clase estándar para acciones dentro de tablas/listas (editar, estado, ver, eliminar). Evitar botones ad-hoc por módulo para conservar tamaño y espaciado consistentes.
 
 ## Componentes compartidos de selects
 
@@ -113,8 +115,34 @@ Configurados en `tsconfig.app.json` y `vite.config.ts`:
 - Siempre ofrecer soporte para tema claro/oscuro mediante utilidades Tailwind.
 - Formularios nuevos deben integrarse con `react-hook-form` y un esquema Yup/Zod correspondiente.
 - Centralizar feedback (éxito/error) usando componentes compartidos dentro de `presentation/share/components`.
+- En tablas de administración:
+  - Usar `TableContainer` como wrapper estándar (preferencia `mode="legacy-compact"` para vistas densas tipo sistema).
+  - Homologar acciones de fila con `.btn-table-action`; íconos compactos permitidos con `w-7 px-0`.
+  - Mantener consistencia de bordes/divisores entre módulos; no mezclar estilos de tabla en un mismo feature.
 - En listas tipo tarjetas con estado (ej. referencias, actividades, comisiones, seguros, garantías): usar tarjeta con etiqueta Activo/Inactivo, botón Agregar que abre modal con toggle Activo, y fondo tenue rojo para items inactivos (`bg-red-50` y variante `dark:bg-red-500/10`).
 - No hagas pruebas de eslint ni intentes correr la aplicacion
 - No hagas pruebas con git ni intentes ejecutarlo
 
 Cuando agregues nuevas funcionalidades replica esta arquitectura: define contratos en infraestructura, casos de uso en core, hooks y componentes dentro de `presentation/features/<feature>` y deja que las páginas se encarguen únicamente de coordinar esas piezas.
+
+## Contexto módulo créditos (2026-02-15)
+
+- **Solicitudes de Crédito** frontend implementado en:
+  - `src/presentation/features/loans/applications/`
+  - rutas: `/loans/applications`, `/loans/applications/new`, `/loans/applications/:id`, `/loans/applications/:id/edit`
+- **Loans consulta mínima** implementado en:
+  - `src/presentation/features/loans/loans-query/`
+  - rutas: `/loans`, `/loans/:id`, `/loans/:id/installments/:installmentNo`
+- **Core API**:
+  - `src/core/api/loans/loan-applications-api.ts`
+  - `src/core/api/loans/loans-api.ts`
+- **Actions por caso de uso**:
+  - `src/core/actions/loan-applications/`
+  - `src/core/actions/loans/`
+- **DTOs y validaciones**:
+  - requests/responses: `src/infrastructure/loans/requests` y `src/infrastructure/loans/responses`
+  - schemas Yup: `src/infrastructure/validations/loans/loan-application*.ts`, `loan-schedule-preview.schema.ts`
+- **Workflow soportado**: `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`, `CANCELLED`.
+  - `DRAFT`: editar, submit, cancelar, preview, agregar/quitar garantía
+  - `SUBMITTED`: aprobar, rechazar, cancelar, preview
+  - `APPROVED/REJECTED/CANCELLED`: solo lectura (APPROVED con enlace a préstamo si `approvedLoanId` existe)

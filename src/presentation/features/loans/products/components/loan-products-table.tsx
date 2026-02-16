@@ -1,5 +1,6 @@
 import type { LoanProductListItemDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-list-item.dto'
 import { AccountingStatusBadge } from '@/presentation/features/accounting/components/accounting-status-badge'
+import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface LoanProductsTableProps {
   items: LoanProductListItemDto[]
@@ -21,7 +22,7 @@ export const LoanProductsTable = ({
   isProcessingId,
 }: LoanProductsTableProps) => {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -111,21 +112,21 @@ export const LoanProductsTable = ({
                     <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
                       <button
                         type="button"
-                        className="btn-icon-label"
+                        className="btn-table-action"
                         onClick={() => onViewDetail(item)}
                       >
                         Detalle
                       </button>
                       <button
                         type="button"
-                        className="btn-icon-label"
+                        className="btn-table-action"
                         onClick={() => onEdit(item)}
                       >
                         Editar
                       </button>
                       <button
                         type="button"
-                        className="btn-icon-label"
+                        className="btn-table-action"
                         onClick={() => onToggleStatus(item)}
                         disabled={isProcessingId === item.id}
                       >
@@ -139,6 +140,6 @@ export const LoanProductsTable = ({
           </tbody>
         </table>
       </div>
-    </div>
+    </TableContainer>
   )
 }

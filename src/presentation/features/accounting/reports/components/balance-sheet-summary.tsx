@@ -1,4 +1,5 @@
 import type { BalanceSheetResultDto } from '@/infrastructure/accounting/dtos/reports/balance-sheet-result.dto'
+import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface BalanceSheetSummaryProps {
   data: BalanceSheetResultDto | null
@@ -74,10 +75,7 @@ export const BalanceSheetSummary = ({
 
       <div className="space-y-4">
         {data.groups.map((group) => (
-          <div
-            key={group.groupKey}
-            className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950"
-          >
+          <TableContainer key={group.groupKey} mode="legacy-compact">
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
                 {group.groupName}
@@ -130,7 +128,7 @@ export const BalanceSheetSummary = ({
                 </tbody>
               </table>
             </div>
-          </div>
+          </TableContainer>
         ))}
       </div>
     </div>

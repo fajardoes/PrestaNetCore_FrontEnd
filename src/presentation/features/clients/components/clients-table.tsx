@@ -1,5 +1,6 @@
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface ClientsTableProps {
@@ -30,7 +31,7 @@ export const ClientsTable = ({
   municipalityNameById,
 }: ClientsTableProps) => {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -114,7 +115,7 @@ export const ClientsTable = ({
                       <button
                         type="button"
                         onClick={() => onSelect(client)}
-                        className="btn-icon-label text-xs"
+                        className="btn-table-action"
                         disabled={processingId === client.id}
                       >
                         Ver / Editar
@@ -122,7 +123,7 @@ export const ClientsTable = ({
                       <button
                         type="button"
                         onClick={() => onToggle(client)}
-                        className="btn-icon-label text-xs"
+                        className="btn-table-action"
                         disabled={processingId === client.id}
                       >
                         {client.activo ? 'Desactivar' : 'Activar'}
@@ -130,7 +131,7 @@ export const ClientsTable = ({
                       <button
                         type="button"
                         onClick={() => onDelete(client)}
-                        className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                        className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                         disabled={processingId === client.id}
                       >
                         Borrar
@@ -148,6 +149,6 @@ export const ClientsTable = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </div>
+    </TableContainer>
   )
 }

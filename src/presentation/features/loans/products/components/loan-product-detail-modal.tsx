@@ -7,6 +7,7 @@ import {
   LoanProductReport,
   type LoanProductReportData,
 } from '@/presentation/components/reports/loans/loan-product-report'
+import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 
 interface LoanProductDetailModalProps {
   open: boolean
@@ -250,7 +251,7 @@ export const LoanProductDetailModal = ({
                   product.interestRateTypeId,
                 )}
               />
-              <DetailItem label="Tasa nominal" value={`${product.nominalRate}%`} />
+              <DetailItem label="Tasa nominal" value={formatRateAsPercent(product.nominalRate)} />
               <DetailItem
                 label="Base de tasa"
                 value={buildCatalogLabel(catalogs.rateBases, product.rateBaseId)}

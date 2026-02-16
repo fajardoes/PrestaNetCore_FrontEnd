@@ -1,5 +1,5 @@
 ﻿import AsyncSelect from 'react-select/async'
-import type { SingleValue } from 'react-select'
+import type { OnChangeValue } from 'react-select'
 
 export interface AsyncSelectOption<TMeta = unknown> {
   value: string
@@ -7,9 +7,13 @@ export interface AsyncSelectOption<TMeta = unknown> {
   meta?: TMeta
 }
 
-interface AsyncSelectFieldProps<TMeta = unknown> {
-  value: AsyncSelectOption<TMeta> | null
-  onChange: (option: AsyncSelectOption<TMeta> | null) => void
+type AsyncSelectValue<TMeta, TIsMulti extends boolean> = TIsMulti extends true
+  ? AsyncSelectOption<TMeta>[]
+  : AsyncSelectOption<TMeta> | null
+
+interface AsyncSelectFieldProps<TMeta = unknown, TIsMulti extends boolean = false> {
+  value: AsyncSelectValue<TMeta, TIsMulti>
+  onChange: (option: AsyncSelectValue<TMeta, TIsMulti>) => void
   loadOptions: (inputValue: string) => Promise<AsyncSelectOption<TMeta>[]>
   placeholder?: string
   inputId?: string
@@ -21,6 +25,7 @@ interface AsyncSelectFieldProps<TMeta = unknown> {
   noOptionsMessage?: string
   menuPortalTarget?: HTMLElement | null
   menuPosition?: 'absolute' | 'fixed'
+  isMulti?: TIsMulti
 }
 
 const classNames = {
@@ -53,7 +58,7 @@ const classNames = {
 
 const defaultNoOptions = () => 'Sin resultados'
 
-const AsyncSelectField = <TMeta,>({
+const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
   value,
   onChange,
   loadOptions,
@@ -67,7 +72,8 @@ const AsyncSelectField = <TMeta,>({
   noOptionsMessage,
   menuPortalTarget,
   menuPosition,
-}: AsyncSelectFieldProps<TMeta>) => {
+  isMulti,
+}: AsyncSelectFieldProps<TMeta, TIsMulti>) => {
   return (
     <AsyncSelect
       unstyled
@@ -76,14 +82,15 @@ const AsyncSelectField = <TMeta,>({
       inputId={inputId}
       instanceId={instanceId}
       value={value}
-      onChange={(option: SingleValue<AsyncSelectOption<TMeta>>) =>
-        onChange(option ?? null)
+      onChange={(option: OnChangeValue<AsyncSelectOption<TMeta>, TIsMulti>) =>
+        onChange((option ?? null) as AsyncSelectValue<TMeta, TIsMulti>)
       }
       loadOptions={loadOptions}
       placeholder={placeholder}
       isClearable={isClearable}
       isDisabled={isDisabled}
       isLoading={isLoading}
+      isMulti={isMulti}
       classNames={classNames}
       menuPortalTarget={menuPortalTarget}
       menuPosition={menuPosition}

@@ -8,6 +8,13 @@ import { DelinquencyPoliciesPage } from '@/presentation/pages/loans/delinquency-
 import { DelinquencyPolicyFormPage } from '@/presentation/pages/loans/delinquency-policies/DelinquencyPolicyFormPage'
 import { ResolveDelinquencyPolicyPage } from '@/presentation/pages/loans/delinquency-policies/ResolveDelinquencyPolicyPage'
 import { DelinquencyPolicyAssignmentsPage } from '@/presentation/pages/loans/delinquency-policy-assignments/DelinquencyPolicyAssignmentsPage'
+import { LoanApplicationsListPage } from '@/presentation/features/loans/applications/pages/loan-applications-list-page'
+import { LoanApplicationCreatePage } from '@/presentation/features/loans/applications/pages/loan-application-create-page'
+import { LoanApplicationDetailPage } from '@/presentation/features/loans/applications/pages/loan-application-detail-page'
+import { LoanApplicationEditPage } from '@/presentation/features/loans/applications/pages/loan-application-edit-page'
+import { LoanDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-detail-page'
+import { LoanInstallmentDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-installment-detail-page'
+import { LoansHomePage } from '@/presentation/features/loans/loans-query/pages/loans-home-page'
 
 export const LoansRoutes = () => (
   <Fragment>
@@ -38,6 +45,19 @@ export const LoansRoutes = () => (
     <Route
       path="/loans/delinquency-policy-assignments"
       element={<DelinquencyPolicyAssignmentsPage />}
+    />
+    <Route path="/loans/applications" element={<LoanApplicationsListPage />} />
+    <Route path="/loans/applications/new" element={<LoanApplicationCreatePage />} />
+    <Route path="/loans/applications/:id" element={<LoanApplicationDetailPage />} />
+    <Route
+      path="/loans/applications/:id/edit"
+      element={<LoanApplicationEditPage />}
+    />
+    <Route path="/loans" element={<LoansHomePage />} />
+    <Route path="/loans/:id" element={<LoanDetailPage />} />
+    <Route
+      path="/loans/:id/installments/:installmentNo"
+      element={<LoanInstallmentDetailPage />}
     />
   </Fragment>
 )

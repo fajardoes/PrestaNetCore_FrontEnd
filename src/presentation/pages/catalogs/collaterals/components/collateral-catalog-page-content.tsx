@@ -7,6 +7,7 @@ import type { CollateralCatalogItemDto } from '@/infrastructure/intranet/respons
 import type { CollateralCatalogItemFormValues } from '@/infrastructure/validations/collaterals/collateral-catalog-item.schema'
 import { CollateralCatalogEditorModal } from '@/presentation/pages/catalogs/collaterals/components/collateral-catalog-editor-modal'
 import { useAuth } from '@/hooks/useAuth'
+import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface CollateralCatalogPageContentProps {
   kind: 'types' | 'statuses'
@@ -120,7 +121,7 @@ export const CollateralCatalogPageContent = ({
         }
       />
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <TableContainer mode="legacy-compact">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900">
@@ -194,7 +195,7 @@ export const CollateralCatalogPageContent = ({
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          className="btn-icon-label text-xs"
+                          className="btn-table-action"
                           onClick={() => {
                             setEditingItem(item)
                             setIsModalOpen(true)
@@ -204,7 +205,7 @@ export const CollateralCatalogPageContent = ({
                         </button>
                         <button
                           type="button"
-                          className="btn-icon-label text-xs"
+                          className="btn-table-action"
                           disabled={isSaving}
                           onClick={async () => {
                             if (
@@ -250,7 +251,7 @@ export const CollateralCatalogPageContent = ({
             </tbody>
           </table>
         </div>
-      </div>
+      </TableContainer>
 
       <CollateralCatalogEditorModal
         open={isModalOpen}

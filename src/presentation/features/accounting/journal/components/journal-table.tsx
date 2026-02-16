@@ -1,5 +1,6 @@
 import type { JournalEntryListItem } from '@/infrastructure/interfaces/accounting/journal-entry'
 import { JournalEntryStateBadge } from './journal-entry-state-badge'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface JournalTableProps {
@@ -113,7 +114,7 @@ export const JournalTable = ({
             <button
               type="button"
               onClick={() => onView(entry)}
-              className="btn-icon-label"
+              className="btn-table-action"
             >
               Ver
             </button>
@@ -121,7 +122,7 @@ export const JournalTable = ({
               <button
                 type="button"
                 onClick={() => onEdit(entry)}
-                className="btn-icon-label"
+                className="btn-table-action"
               >
                 Editar
               </button>
@@ -130,7 +131,7 @@ export const JournalTable = ({
               <button
                 type="button"
                 onClick={() => onPost(entry)}
-                className="rounded-md border border-emerald-200 px-2 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-600/50 dark:text-emerald-200 dark:hover:bg-emerald-500/10"
+                className="btn-table-action border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-600/50 dark:text-emerald-200 dark:hover:bg-emerald-500/10"
               >
                 Postear
               </button>
@@ -139,7 +140,7 @@ export const JournalTable = ({
               <button
                 type="button"
                 onClick={() => onVoid(entry)}
-                className="rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 transition hover:bg-red-50 dark:border-red-600/60 dark:text-red-200 dark:hover:bg-red-500/10"
+                className="btn-table-action border-red-200 text-red-700 hover:bg-red-50 dark:border-red-600/60 dark:text-red-200 dark:hover:bg-red-500/10"
               >
                 Anular
               </button>
@@ -151,7 +152,7 @@ export const JournalTable = ({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -192,6 +193,6 @@ export const JournalTable = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </div>
+    </TableContainer>
   )
 }

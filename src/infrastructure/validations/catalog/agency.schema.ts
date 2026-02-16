@@ -12,6 +12,7 @@ export const agencySchema = z.object({
     .string({ required_error: 'El código es obligatorio.' })
     .max(50, 'Máximo 50 caracteres.'),
   isActive: z.boolean().default(true),
+  canCreateLoanApplications: z.boolean().default(false),
 })
 
 export type AgencyFormValues = z.infer<typeof agencySchema>

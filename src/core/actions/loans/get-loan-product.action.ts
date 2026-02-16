@@ -4,9 +4,13 @@ import type { LoanProductDetailDto } from '@/infrastructure/loans/dtos/loan-prod
 
 export const getLoanProductAction = async (
   id: string,
+  options?: { silent?: boolean },
 ): Promise<ApiResult<LoanProductDetailDto>> => {
   try {
-    const result = await loanProductsApi.getLoanProductById(id)
+    const result = await loanProductsApi.getLoanProductById(
+      id,
+      options?.silent ? { skipGlobalLoading: true } : undefined,
+    )
     return { success: true, data: result }
   } catch (error) {
     return toApiError(error, 'No fue posible obtener el producto de préstamo.')

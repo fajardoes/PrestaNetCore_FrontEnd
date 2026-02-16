@@ -466,12 +466,16 @@ export const LoanProductForm = ({
             <input
               type="number"
               step="0.01"
+              placeholder="Ej. 24 o 24.5"
               className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
               {...register('nominalRate', {
                 setValueAs: toNumberValue,
               })}
               disabled={isSaving}
             />
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Ingresa el porcentaje anual sin decimal de conversión (ej. 24 = 24%).
+            </p>
             {errors.nominalRate ? (
               <p className="text-xs text-red-500">{errors.nominalRate.message}</p>
             ) : null}

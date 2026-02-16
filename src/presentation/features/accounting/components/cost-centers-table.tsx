@@ -1,5 +1,6 @@
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
 import { AccountingStatusBadge } from './accounting-status-badge'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface CostCentersTableProps {
@@ -22,7 +23,7 @@ export const CostCentersTable = ({
   onEdit,
 }: CostCentersTableProps) => {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -100,7 +101,7 @@ export const CostCentersTable = ({
                       <button
                         type="button"
                         onClick={() => onEdit(center)}
-                        className="btn-icon-label"
+                        className="btn-table-action"
                       >
                         Editar
                       </button>
@@ -121,6 +122,6 @@ export const CostCentersTable = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </div>
+    </TableContainer>
   )
 }

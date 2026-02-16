@@ -1,4 +1,5 @@
 import type { LedgerEntry } from '@/infrastructure/interfaces/accounting/ledger-entry'
+import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface LedgerTableProps {
   entries: LedgerEntry[]
@@ -89,7 +90,7 @@ export const LedgerTable = ({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -141,6 +142,6 @@ export const LedgerTable = ({
           </tbody>
         </table>
       </div>
-    </div>
+    </TableContainer>
   )
 }

@@ -66,6 +66,7 @@ export const UsersPage = () => {
       isDeleted: values.isDeleted,
       roles: values.roles,
       agencyId: values.agencyId,
+      queryOfficeIds: values.queryOfficeIds,
     })
 
     if (result.success) {
@@ -82,6 +83,7 @@ export const UsersPage = () => {
       confirmPassword: values.confirmPassword,
       roles: values.roles,
       agencyId: values.agencyId,
+      queryOfficeIds: values.queryOfficeIds,
     })
 
     if (result.success) {

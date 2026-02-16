@@ -12,4 +12,5 @@ export interface SecurityUser {
   agencyId?: string | null
   agencyName?: string | null
   agencyCode?: string | null
+  queryOfficeIds?: string[]
 }

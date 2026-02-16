@@ -1,5 +1,6 @@
 ﻿import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface PromotersTableProps {
@@ -26,7 +27,7 @@ export const PromotersTable = ({
   processingId,
 }: PromotersTableProps) => {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -113,7 +114,7 @@ export const PromotersTable = ({
                       <button
                         type="button"
                         onClick={() => onEdit(promoter)}
-                        className="btn-icon-label text-xs"
+                        className="btn-table-action"
                         disabled={processingId === promoter.id}
                       >
                         Editar
@@ -121,7 +122,7 @@ export const PromotersTable = ({
                       <button
                         type="button"
                         onClick={() => onToggle(promoter)}
-                        className="btn-icon-label text-xs"
+                        className="btn-table-action"
                         disabled={processingId === promoter.id}
                       >
                         {promoter.isActive ? 'Desactivar' : 'Activar'}
@@ -139,6 +140,6 @@ export const PromotersTable = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </div>
+    </TableContainer>
   )
 }

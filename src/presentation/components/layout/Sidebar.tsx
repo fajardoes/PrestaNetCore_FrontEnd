@@ -4,6 +4,8 @@ import { useAuth } from '@/hooks/useAuth'
 import type { MenuItemTreeDto } from '@/infrastructure/interfaces/security/menu'
 import { useMyMenus } from '@/presentation/features/security/menus/hooks/use-my-menus'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
+import logoLight from '@/assets/logo_light.svg'
+import logoDark from '@/assets/logo_dark.svg'
 
 interface SidebarProps {
   collapsed: boolean
@@ -192,20 +194,24 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
     <aside
       className={`fixed inset-y-0 hidden transform border-r border-slate-300 bg-white text-slate-900 transition-[width] duration-200 dark:border-slate-800 dark:bg-sidebar dark:text-slate-100 lg:flex lg:flex-col ${sidebarWidth}`}
     >
-      <div
-        className={`flex items-center ${
-          collapsed ? 'justify-center' : 'justify-start px-6'
-        } py-6`}
-      >
-        {collapsed ? (
-          <span className="text-xl font-bold uppercase tracking-wide">M</span>
-        ) : (
-          <div className="flex flex-col">
-            <span className="text-xl font-bold uppercase tracking-wide">
-              prestanet
-            </span>
-          </div>
-        )}
+      <div className={`flex flex-col items-center justify-center px-3 ${collapsed ? 'py-5' : 'py-6'}`}>
+        <img
+          src={logoLight}
+          alt="Prestanet"
+          className={`${collapsed ? 'h-10' : 'h-12'} w-auto dark:hidden`}
+        />
+        <img
+          src={logoDark}
+          alt="Prestanet"
+          className={`${collapsed ? 'h-10' : 'h-12'} hidden w-auto dark:block`}
+        />
+        <span
+          className={`mt-2 text-center font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-slate-200 ${
+            collapsed ? 'text-[10px]' : 'text-xs'
+          }`}
+        >
+          PRESTANET
+        </span>
       </div>
       <nav className="flex-1 space-y-2 px-3">
         {!isAuthenticated ? null : isLoading ? (

@@ -1,8 +1,8 @@
-import type { BusinessDayAdjustmentRule } from './business-day-adjustment-rule'
+import type { BusinessDayAdjustmentRuleCode } from './business-day-adjustment-rule'
 
 export interface AdjustDateResponseDto {
   originalDate: string
   adjustedDate: string
-  rule: BusinessDayAdjustmentRule
+  holidayAdjustmentRuleCode: BusinessDayAdjustmentRuleCode
   shiftDays: number
 }

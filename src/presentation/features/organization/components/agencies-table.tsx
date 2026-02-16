@@ -1,4 +1,5 @@
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface AgenciesTableProps {
@@ -21,7 +22,7 @@ export const AgenciesTable = ({
   onPageChange,
 }: AgenciesTableProps) => {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -38,6 +39,9 @@ export const AgenciesTable = ({
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 Estado
               </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                Originación
+              </th>
               <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                 Acciones
               </th>
@@ -48,7 +52,7 @@ export const AgenciesTable = ({
               <tr>
                 <td
                   className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                  colSpan={5}
+                  colSpan={6}
                 >
                   Cargando agencias...
                 </td>
@@ -57,7 +61,7 @@ export const AgenciesTable = ({
               <tr>
                 <td
                   className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
-                  colSpan={5}
+                  colSpan={6}
                 >
                   {error}
                 </td>
@@ -66,7 +70,7 @@ export const AgenciesTable = ({
               <tr>
                 <td
                   className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                  colSpan={5}
+                  colSpan={6}
                 >
                   No hay agencias registradas.
                 </td>
@@ -97,11 +101,22 @@ export const AgenciesTable = ({
                       {agency.isActive ? 'Activa' : 'Inactiva'}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-sm">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+                        agency.canCreateLoanApplications
+                          ? 'bg-blue-100 text-blue-800 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-100 dark:ring-blue-500/40'
+                          : 'bg-slate-100 text-slate-700 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700'
+                      }`}
+                    >
+                      {agency.canCreateLoanApplications ? 'Habilitada' : 'No habilitada'}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-right text-sm">
                     <button
                       type="button"
                       onClick={() => onEdit(agency)}
-                      className="btn-icon-label"
+                      className="btn-table-action"
                     >
                       Editar
                     </button>
@@ -117,6 +132,6 @@ export const AgenciesTable = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </div>
+    </TableContainer>
   )
 }

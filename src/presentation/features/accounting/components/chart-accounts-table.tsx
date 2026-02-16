@@ -1,5 +1,6 @@
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import { AccountingStatusBadge } from './accounting-status-badge'
+import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface ChildrenMap {
   [parentId: string]: {
@@ -61,7 +62,7 @@ export const ChartAccountsTable = ({
               <button
                 type="button"
                 onClick={() => onToggleExpand(account.id, account.isGroup)}
-                className="btn-icon h-7 w-7"
+                className="btn-table-action w-7 px-0"
                 aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
               >
                 {childrenState?.isLoading ? (
@@ -97,7 +98,7 @@ export const ChartAccountsTable = ({
                 <button
                   type="button"
                   onClick={() => onCreateChild(account)}
-                  className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                  className="btn-table-action"
                 >
                   Nuevo hijo
                 </button>
@@ -105,7 +106,7 @@ export const ChartAccountsTable = ({
               <button
                 type="button"
                 onClick={() => onEdit(account)}
-                className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                className="btn-table-action"
               >
                 Editar
               </button>
@@ -152,7 +153,7 @@ export const ChartAccountsTable = ({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="divide-y divide-slate-200 dark:divide-slate-800" role="tree">
         {isLoading ? (
           <div className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
@@ -170,7 +171,7 @@ export const ChartAccountsTable = ({
           renderRows(accounts, 0, 'root')
         )}
       </div>
-    </div>
+    </TableContainer>
   )
 }
 

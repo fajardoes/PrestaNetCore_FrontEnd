@@ -7,6 +7,7 @@ export const editUserSchema = z.object({
   agencyId: z
     .string({ required_error: 'Selecciona una agencia.' })
     .min(1, 'Selecciona una agencia.'),
+  queryOfficeIds: z.array(z.string()).default([]),
   phoneNumber: z
     .string()
     .max(30, 'Máximo 30 caracteres.')

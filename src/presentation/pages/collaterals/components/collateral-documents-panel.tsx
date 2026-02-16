@@ -4,6 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { useNotifications } from '@/providers/NotificationProvider'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { FilePreviewModal } from '@/presentation/share/components/file-preview-modal'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { useCollateralDocuments } from '@/presentation/features/collaterals/hooks/use-collateral-documents'
 import type { CollateralDocumentResponseDto } from '@/infrastructure/intranet/responses/collaterals/collateral-document-response'
 import {
@@ -186,7 +187,7 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
         ) : null}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <TableContainer mode="legacy-compact">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900">
@@ -248,7 +249,7 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
-                          className="btn-icon-label text-xs"
+                          className="btn-table-action"
                           disabled={isPreviewing}
                           onClick={async () => {
                             const result = await preview(item.downloadUrl, item.fileName)
@@ -275,7 +276,7 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
                         </button>
                         <button
                           type="button"
-                          className="btn-icon-label text-xs"
+                          className="btn-table-action"
                           disabled={isDownloading}
                           onClick={async () => {
                             const result = await download(item.downloadUrl, item.fileName)
@@ -288,7 +289,7 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
                         </button>
                         <button
                           type="button"
-                          className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                          className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                           disabled={isDeleting}
                           onClick={() => {
                             setPendingDeleteDocument(item)
@@ -304,7 +305,7 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
             </tbody>
           </table>
         </div>
-      </div>
+      </TableContainer>
 
       <ConfirmModal
         open={Boolean(pendingDeleteDocument)}

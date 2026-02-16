@@ -1,4 +1,5 @@
 import type { ClientCatalogItem } from '@/infrastructure/interfaces/clients/catalog'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface CatalogTableProps {
@@ -25,7 +26,7 @@ export const CatalogTable = ({
   onPageChange,
 }: CatalogTableProps) => {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -106,21 +107,21 @@ export const CatalogTable = ({
                       <button
                         type="button"
                         onClick={() => onToggle(catalog)}
-                        className="btn-icon-label text-xs"
+                        className="btn-table-action"
                       >
                         {catalog.activo ? 'Desactivar' : 'Activar'}
                       </button>
                       <button
                         type="button"
                         onClick={() => onEdit(catalog)}
-                        className="btn-icon-label text-xs"
+                        className="btn-table-action"
                       >
                         Editar
                       </button>
                       <button
                         type="button"
                         onClick={() => onDelete(catalog)}
-                        className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                        className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       >
                         Borrar
                       </button>
@@ -137,6 +138,6 @@ export const CatalogTable = ({
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </div>
+    </TableContainer>
   )
 }

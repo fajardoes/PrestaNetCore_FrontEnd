@@ -1,4 +1,5 @@
 import { httpClient } from '@/infrastructure/api/httpClient'
+import type { AxiosRequestConfig } from 'axios'
 import type {
   ClientActivity,
   ClientCreatePayload,
@@ -144,10 +145,11 @@ export const clientesApi = {
 
   async listClients(
     filters: ListClientsFilters,
+    requestConfig?: AxiosRequestConfig,
   ): Promise<PagedResult<ClientListItem>> {
     const { data } = await httpClient.get<PagedResult<ClientListItem>>(
       basePath,
-      { params: filters },
+      { params: filters, ...requestConfig },
     )
     return data
   },

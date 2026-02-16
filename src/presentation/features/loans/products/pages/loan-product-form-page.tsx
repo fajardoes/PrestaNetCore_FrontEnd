@@ -8,6 +8,7 @@ import { useLoanCatalogsCache } from '@/presentation/features/loans/catalogs/hoo
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
 import type { LoanProductCreateDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-create.dto'
 import type { LoanProductUpdateDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-update.dto'
+import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
 
 export const LoanProductFormPage = () => {
   const navigate = useNavigate()
@@ -43,6 +44,7 @@ export const LoanProductFormPage = () => {
     return {
       ...data,
       currencyCode: 'HNL',
+      nominalRate: mapRateToPercentValue(data.nominalRate),
       description: data.description ?? '',
       minCollateralRatio: data.minCollateralRatio ?? undefined,
       glInterestSuspenseAccountId: data.glInterestSuspenseAccountId ?? null,
@@ -59,6 +61,7 @@ export const LoanProductFormPage = () => {
     const payloadBase = {
       ...values,
       currencyCode: 'HNL',
+      nominalRate: mapPercentInputToRate(values.nominalRate),
       description: values.description ?? null,
       minCollateralRatio: values.requiresCollateral
         ? values.minCollateralRatio ?? null

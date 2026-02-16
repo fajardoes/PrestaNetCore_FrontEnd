@@ -819,7 +819,7 @@ export const ClientForm = ({
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="btn-icon-label text-xs"
+                  className="btn-table-action"
                   onClick={() => openEditReferenceModal(index)}
                   disabled={isSaving}
                 >
@@ -827,7 +827,7 @@ export const ClientForm = ({
                 </button>
                 <button
                   type="button"
-                  className="btn-icon-label text-xs"
+                  className="btn-table-action"
                   onClick={() => {
                     const toggled = [...references]
                     toggled[index] = {
@@ -843,7 +843,7 @@ export const ClientForm = ({
                 {!isEdit ? (
                   <button
                     type="button"
-                    className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                    className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                     onClick={() => handleDeleteReference(index)}
                     disabled={isSaving}
                   >
@@ -936,7 +936,7 @@ export const ClientForm = ({
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="btn-icon-label text-xs"
+                  className="btn-table-action"
                   onClick={() => openEditActivityModal(index)}
                   disabled={isSaving}
                 >
@@ -944,7 +944,7 @@ export const ClientForm = ({
                 </button>
                 <button
                   type="button"
-                  className="btn-icon-label text-xs"
+                  className="btn-table-action"
                   onClick={() => {
                     const toggled = [...activities]
                     toggled[index] = {
@@ -959,7 +959,7 @@ export const ClientForm = ({
                 </button>
                 <button
                   type="button"
-                  className="btn-icon-label text-xs"
+                  className="btn-table-action"
                   onClick={() => {
                     const toggled = [...activities]
                     toggled[index] = {
@@ -981,7 +981,7 @@ export const ClientForm = ({
                 {!isEdit ? (
                   <button
                     type="button"
-                    className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                    className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                     onClick={() => handleDeleteActivity(index)}
                     disabled={isSaving}
                   >

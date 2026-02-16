@@ -5,9 +5,13 @@ import type { PagedResult } from '@/types/pagination'
 
 export const listClientsAction = async (
   filters: ListClientsFilters,
+  options?: { silent?: boolean },
 ): Promise<ApiResult<PagedResult<ClientListItem>>> => {
   try {
-    const clients = await clientesApi.listClients(filters)
+    const clients = await clientesApi.listClients(
+      filters,
+      options?.silent ? { skipGlobalLoading: true } : undefined,
+    )
     return { success: true, data: clients }
   } catch (error) {
     return toApiError(error, 'No fue posible obtener la lista de clientes.')

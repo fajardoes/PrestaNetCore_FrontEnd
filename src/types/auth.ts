@@ -8,6 +8,7 @@ export interface AuthUser {
   agencyId?: string | null
   agencyName?: string | null
   agencyCode?: string | null
+  queryOfficeIds?: string[]
 }
 
 export interface AuthTokens {

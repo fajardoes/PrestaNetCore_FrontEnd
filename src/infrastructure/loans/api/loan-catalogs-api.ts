@@ -1,4 +1,5 @@
 import { httpClient } from '@/infrastructure/api/httpClient'
+import type { AxiosRequestConfig } from 'axios'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import type { LoanCatalogCreateDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-create.dto'
 import type { LoanCatalogUpdateDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-update.dto'
@@ -28,11 +29,13 @@ export const loanCatalogsApi = {
   async getLoanCatalogItems(
     catalog: LoanCatalogKey,
     query?: LoanCatalogListQueryDto,
+    requestConfig?: AxiosRequestConfig,
   ): Promise<LoanCatalogItemDto[]> {
     const { data } = await httpClient.get<LoanCatalogItemDto[]>(
       `${basePath}/${catalog}`,
       {
         params: query ?? {},
+        ...requestConfig,
       },
     )
     return data

@@ -1,4 +1,5 @@
 import type { TrialBalanceResultDto } from '@/infrastructure/accounting/dtos/reports/trial-balance-result.dto'
+import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface TrialBalanceTableProps {
   data: TrialBalanceResultDto | null
@@ -89,7 +90,7 @@ export const TrialBalanceTable = ({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
           <thead className="bg-slate-50 dark:bg-slate-900">
@@ -139,6 +140,6 @@ export const TrialBalanceTable = ({
           </tbody>
         </table>
       </div>
-    </div>
+    </TableContainer>
   )
 }

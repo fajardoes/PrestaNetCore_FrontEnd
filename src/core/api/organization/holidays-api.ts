@@ -4,8 +4,15 @@ import type { HolidayDetailDto } from '@/infrastructure/interfaces/organization/
 import type { HolidayCreateDto } from '@/infrastructure/interfaces/organization/holidays/holiday-create.dto'
 import type { HolidayUpdateDto } from '@/infrastructure/interfaces/organization/holidays/holiday-update.dto'
 import type { HolidayStatusUpdateDto } from '@/infrastructure/interfaces/organization/holidays/holiday-status-update.dto'
+import type { HolidayTypeItemDto } from '@/infrastructure/interfaces/organization/holidays/holiday-type-item.dto'
 
 const basePath = '/organization/holidays'
+const holidayTypesPath = '/organization/holiday-types'
+
+export const listHolidayTypes = async (): Promise<HolidayTypeItemDto[]> => {
+  const { data } = await httpClient.get<HolidayTypeItemDto[]>(holidayTypesPath)
+  return data
+}
 
 export const listHolidays = async (): Promise<HolidayListItemDto[]> => {
   const { data } = await httpClient.get<HolidayListItemDto[]>(basePath)

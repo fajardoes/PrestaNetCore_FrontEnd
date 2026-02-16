@@ -9,7 +9,10 @@ import {
   type AdjustDateFormValues,
   type BusinessDayCheckFormValues,
 } from '@/infrastructure/validations/organization/business-calendar.schema'
-import type { BusinessDayAdjustmentRule } from '@/infrastructure/interfaces/organization/holidays/business-day-adjustment-rule'
+import {
+  BUSINESS_DAY_ADJUSTMENT_RULES,
+  type BusinessDayAdjustmentRuleCode,
+} from '@/infrastructure/interfaces/organization/holidays/business-day-adjustment-rule'
 import AsyncSelect from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
 
@@ -27,20 +30,28 @@ interface BusinessCalendarUtilitiesProps {
   adjustResult: {
     originalDate: string
     adjustedDate: string
-    rule: BusinessDayAdjustmentRule
+    holidayAdjustmentRuleCode: BusinessDayAdjustmentRuleCode
     shiftDays: number
   } | null
   onCheck: (values: BusinessDayCheckFormValues) => Promise<void>
   onAdjust: (values: AdjustDateFormValues) => Promise<void>
 }
 
-const RULE_OPTIONS: { value: BusinessDayAdjustmentRule; label: string }[] = [
-  { value: 1, label: 'Siguiente día hábil' },
-  { value: 2, label: 'Día hábil anterior' },
+const RULE_OPTIONS: { value: BusinessDayAdjustmentRuleCode; label: string }[] = [
+  {
+    value: BUSINESS_DAY_ADJUSTMENT_RULES.NEXT_BUSINESS_DAY,
+    label: 'Siguiente día hábil',
+  },
+  {
+    value: BUSINESS_DAY_ADJUSTMENT_RULES.PREVIOUS_BUSINESS_DAY,
+    label: 'Día hábil anterior',
+  },
 ]
 
-const formatRule = (rule: BusinessDayAdjustmentRule) =>
-  rule === 1 ? 'Siguiente día hábil' : 'Día hábil anterior'
+const formatRule = (ruleCode: BusinessDayAdjustmentRuleCode) => {
+  const option = RULE_OPTIONS.find((item) => item.value === ruleCode)
+  return option?.label ?? ruleCode
+}
 
 export const BusinessCalendarUtilities = ({
   isChecking,
@@ -92,7 +103,7 @@ export const BusinessCalendarUtilities = ({
     resolver: yupResolver(adjustDateSchema),
     defaultValues: {
       date: '',
-      rule: 1,
+      holidayAdjustmentRuleCode: BUSINESS_DAY_ADJUSTMENT_RULES.NEXT_BUSINESS_DAY,
       agencyId: '',
       portfolioTypeId: '',
     },
@@ -107,9 +118,10 @@ export const BusinessCalendarUtilities = ({
     [sortedPortfolioTypes],
   )
   const ruleOptions = useMemo(
-    () => RULE_OPTIONS.map((rule) => ({ value: String(rule.value), label: rule.label })),
+    () => RULE_OPTIONS.map((rule) => ({ value: rule.value, label: rule.label })),
     [],
   )
+
   const filterOptions = async <T extends string | number>(
     options: Array<{ value: T; label: string }>,
     inputValue: string,
@@ -122,7 +134,7 @@ export const BusinessCalendarUtilities = ({
   const selectedCheckAgencyId = watchCheck('agencyId')
   const selectedCheckPortfolioTypeId = watchCheck('portfolioTypeId')
   const selectedCheckDate = watchCheck('date')
-  const selectedAdjustRule = watchAdjust('rule')
+  const selectedAdjustRuleCode = watchAdjust('holidayAdjustmentRuleCode')
   const selectedAdjustAgencyId = watchAdjust('agencyId')
   const selectedAdjustPortfolioTypeId = watchAdjust('portfolioTypeId')
   const selectedAdjustDate = watchAdjust('date')
@@ -306,12 +318,17 @@ export const BusinessCalendarUtilities = ({
             </label>
             <AsyncSelect
               value={
-                ruleOptions.find((option) => option.value === String(selectedAdjustRule)) ?? null
+                ruleOptions.find((option) => option.value === selectedAdjustRuleCode) ?? null
               }
               onChange={(option) =>
-                setAdjustValue('rule', Number(option?.value ?? '1'), {
-                  shouldValidate: true,
-                })
+                setAdjustValue(
+                  'holidayAdjustmentRuleCode',
+                  (option?.value as BusinessDayAdjustmentRuleCode | undefined) ??
+                    BUSINESS_DAY_ADJUSTMENT_RULES.NEXT_BUSINESS_DAY,
+                  {
+                    shouldValidate: true,
+                  },
+                )
               }
               loadOptions={(inputValue) => filterOptions(ruleOptions, inputValue)}
               defaultOptions={ruleOptions}
@@ -320,9 +337,9 @@ export const BusinessCalendarUtilities = ({
               isDisabled={isAdjusting}
               noOptionsMessage="Sin reglas"
             />
-            <input type="hidden" {...registerAdjust('rule', { valueAsNumber: true })} />
-            {adjustErrors.rule ? (
-              <p className="text-xs text-red-500">{adjustErrors.rule.message}</p>
+            <input type="hidden" {...registerAdjust('holidayAdjustmentRuleCode')} />
+            {adjustErrors.holidayAdjustmentRuleCode ? (
+              <p className="text-xs text-red-500">{adjustErrors.holidayAdjustmentRuleCode.message}</p>
             ) : null}
           </div>
 
@@ -401,7 +418,7 @@ export const BusinessCalendarUtilities = ({
               {adjustResult.adjustedDate}
             </p>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Regla: {formatRule(adjustResult.rule)}
+              Regla: {formatRule(adjustResult.holidayAdjustmentRuleCode)}
             </p>
             <p className="text-sm text-slate-600 dark:text-slate-400">
               Desplazamiento: {adjustResult.shiftDays} días

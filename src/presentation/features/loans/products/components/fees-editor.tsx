@@ -131,7 +131,7 @@ export const FeesEditor = ({
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="btn-icon-label text-xs"
+                    className="btn-table-action"
                     onClick={() => openEditFeeModal(index)}
                     disabled={disabled}
                   >
@@ -139,7 +139,7 @@ export const FeesEditor = ({
                   </button>
                   <button
                     type="button"
-                    className="btn-icon-label text-xs"
+                    className="btn-table-action"
                     onClick={() => handleToggleFee(index)}
                     disabled={disabled}
                   >
@@ -148,7 +148,7 @@ export const FeesEditor = ({
                   {allowRemove ? (
                     <button
                       type="button"
-                      className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                      className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       onClick={() => remove(index)}
                       disabled={disabled}
                     >

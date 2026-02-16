@@ -174,7 +174,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             'No fue posible autenticar tus credenciales en el prestanet.',
         )
       }
-      setUser(result.data.user)
+      try {
+        const profile = await authService.getProfile()
+        setUser(profile)
+      } catch {
+        setUser(result.data.user)
+      }
     } catch (error) {
       tokenStorage.clearTokens()
       if (error instanceof ForcedPasswordChangeError) {

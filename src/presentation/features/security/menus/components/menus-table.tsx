@@ -1,5 +1,6 @@
 import type { MenuItemAdminDto } from '@/infrastructure/interfaces/security/menu'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
+import { TableContainer } from '@/presentation/share/components/table-container'
 interface MenusTableProps {
   items: MenuItemAdminDto[]
   expandedIds: Set<string>
@@ -41,7 +42,7 @@ export const MenusTable = ({
               <button
                 type="button"
                 onClick={() => onToggleExpand(item.id)}
-                className="btn-icon h-7 w-7"
+                className="btn-table-action w-7 px-0"
                 aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
               >
                 {isExpanded ? (
@@ -82,14 +83,14 @@ export const MenusTable = ({
               <button
                 type="button"
                 onClick={() => onEdit(item)}
-                className="btn-icon-label"
+                className="btn-table-action"
               >
                 Editar
               </button>
               <button
                 type="button"
                 onClick={() => onDelete(item)}
-                className="btn-icon"
+                className="btn-table-action w-7 px-0"
                 aria-label="Eliminar menu"
               >
                 <TrashIcon className="h-4 w-4" />
@@ -108,7 +109,7 @@ export const MenusTable = ({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+    <TableContainer mode="legacy-compact">
       <div className="divide-y divide-slate-200 dark:divide-slate-800" role="tree">
         {isLoading ? (
           <div className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
@@ -126,7 +127,7 @@ export const MenusTable = ({
           renderRows(items, 0, 'root')
         )}
       </div>
-    </div>
+    </TableContainer>
   )
 }
 

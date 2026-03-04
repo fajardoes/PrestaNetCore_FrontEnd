@@ -10,12 +10,19 @@ import { useLoanApplication } from '@/presentation/features/loans/applications/h
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { MessageModal } from '@/presentation/share/components/message-modal'
+import type { LoanApplicationAllowedAction } from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
 import type { LoanSchedulePreviewFormValues } from '@/infrastructure/validations/loans/loan-schedule-preview.schema'
 import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
 
-type ConfirmAction = 'submit' | 'approve' | 'reject' | 'cancel' | null
+type ConfirmAction =
+  | 'submit'
+  | 'approve'
+  | 'reject'
+  | 'cancel'
+  | 'return_to_draft'
+  | null
 
 interface FeedbackState {
   tone: 'success' | 'error' | 'info' | 'warning'
@@ -27,8 +34,17 @@ export const LoanApplicationDetailPage = () => {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const options = useLoanApplicationOptions()
-  const { application, collaterals, isLoading, error, loadById, setApplication, setCollaterals } =
-    useLoanApplication()
+  const {
+    application,
+    collaterals,
+    allowedActions,
+    isLoading,
+    error,
+    actionsError,
+    loadById,
+    setApplication,
+    setCollaterals,
+  } = useLoanApplication()
   const {
     isWorkflowRunning,
     isCollateralSaving,
@@ -37,6 +53,7 @@ export const LoanApplicationDetailPage = () => {
     approve,
     reject,
     cancel,
+    returnToDraft,
     addCollateral,
     removeCollateral,
     previewSchedule,
@@ -69,15 +86,19 @@ export const LoanApplicationDetailPage = () => {
     )
   }
 
-  const status = application.statusCode
-  const canEdit = status === 'DRAFT'
-  const canSubmit = status === 'DRAFT'
-  const canApprove = status === 'SUBMITTED'
-  const canReject = status === 'SUBMITTED'
-  const canCancel = status === 'DRAFT' || status === 'SUBMITTED'
-  const canPreview = status === 'DRAFT' || status === 'SUBMITTED'
+  const hasAction = (action: LoanApplicationAllowedAction) => allowedActions.includes(action)
+  const canEdit = hasAction('update_draft')
+  const canSubmit = hasAction('submit')
+  const canApprove = hasAction('approve')
+  const canReject = hasAction('reject')
+  const canCancel = hasAction('cancel')
+  const canReturnToDraft = hasAction('return_to_draft')
+  const canPreview = hasAction('preview_schedule')
+  const canAddCollateral = hasAction('add_collateral')
+  const canRemoveCollateral = hasAction('remove_collateral')
 
   const generatePaymentPlan = async (values?: LoanSchedulePreviewFormValues) => {
+    if (!canPreview) return
     const result = await previewSchedule(id, {
       paymentFrequencyIdOverride: values?.paymentFrequencyIdOverride || null,
       firstDueDateOverride: values?.firstDueDateOverride || null,
@@ -108,6 +129,7 @@ export const LoanApplicationDetailPage = () => {
         canApprove={canApprove}
         canReject={canReject}
         canCancel={canCancel}
+        canReturnToDraft={canReturnToDraft}
         canPreview={canPreview}
         isProcessingWorkflow={isWorkflowRunning}
         onOpenPaymentPlan={() => {
@@ -118,7 +140,14 @@ export const LoanApplicationDetailPage = () => {
         onApprove={() => setConfirmAction('approve')}
         onReject={() => setConfirmAction('reject')}
         onCancel={() => setConfirmAction('cancel')}
+        onReturnToDraft={() => setConfirmAction('return_to_draft')}
       />
+
+      {actionsError ? (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+          No fue posible resolver acciones habilitadas: {actionsError}
+        </div>
+      ) : null}
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -139,7 +168,7 @@ export const LoanApplicationDetailPage = () => {
           </div>
           <div className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Motivo (rechazar / cancelar)
+              Motivo (rechazar / cancelar / devolver a borrador)
             </label>
             <textarea
               rows={3}
@@ -156,7 +185,8 @@ export const LoanApplicationDetailPage = () => {
 
       <LoanApplicationCollateralsCard
         collaterals={collaterals}
-        canEdit={canEdit}
+        canAddCollateral={canAddCollateral}
+        canRemoveCollateral={canRemoveCollateral}
         isProcessing={isCollateralSaving}
         onAdd={() => setAddCollateralOpen(true)}
         onRemove={(item) => setPendingCollateral(item)}
@@ -232,14 +262,29 @@ export const LoanApplicationDetailPage = () => {
               ? 'Aprobar solicitud'
               : confirmAction === 'reject'
                 ? 'Rechazar solicitud'
+                : confirmAction === 'return_to_draft'
+                  ? 'Devolver a borrador'
                 : 'Cancelar solicitud'
         }
-        description="Esta acción cambiará el estado de la solicitud."
+        description={
+          confirmAction === 'return_to_draft'
+            ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
+            : 'Esta acción cambiará el estado de la solicitud.'
+        }
         confirmLabel="Confirmar"
         isProcessing={isWorkflowRunning}
         onCancel={() => setConfirmAction(null)}
         onConfirm={async () => {
           if (!confirmAction) return
+          if (confirmAction === 'return_to_draft' && !workflowReason.trim()) {
+            setFeedback({
+              tone: 'warning',
+              title: 'Motivo requerido',
+              description:
+                'Debes ingresar un motivo para devolver la solicitud a borrador.',
+            })
+            return
+          }
 
           const result =
             confirmAction === 'submit'
@@ -248,10 +293,13 @@ export const LoanApplicationDetailPage = () => {
                 ? await approve(id, { notes: workflowNotes || null })
                 : confirmAction === 'reject'
                   ? await reject(id, { reason: workflowReason || null })
+                  : confirmAction === 'return_to_draft'
+                    ? await returnToDraft(id, { reason: workflowReason.trim() })
                   : await cancel(id, { reason: workflowReason || null })
 
           if (result.success) {
             setApplication(result.data)
+            void loadById(id)
             setConfirmAction(null)
             setFeedback({
               tone: 'success',

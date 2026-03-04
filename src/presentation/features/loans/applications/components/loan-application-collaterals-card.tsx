@@ -4,7 +4,8 @@ import { formatMoney } from '@/presentation/features/loans/applications/componen
 
 interface LoanApplicationCollateralsCardProps {
   collaterals: LoanApplicationCollateralResponse[]
-  canEdit: boolean
+  canAddCollateral: boolean
+  canRemoveCollateral: boolean
   isProcessing?: boolean
   onAdd: () => void
   onRemove: (item: LoanApplicationCollateralResponse) => void
@@ -12,7 +13,8 @@ interface LoanApplicationCollateralsCardProps {
 
 export const LoanApplicationCollateralsCard = ({
   collaterals,
-  canEdit,
+  canAddCollateral,
+  canRemoveCollateral,
   isProcessing = false,
   onAdd,
   onRemove,
@@ -21,14 +23,16 @@ export const LoanApplicationCollateralsCard = ({
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Garantías</h2>
-        <button
-          type="button"
-          className="btn-primary px-3 py-2 text-sm"
-          onClick={onAdd}
-          disabled={!canEdit || isProcessing}
-        >
-          Agregar garantía
-        </button>
+        {canAddCollateral ? (
+          <button
+            type="button"
+            className="btn-primary px-3 py-2 text-sm"
+            onClick={onAdd}
+            disabled={isProcessing}
+          >
+            Agregar garantía
+          </button>
+        ) : null}
       </div>
 
       <div className="overflow-x-auto">
@@ -62,15 +66,17 @@ export const LoanApplicationCollateralsCard = ({
                   <td className="px-2 py-2">{formatMoney(item.coverageValue)}</td>
                   <td className="px-2 py-2">{item.notes || '—'}</td>
                   <td className="px-2 py-2 text-right">
-                    <button
-                      type="button"
-                      className="btn-table-action w-7 px-0"
-                      onClick={() => onRemove(item)}
-                      disabled={!canEdit || isProcessing}
-                      aria-label="Eliminar garantía"
-                    >
-                      <Trash2 className="mx-auto h-4 w-4" />
-                    </button>
+                    {canRemoveCollateral ? (
+                      <button
+                        type="button"
+                        className="btn-table-action w-7 px-0"
+                        onClick={() => onRemove(item)}
+                        disabled={isProcessing}
+                        aria-label="Eliminar garantía"
+                      >
+                        <Trash2 className="mx-auto h-4 w-4" />
+                      </button>
+                    ) : null}
                   </td>
                 </tr>
               ))

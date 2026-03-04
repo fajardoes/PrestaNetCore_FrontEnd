@@ -33,7 +33,7 @@ export const useAssignRoles = (options?: UseAssignRolesOptions) => {
     } else {
       setState({ roles: [], isLoading: false, error: result.error })
     }
-  }, [])
+  }, [enabled])
 
   useEffect(() => {
     if (!enabled) {

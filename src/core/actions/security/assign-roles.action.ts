@@ -18,9 +18,7 @@ export const assignRolesAction = async ({
   try {
     const payload: AssignRolesPayload = { roles }
     const updatedRoles = await securityApi.assignRoles(userId, payload)
-    const normalizedRoles = Array.isArray(updatedRoles)
-      ? updatedRoles.map((role) => ('name' in role ? (role as { name: string }).name : String(role)))
-      : roles
+    const normalizedRoles = Array.isArray(updatedRoles) ? updatedRoles : roles
 
     return { success: true, data: normalizedRoles }
   } catch (error) {

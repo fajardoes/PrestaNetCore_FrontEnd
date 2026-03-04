@@ -4,11 +4,13 @@ import type { LoanApplicationCancelRequest } from '@/infrastructure/loans/reques
 import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans/requests/loan-application-collateral-add-request'
 import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/requests/loan-application-create-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
+import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSearchRequest } from '@/infrastructure/loans/requests/loan-application-search-request'
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
 import type { LoanApplicationUpdateRequest } from '@/infrastructure/loans/requests/loan-application-update-request'
 import type { LoanSchedulePreviewRequest } from '@/infrastructure/loans/requests/loan-schedule-preview-request'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
+import type { LoanApplicationActionsResponse } from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
 import type { LoanApplicationSearchResponse } from '@/infrastructure/loans/responses/loan-application-search-response'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
@@ -127,6 +129,26 @@ export const previewSchedule = async (
   const { data } = await httpClient.post<LoanSchedulePreviewResponse>(
     `${basePath}/${id}/schedule/preview`,
     dto,
+  )
+  return data
+}
+
+export const returnLoanApplicationToDraft = async (
+  id: string,
+  dto: LoanApplicationReturnToDraftRequest,
+): Promise<LoanApplicationResponse> => {
+  const { data } = await httpClient.post<LoanApplicationResponse>(
+    `${basePath}/${id}/return-to-draft`,
+    dto,
+  )
+  return data
+}
+
+export const getLoanApplicationActions = async (
+  id: string,
+): Promise<LoanApplicationActionsResponse> => {
+  const { data } = await httpClient.get<LoanApplicationActionsResponse>(
+    `${basePath}/${id}/actions`,
   )
   return data
 }

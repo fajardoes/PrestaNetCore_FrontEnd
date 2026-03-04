@@ -22,7 +22,9 @@ export const LoanApplicationsListPage = () => {
   const {
     items,
     isLoading,
+    isLoadingActions,
     error,
+    allowedActionsById,
     filters,
     page,
     take,
@@ -267,6 +269,11 @@ export const LoanApplicationsListPage = () => {
                     <td>{formatDate(item.createdAt)}</td>
                     <td>
                       <div className="flex items-center justify-end gap-1">
+                        {isLoadingActions && !allowedActionsById[item.id] ? (
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                            ...
+                          </span>
+                        ) : null}
                         <button
                           type="button"
                           className="btn-table-action w-7 px-0"
@@ -276,24 +283,21 @@ export const LoanApplicationsListPage = () => {
                         >
                           <Eye className="mx-auto h-4 w-4" />
                         </button>
-                        <button
-                          type="button"
-                          className="btn-table-action w-7 px-0"
-                          onClick={() =>
-                            navigate(`/loans/applications/${item.id}/edit`, {
-                              state: { returnTo: '/loans/applications' },
-                            })
-                          }
-                          disabled={item.statusCode !== 'DRAFT'}
-                          title={
-                            item.statusCode === 'DRAFT'
-                              ? 'Editar solicitud'
-                              : 'Solo editable en estado borrador'
-                          }
-                          aria-label="Editar"
-                        >
-                          <Pencil className="mx-auto h-4 w-4" />
-                        </button>
+                        {allowedActionsById[item.id]?.includes('update_draft') ? (
+                          <button
+                            type="button"
+                            className="btn-table-action w-7 px-0"
+                            onClick={() =>
+                              navigate(`/loans/applications/${item.id}/edit`, {
+                                state: { returnTo: '/loans/applications' },
+                              })
+                            }
+                            title="Editar solicitud"
+                            aria-label="Editar"
+                          >
+                            <Pencil className="mx-auto h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>

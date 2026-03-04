@@ -9,6 +9,7 @@ interface LoanApplicationHeaderCardProps {
   canApprove: boolean
   canReject: boolean
   canCancel: boolean
+  canReturnToDraft: boolean
   canPreview: boolean
   isProcessingWorkflow?: boolean
   onOpenPaymentPlan: () => void
@@ -16,6 +17,7 @@ interface LoanApplicationHeaderCardProps {
   onApprove: () => void
   onReject: () => void
   onCancel: () => void
+  onReturnToDraft: () => void
 }
 
 export const LoanApplicationHeaderCard = ({
@@ -25,6 +27,7 @@ export const LoanApplicationHeaderCard = ({
   canApprove,
   canReject,
   canCancel,
+  canReturnToDraft,
   canPreview,
   isProcessingWorkflow = false,
   onOpenPaymentPlan,
@@ -32,6 +35,7 @@ export const LoanApplicationHeaderCard = ({
   onApprove,
   onReject,
   onCancel,
+  onReturnToDraft,
 }: LoanApplicationHeaderCardProps) => {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -66,38 +70,56 @@ export const LoanApplicationHeaderCard = ({
               Editar
             </Link>
           ) : null}
-          <button
-            type="button"
-            className="btn-primary px-3 py-2 text-sm"
-            onClick={onSubmit}
-            disabled={!canSubmit || isProcessingWorkflow}
-          >
-            Enviar
-          </button>
-          <button
-            type="button"
-            className="btn-primary px-3 py-2 text-sm"
-            onClick={onApprove}
-            disabled={!canApprove || isProcessingWorkflow}
-          >
-            Aprobar
-          </button>
-          <button
-            type="button"
-            className="btn-secondary px-3 py-2 text-sm"
-            onClick={onReject}
-            disabled={!canReject || isProcessingWorkflow}
-          >
-            Rechazar
-          </button>
-          <button
-            type="button"
-            className="btn-secondary px-3 py-2 text-sm"
-            onClick={onCancel}
-            disabled={!canCancel || isProcessingWorkflow}
-          >
-            Cancelar
-          </button>
+          {canSubmit ? (
+            <button
+              type="button"
+              className="btn-primary px-3 py-2 text-sm"
+              onClick={onSubmit}
+              disabled={isProcessingWorkflow}
+            >
+              Enviar
+            </button>
+          ) : null}
+          {canApprove ? (
+            <button
+              type="button"
+              className="btn-primary px-3 py-2 text-sm"
+              onClick={onApprove}
+              disabled={isProcessingWorkflow}
+            >
+              Aprobar
+            </button>
+          ) : null}
+          {canReject ? (
+            <button
+              type="button"
+              className="btn-secondary px-3 py-2 text-sm"
+              onClick={onReject}
+              disabled={isProcessingWorkflow}
+            >
+              Rechazar
+            </button>
+          ) : null}
+          {canCancel ? (
+            <button
+              type="button"
+              className="btn-secondary px-3 py-2 text-sm"
+              onClick={onCancel}
+              disabled={isProcessingWorkflow}
+            >
+              Cancelar
+            </button>
+          ) : null}
+          {canReturnToDraft ? (
+            <button
+              type="button"
+              className="btn-secondary px-3 py-2 text-sm"
+              onClick={onReturnToDraft}
+              disabled={isProcessingWorkflow}
+            >
+              Devolver a borrador
+            </button>
+          ) : null}
           {canPreview ? (
             <button
               type="button"
@@ -105,13 +127,9 @@ export const LoanApplicationHeaderCard = ({
               onClick={onOpenPaymentPlan}
               disabled={isProcessingWorkflow}
             >
-              Generar plan de pagos
+              Previsualizar cronograma
             </button>
-          ) : (
-            <span className="rounded-md border border-slate-200 px-3 py-2 text-xs text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              Plan de pagos: no disponible en este estado
-            </span>
-          )}
+          ) : null}
         </div>
       </div>
     </section>

@@ -22,7 +22,7 @@ export const LoanApplicationEditPage = () => {
   const location = useLocation()
   const navigate = useNavigate()
   const options = useLoanApplicationOptions()
-  const { application, isLoading, error, loadById } = useLoanApplication()
+  const { application, allowedActions, isLoading, error, loadById } = useLoanApplication()
   const { update, isSaving } = useLoanApplicationMutations()
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const navigationState = location.state as EditNavigationState | null
@@ -48,20 +48,20 @@ export const LoanApplicationEditPage = () => {
     )
   }
 
-  const isDraft = application.statusCode === 'DRAFT'
+  const canUpdateDraft = allowedActions.includes('update_draft')
 
   return (
     <div className="space-y-4">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Editar solicitud</h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Solo se permite edición en estado borrador.
+          La edición depende de la acción habilitada para actualizar borrador.
         </p>
       </div>
 
-      {!isDraft ? (
+      {!canUpdateDraft ? (
         <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
-          Esta solicitud no está en borrador. Se muestra en modo solo lectura.
+          Esta solicitud no tiene habilitada la acción de actualización. Se muestra en modo solo lectura.
         </div>
       ) : null}
 
@@ -78,9 +78,9 @@ export const LoanApplicationEditPage = () => {
             notes: application.notes || null,
           }}
           isSubmitting={isSaving}
-          readOnly={!isDraft}
+          readOnly={!canUpdateDraft}
           onSubmit={async (values) => {
-            if (!isDraft) return
+            if (!canUpdateDraft) return
             const result = await update(id, {
               ...values,
               notes: values.notes || null,

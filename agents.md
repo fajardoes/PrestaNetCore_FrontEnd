@@ -146,3 +146,13 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
   - `DRAFT`: editar, submit, cancelar, preview, agregar/quitar garantía
   - `SUBMITTED`: aprobar, rechazar, cancelar, preview
   - `APPROVED/REJECTED/CANCELLED`: solo lectura (APPROVED con enlace a préstamo si `approvedLoanId` existe)
+
+## Lineamientos globales Roles/Permisos y Actions (2026-03-04)
+
+- La pantalla `security/permisos-por-rol` (`/security/role-permissions`) es única y global para toda la aplicación, no exclusiva de un módulo.
+- El guardado de permisos por rol se centraliza en `PUT /api/auth/roles/{roleName}/permissions`.
+- Los permisos se deben consumir dinámicamente desde backend y agruparse/filtrarse por prefijo de módulo (`loan_applications.*`, `accounting.*`, `clients.*`, etc.); no hardcodear catálogos por módulo en frontend.
+- Convención de naming de permisos: `modulo.feature.action` para mantener escalabilidad y compatibilidad de UI.
+- No hardcodear visibilidad de botones por estado o rol en módulos operativos; cada módulo debe consumir su endpoint `/actions` para decidir acciones visibles/habilitadas.
+- En solicitudes de crédito, usar `GET /api/loan-applications/{id}/actions` como fuente de verdad para acciones permitidas.
+- Para módulos futuros (ej. contabilidad), seguir el mismo patrón con su endpoint `GET /api/<modulo>/.../actions`.

@@ -6,6 +6,7 @@ import { CreateLoanApplicationAction } from '@/core/actions/loan-applications/cr
 import { PreviewLoanApplicationScheduleAction } from '@/core/actions/loan-applications/preview-loan-application-schedule.action'
 import { RejectLoanApplicationAction } from '@/core/actions/loan-applications/reject-loan-application.action'
 import { RemoveLoanApplicationCollateralAction } from '@/core/actions/loan-applications/remove-loan-application-collateral.action'
+import { ReturnLoanApplicationToDraftAction } from '@/core/actions/loan-applications/return-loan-application-to-draft.action'
 import { SubmitLoanApplicationAction } from '@/core/actions/loan-applications/submit-loan-application.action'
 import { UpdateLoanApplicationAction } from '@/core/actions/loan-applications/update-loan-application.action'
 import type { ApiResult } from '@/core/helpers/api-result'
@@ -14,6 +15,7 @@ import type { LoanApplicationCancelRequest } from '@/infrastructure/loans/reques
 import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans/requests/loan-application-collateral-add-request'
 import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/requests/loan-application-create-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
+import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
 import type { LoanApplicationUpdateRequest } from '@/infrastructure/loans/requests/loan-application-update-request'
 import type { LoanSchedulePreviewRequest } from '@/infrastructure/loans/requests/loan-schedule-preview-request'
@@ -29,8 +31,14 @@ interface LoanApplicationMutationsState {
 
 const mapErrorMessage = (result: ApiResult<unknown>) => {
   if (result.success) return null
+  if (result.status === 403) {
+    return 'No autorizado para ejecutar esta acción.'
+  }
+  if (result.status === 400) {
+    return result.error || 'No se pudo completar la acción por validación.'
+  }
   if (result.status === 409) {
-    return 'La solicitud ya fue aprobada o existe un préstamo asociado.'
+    return result.error || 'Conflicto de estado: la acción no es válida en el estado actual.'
   }
   return result.error
 }
@@ -114,6 +122,20 @@ export const useLoanApplicationMutations = () => {
     return result
   }, [])
 
+  const returnToDraft = useCallback(
+    async (id: string, payload: LoanApplicationReturnToDraftRequest) => {
+      setState((prev) => ({ ...prev, isWorkflowRunning: true, error: null }))
+      const result = await new ReturnLoanApplicationToDraftAction().execute(id, payload)
+      setState((prev) => ({
+        ...prev,
+        isWorkflowRunning: false,
+        error: result.success ? null : mapErrorMessage(result),
+      }))
+      return result
+    },
+    [],
+  )
+
   const addCollateral = useCallback(
     async (applicationId: string, payload: LoanApplicationCollateralAddRequest) => {
       setState((prev) => ({ ...prev, isCollateralSaving: true, error: null }))
@@ -171,6 +193,7 @@ export const useLoanApplicationMutations = () => {
     approve,
     reject,
     cancel,
+    returnToDraft,
     addCollateral,
     removeCollateral,
     previewSchedule,

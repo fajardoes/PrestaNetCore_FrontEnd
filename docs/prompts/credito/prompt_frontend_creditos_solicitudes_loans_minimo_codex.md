@@ -332,3 +332,5 @@ Secciones (componentes presentacionales):
 
 ## 12) Referencia del backend (para contexto)
 Este frontend consume el módulo backend ya implementado y debe respetar estados y reglas (DRAFT/SUBMITTED/APPROVED/REJECTED/CANCELLED, approve transaccional, preview sin persistencia, etc.). fileciteturn0file1
+
+Nota: Documentar en el AGENTS.md para mantener el contexto del proyecto

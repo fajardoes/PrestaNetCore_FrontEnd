@@ -65,18 +65,29 @@ export const useLoanApplicationsList = () => {
 
     setIsLoadingActions(true)
 
-    const entries = await Promise.all(
-      items.map(async (item) => {
-        const result = await actionsResolverRef.current.execute(item.id)
-        if (!result.success) {
-          return [item.id, [] as LoanApplicationAllowedAction[]] as const
+    const entries: Array<readonly [string, LoanApplicationAllowedAction[]]> = []
+    let actionsEndpointForbidden = false
+
+    for (const item of items) {
+      if (actionsEndpointForbidden) {
+        entries.push([item.id, [] as LoanApplicationAllowedAction[]] as const)
+        continue
+      }
+
+      const result = await actionsResolverRef.current.execute(item.id)
+      if (!result.success) {
+        if (result.status === 403) {
+          actionsEndpointForbidden = true
         }
-        return [
-          item.id,
-          result.data.allowedActions as LoanApplicationAllowedAction[],
-        ] as const
-      }),
-    )
+        entries.push([item.id, [] as LoanApplicationAllowedAction[]] as const)
+        continue
+      }
+
+      entries.push([
+        item.id,
+        result.data.allowedActions as LoanApplicationAllowedAction[],
+      ] as const)
+    }
 
     if (requestId !== requestIdRef.current) {
       return

@@ -47,7 +47,7 @@ export const LoanApplicationCreatePage = () => {
                 tone: 'success',
                 title: 'Solicitud creada',
                 description: 'La solicitud se creó correctamente.',
-                onAcknowledge: () => navigate(`/loans/applications/${result.data.id}`),
+                onAcknowledge: () => navigate('/loans/applications'),
               })
               return
             }

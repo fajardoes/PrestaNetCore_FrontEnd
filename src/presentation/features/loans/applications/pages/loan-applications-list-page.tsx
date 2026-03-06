@@ -1,14 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Eye, Pencil, Plus } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
+import { MessageModal } from '@/presentation/share/components/message-modal'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { useLoanApplicationsList } from '@/presentation/features/loans/applications/hooks/use-loan-applications-list'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import {
   formatDate,
   formatMoney,
@@ -17,8 +19,21 @@ import {
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200]
 
+type FeedbackTone = 'success' | 'error' | 'info' | 'warning'
+
+interface ListWorkflowFeedback {
+  tone: FeedbackTone
+  title: string
+  description: string
+}
+
+interface LoanApplicationsListLocationState {
+  workflowFeedback?: ListWorkflowFeedback
+}
+
 export const LoanApplicationsListPage = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const {
     items,
     isLoading,
@@ -39,6 +54,10 @@ export const LoanApplicationsListPage = () => {
     searchPromoters,
     searchLoanProducts,
   } = useLoanApplicationOptions()
+  const { hasPermission, isLoading: isLoadingPermissions } = useUserPermissions()
+  const canCreateLoanApplication = hasPermission('loan_applications.create')
+  const locationState = location.state as LoanApplicationsListLocationState | null
+  const workflowFeedbackFromNavigation = locationState?.workflowFeedback ?? null
 
   const [search, setSearch] = useState(filters.search ?? '')
   const [clientId, setClientId] = useState(filters.clientId ?? '')
@@ -51,6 +70,14 @@ export const LoanApplicationsListPage = () => {
   const [selectedClient, setSelectedClient] = useState<AsyncSelectOption | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<AsyncSelectOption | null>(null)
   const [selectedPromoter, setSelectedPromoter] = useState<AsyncSelectOption | null>(null)
+  const [workflowFeedback, setWorkflowFeedback] = useState<ListWorkflowFeedback | null>(
+    workflowFeedbackFromNavigation,
+  )
+
+  useEffect(() => {
+    if (!workflowFeedbackFromNavigation) return
+    setWorkflowFeedback(workflowFeedbackFromNavigation)
+  }, [workflowFeedbackFromNavigation])
 
   const statusOptionsResolved = useMemo(() => {
     if (!statusId) return statusOptions
@@ -119,13 +146,16 @@ export const LoanApplicationsListPage = () => {
               >
                 Buscar
               </button>
-              <button
-                type="button"
-                className="btn-primary inline-flex items-center gap-2 px-3 py-1.5 text-xs"
-                onClick={() => navigate('/loans/applications/new')}
-              >
-                <Plus className="h-3.5 w-3.5" /> Crear solicitud
-              </button>
+              {canCreateLoanApplication ? (
+                <button
+                  type="button"
+                  className="btn-primary inline-flex items-center gap-2 px-3 py-1.5 text-xs"
+                  disabled={isLoadingPermissions}
+                  onClick={() => navigate('/loans/applications/new')}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Crear solicitud
+                </button>
+              ) : null}
             </div>
           }
         >
@@ -315,6 +345,17 @@ export const LoanApplicationsListPage = () => {
           onPageSizeChange={setTake}
         />
       </TableContainer>
+
+      <MessageModal
+        open={Boolean(workflowFeedback)}
+        tone={workflowFeedback?.tone}
+        title={workflowFeedback?.title || ''}
+        description={workflowFeedback?.description || ''}
+        onAcknowledge={() => {
+          setWorkflowFeedback(null)
+          navigate('/loans/applications', { replace: true, state: null })
+        }}
+      />
     </div>
   )
 }

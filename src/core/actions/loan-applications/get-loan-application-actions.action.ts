@@ -8,12 +8,28 @@ export class GetLoanApplicationActionsAction {
       const data = await getLoanApplicationActions(id)
       return { success: true, data }
     } catch (error) {
+      const status = getAxiosStatus(error)
+      if (status === 403) {
+        return toApiError(error, 'No autorizado para consultar acciones de la solicitud.')
+      }
       return toApiError(
         error,
         'No fue posible obtener las acciones habilitadas para la solicitud.',
       )
     }
   }
+}
+
+const getAxiosStatus = (error: unknown): number | undefined => {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'isAxiosError' in error &&
+    Boolean((error as { isAxiosError?: boolean }).isAxiosError)
+  ) {
+    return (error as { response?: { status?: number } }).response?.status
+  }
+  return undefined
 }
 
 const action = new GetLoanApplicationActionsAction()

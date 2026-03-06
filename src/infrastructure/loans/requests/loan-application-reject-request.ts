@@ -1,3 +1,3 @@
 export interface LoanApplicationRejectRequest {
-  reason?: string | null
+  reason: string
 }

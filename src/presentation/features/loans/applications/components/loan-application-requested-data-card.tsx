@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
-import { formatMoney } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import {
+  formatDate,
+  formatMoney,
+} from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 
 interface LoanApplicationRequestedDataCardProps {
   application: LoanApplicationResponse
@@ -10,6 +13,38 @@ interface LoanApplicationRequestedDataCardProps {
 export const LoanApplicationRequestedDataCard = ({
   application,
 }: LoanApplicationRequestedDataCardProps) => {
+  const isDraft = (application.statusCode ?? '').toUpperCase() === 'DRAFT'
+  const returnedToDraftReason = (
+    application.returnedToDraftReason ?? application.returnToDraftReason ?? ''
+  ).trim()
+  const returnedToDraftOperationalDate = (
+    application.returnedToDraftOperationalDate ?? ''
+  ).trim()
+  const workflowCommentsRaw = [
+    {
+      label: 'Motivo de devolucion a borrador',
+      value: isDraft ? returnedToDraftReason : null,
+    },
+    {
+      label: 'Fecha de devolución',
+      value: isDraft && returnedToDraftOperationalDate
+        ? formatDate(returnedToDraftOperationalDate)
+        : null,
+    },
+    { label: 'Motivo de rechazo', value: application.rejectedReason ?? null },
+    { label: 'Motivo de cancelacion', value: application.cancelledReason ?? null },
+    {
+      label: 'Comentario de flujo',
+      value: application.workflowReason ?? application.lastWorkflowReason ?? null,
+    },
+  ]
+  const workflowComments = workflowCommentsRaw
+    .map((item) => ({
+      label: item.label,
+      value: (item.value ?? '').trim(),
+    }))
+    .filter((item) => item.value.length > 0)
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Datos solicitados</h2>
@@ -32,6 +67,19 @@ export const LoanApplicationRequestedDataCard = ({
       {application.notes ? (
         <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
           {application.notes}
+        </div>
+      ) : null}
+      {workflowComments.length ? (
+        <div className="mt-3 space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+          <p className="text-xs font-semibold uppercase tracking-wide">
+            Comentarios del flujo
+          </p>
+          {workflowComments.map((item) => (
+            <div key={item.label}>
+              <p className="text-[11px] uppercase tracking-wide opacity-80">{item.label}</p>
+              <p>{item.value}</p>
+            </div>
+          ))}
         </div>
       ) : null}
     </section>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { LoanApplicationAddCollateralModal } from '@/presentation/features/loans/applications/components/loan-application-add-collateral-modal'
@@ -28,6 +28,7 @@ interface FeedbackState {
   tone: 'success' | 'error' | 'info' | 'warning'
   title: string
   description: string
+  onAcknowledge?: () => void
 }
 
 export const LoanApplicationDetailPage = () => {
@@ -63,8 +64,9 @@ export const LoanApplicationDetailPage = () => {
   const [pendingCollateral, setPendingCollateral] =
     useState<LoanApplicationCollateralResponse | null>(null)
   const [addCollateralOpen, setAddCollateralOpen] = useState(false)
-  const [workflowNotes, setWorkflowNotes] = useState('')
-  const [workflowReason, setWorkflowReason] = useState('')
+  const [workflowInput, setWorkflowInput] = useState('')
+  const [workflowInputError, setWorkflowInputError] = useState<string | null>(null)
+  const workflowInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [preview, setPreview] = useState<LoanSchedulePreviewResponse | null>(null)
   const [paymentPlanOpen, setPaymentPlanOpen] = useState(false)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
@@ -96,6 +98,16 @@ export const LoanApplicationDetailPage = () => {
   const canPreview = hasAction('preview_schedule')
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
+  const reasonRequiredActions: ConfirmAction[] = ['reject', 'cancel', 'return_to_draft']
+  const openConfirmModal = (action: Exclude<ConfirmAction, null>) => {
+    setConfirmAction(action)
+    setWorkflowInput('')
+    setWorkflowInputError(null)
+  }
+  const closeConfirmModal = () => {
+    setConfirmAction(null)
+    setWorkflowInputError(null)
+  }
 
   const generatePaymentPlan = async (values?: LoanSchedulePreviewFormValues) => {
     if (!canPreview) return
@@ -136,11 +148,11 @@ export const LoanApplicationDetailPage = () => {
           setPaymentPlanOpen(true)
           void generatePaymentPlan()
         }}
-        onSubmit={() => setConfirmAction('submit')}
-        onApprove={() => setConfirmAction('approve')}
-        onReject={() => setConfirmAction('reject')}
-        onCancel={() => setConfirmAction('cancel')}
-        onReturnToDraft={() => setConfirmAction('return_to_draft')}
+        onSubmit={() => openConfirmModal('submit')}
+        onApprove={() => openConfirmModal('approve')}
+        onReject={() => openConfirmModal('reject')}
+        onCancel={() => openConfirmModal('cancel')}
+        onReturnToDraft={() => openConfirmModal('return_to_draft')}
       />
 
       {actionsError ? (
@@ -148,38 +160,6 @@ export const LoanApplicationDetailPage = () => {
           No fue posible resolver acciones habilitadas: {actionsError}
         </div>
       ) : null}
-
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          Notas del flujo
-        </h3>
-        <div className="mt-2 grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Notas (enviar / aprobar)
-            </label>
-            <textarea
-              rows={3}
-              value={workflowNotes}
-              onChange={(event) => setWorkflowNotes(event.target.value)}
-              maxLength={500}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Motivo (rechazar / cancelar / devolver a borrador)
-            </label>
-            <textarea
-              rows={3}
-              value={workflowReason}
-              onChange={(event) => setWorkflowReason(event.target.value)}
-              maxLength={500}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
-            />
-          </div>
-        </div>
-      </div>
 
       <LoanApplicationRequestedDataCard application={application} />
 
@@ -269,42 +249,74 @@ export const LoanApplicationDetailPage = () => {
         description={
           confirmAction === 'return_to_draft'
             ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
-            : 'Esta acción cambiará el estado de la solicitud.'
+            : confirmAction === 'reject' || confirmAction === 'cancel'
+              ? 'Esta acción cambiará el estado de la solicitud y requiere motivo.'
+              : 'Esta acción cambiará el estado de la solicitud. Puedes registrar una nota.'
         }
         confirmLabel="Confirmar"
         isProcessing={isWorkflowRunning}
-        onCancel={() => setConfirmAction(null)}
+        onCancel={closeConfirmModal}
         onConfirm={async () => {
           if (!confirmAction) return
-          if (confirmAction === 'return_to_draft' && !workflowReason.trim()) {
-            setFeedback({
-              tone: 'warning',
-              title: 'Motivo requerido',
-              description:
-                'Debes ingresar un motivo para devolver la solicitud a borrador.',
-            })
+          const note = workflowInput.trim()
+          const requiresReason = reasonRequiredActions.includes(confirmAction)
+          if (requiresReason && !note) {
+            setWorkflowInputError('Debes ingresar un motivo.')
+            workflowInputRef.current?.focus()
             return
           }
 
           const result =
             confirmAction === 'submit'
-              ? await submit(id, { notes: workflowNotes || null })
+              ? await submit(id, { notes: note || null })
               : confirmAction === 'approve'
-                ? await approve(id, { notes: workflowNotes || null })
+                ? await approve(id, { notes: note || null })
                 : confirmAction === 'reject'
-                  ? await reject(id, { reason: workflowReason || null })
+                  ? await reject(id, { reason: note })
                   : confirmAction === 'return_to_draft'
-                    ? await returnToDraft(id, { reason: workflowReason.trim() })
-                  : await cancel(id, { reason: workflowReason || null })
+                    ? await returnToDraft(id, { reason: note })
+                  : await cancel(id, { reason: note })
 
           if (result.success) {
+            const appliedAction = confirmAction
             setApplication(result.data)
-            void loadById(id)
             setConfirmAction(null)
+            setWorkflowInput('')
+            setWorkflowInputError(null)
+            const successTitle =
+              appliedAction === 'reject'
+                ? 'Solicitud rechazada'
+                : appliedAction === 'approve'
+                  ? 'Solicitud aprobada'
+                  : appliedAction === 'submit'
+                    ? 'Solicitud enviada'
+                    : appliedAction === 'cancel'
+                      ? 'Solicitud cancelada'
+                      : 'Acción aplicada'
+            if (
+              appliedAction === 'submit' ||
+              appliedAction === 'return_to_draft' ||
+              appliedAction === 'cancel' ||
+              appliedAction === 'reject'
+            ) {
+              navigate('/loans/applications', {
+                state: {
+                  workflowFeedback: {
+                    tone: 'success',
+                    title: successTitle,
+                    description: 'La operación se ejecutó correctamente.',
+                  },
+                },
+              })
+              return
+            }
             setFeedback({
               tone: 'success',
-              title: 'Acción aplicada',
+              title: successTitle,
               description: 'La operación se ejecutó correctamente.',
+              onAcknowledge: () => {
+                void loadById(id)
+              },
             })
             return
           }
@@ -314,7 +326,41 @@ export const LoanApplicationDetailPage = () => {
             description: result.error,
           })
         }}
-      />
+      >
+        {confirmAction ? (
+          <div className="space-y-1">
+            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {reasonRequiredActions.includes(confirmAction)
+                ? 'Motivo *'
+                : 'Nota de flujo (opcional)'}
+            </label>
+            <textarea
+              ref={workflowInputRef}
+              rows={3}
+              value={workflowInput}
+              onChange={(event) => {
+                setWorkflowInput(event.target.value)
+                if (workflowInputError) {
+                  setWorkflowInputError(null)
+                }
+              }}
+              maxLength={500}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Máximo 500 caracteres.
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                {workflowInput.length}/500
+              </p>
+            </div>
+            {workflowInputError ? (
+              <p className="text-xs text-red-600 dark:text-red-300">{workflowInputError}</p>
+            ) : null}
+          </div>
+        ) : null}
+      </ConfirmModal>
 
       <ConfirmModal
         open={Boolean(pendingCollateral)}
@@ -352,7 +398,11 @@ export const LoanApplicationDetailPage = () => {
         tone={feedback?.tone}
         title={feedback?.title || ''}
         description={feedback?.description || ''}
-        onAcknowledge={() => setFeedback(null)}
+        onAcknowledge={() => {
+          const callback = feedback?.onAcknowledge
+          setFeedback(null)
+          callback?.()
+        }}
       />
     </div>
   )

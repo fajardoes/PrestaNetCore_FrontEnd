@@ -156,3 +156,5 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
 - No hardcodear visibilidad de botones por estado o rol en módulos operativos; cada módulo debe consumir su endpoint `/actions` para decidir acciones visibles/habilitadas.
 - En solicitudes de crédito, usar `GET /api/loan-applications/{id}/actions` como fuente de verdad para acciones permitidas.
 - Para módulos futuros (ej. contabilidad), seguir el mismo patrón con su endpoint `GET /api/<modulo>/.../actions`.
+- En UI de frontend, evitar mostrar textos funcionales en ingles al usuario final. Si backend envia nombres/descripciones de permisos o estados en ingles (ej. `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`, `CANCELLED`), mostrar su equivalente en espanol en la interfaz.
+- En `security/role-permissions`, mantener visible el `permission.code` como dato tecnico, pero el `name/description` y labels de agrupacion deben presentarse en espanol.

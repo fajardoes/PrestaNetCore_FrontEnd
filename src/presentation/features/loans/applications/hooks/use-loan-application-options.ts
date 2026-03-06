@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import { getClientDetailAction } from '@/core/actions/clients/get-client-detail.action'
 import { listClientsAction } from '@/core/actions/clients/list-clients.action'
 import { getLoanProductAction } from '@/core/actions/loans/get-loan-product.action'
@@ -16,7 +16,6 @@ import type { CollateralResponseDto } from '@/infrastructure/intranet/responses/
 import type { Municipality } from '@/infrastructure/interfaces/organization/geography'
 import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
 import type { AsyncSelectOption } from '@/presentation/share/components/async-select'
-import { useAuth } from '@/hooks/useAuth'
 import type { PagedResult } from '@/types/pagination'
 
 const minChars = (value: string, length = 2) => value.trim().length >= length
@@ -81,36 +80,6 @@ const findCatalogLabel = (items: LoanCatalogItemDto[], id?: string | null) => {
 }
 
 export const useLoanApplicationOptions = () => {
-  const { user } = useAuth()
-  const allowedOfficeIds = useMemo(() => {
-    const ids = new Set<string>()
-    const agencyId = user?.agencyId?.trim().toLowerCase()
-    if (agencyId) {
-      ids.add(agencyId)
-    }
-
-    for (const officeId of user?.queryOfficeIds ?? []) {
-      const normalized = officeId.trim().toLowerCase()
-      if (normalized) {
-        ids.add(normalized)
-      }
-    }
-
-    return ids
-  }, [user?.agencyId, user?.queryOfficeIds])
-
-  const filterPromotersByOffice = useCallback(
-    (promoters: PromoterResponse[]) => {
-      if (!allowedOfficeIds.size) return promoters
-      return promoters.filter((promoter) => {
-        const promoterOfficeId = promoter.agencyId?.trim().toLowerCase()
-        if (!promoterOfficeId) return false
-        return allowedOfficeIds.has(promoterOfficeId)
-      })
-    },
-    [allowedOfficeIds],
-  )
-
   const listAllPromoters = useCallback(async (search?: string) => {
     const pageSize = 100
     const maxPages = 10
@@ -225,21 +194,19 @@ export const useLoanApplicationOptions = () => {
   const searchPromoters = useCallback(async (input: string) => {
     if (!minChars(input)) return []
     const promoters = await listAllPromoters(input.trim())
-    return filterPromotersByOffice(promoters).slice(0, 20).map(mapPromoterOption)
-  }, [filterPromotersByOffice, listAllPromoters])
+    return promoters.slice(0, 20).map(mapPromoterOption)
+  }, [listAllPromoters])
 
   const listPromoters = useCallback(async (search?: string) => {
-    const promoters = await listAllPromoters(search)
-    return filterPromotersByOffice(promoters)
-  }, [filterPromotersByOffice, listAllPromoters])
+    return listAllPromoters(search)
+  }, [listAllPromoters])
 
   const findPromoterById = useCallback(async (promoterId: string) => {
     if (!promoterId) return null
     const result = await getPromoterAction(promoterId)
     if (!result.success) return null
-    const [found] = filterPromotersByOffice([result.data])
-    return found ? mapPromoterOption(found) : null
-  }, [filterPromotersByOffice])
+    return mapPromoterOption(result.data)
+  }, [])
 
   const searchLoanProducts = useCallback(async (input: string) => {
     const result = await listLoanProductsAction({

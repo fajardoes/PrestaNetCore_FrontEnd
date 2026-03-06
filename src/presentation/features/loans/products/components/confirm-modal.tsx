@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 interface ConfirmModalProps {
   open: boolean
   title: string
@@ -5,6 +7,8 @@ interface ConfirmModalProps {
   confirmLabel?: string
   cancelLabel?: string
   isProcessing?: boolean
+  confirmDisabled?: boolean
+  children?: ReactNode
   onConfirm: () => void
   onCancel: () => void
 }
@@ -16,6 +20,8 @@ export const ConfirmModal = ({
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
   isProcessing,
+  confirmDisabled,
+  children,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) => {
@@ -32,6 +38,7 @@ export const ConfirmModal = ({
             {description}
           </p>
         </div>
+        {children ? <div className="mt-4">{children}</div> : null}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
@@ -45,7 +52,7 @@ export const ConfirmModal = ({
             type="button"
             className="btn-primary px-4 py-2 text-sm"
             onClick={onConfirm}
-            disabled={isProcessing}
+            disabled={isProcessing || confirmDisabled}
           >
             {isProcessing ? 'Procesando...' : confirmLabel}
           </button>

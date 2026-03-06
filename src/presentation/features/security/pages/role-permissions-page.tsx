@@ -1,8 +1,62 @@
 import { useMemo, useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
 import { CreateRoleModal } from '@/presentation/features/security/components/create-role-modal'
 import { useRolePermissionsAdmin } from '@/presentation/features/security/hooks/use-role-permissions-admin'
 import { MessageModal } from '@/presentation/share/components/message-modal'
+
+const MODULE_LABELS: Record<string, string> = {
+  loan_applications: 'Solicitudes de credito',
+  loans: 'Prestamos',
+  accounting: 'Contabilidad',
+  clients: 'Clientes',
+  security: 'Seguridad',
+  collaterals: 'Garantias',
+  catalog: 'Catalogos',
+  organization: 'Organizacion',
+  geography: 'Geografia',
+  sales: 'Ventas',
+}
+
+const STATUS_TRANSLATIONS: Array<[RegExp, string]> = [
+  [/\bDRAFT\b/gi, 'BORRADOR'],
+  [/\bSUBMITTED\b/gi, 'ENVIADA'],
+  [/\bAPPROVED\b/gi, 'APROBADA'],
+  [/\bREJECTED\b/gi, 'RECHAZADA'],
+  [/\bCANCELLED\b/gi, 'CANCELADA'],
+]
+
+const TERM_TRANSLATIONS: Array<[RegExp, string]> = [
+  [/\bcreate\b/gi, 'crear'],
+  [/\bview\b/gi, 'ver'],
+  [/\bread\b/gi, 'leer'],
+  [/\bupdate\b/gi, 'editar'],
+  [/\bdelete\b/gi, 'eliminar'],
+  [/\bsubmit\b/gi, 'enviar'],
+  [/\bapprove\b/gi, 'aprobar'],
+  [/\breject\b/gi, 'rechazar'],
+  [/\bcancel\b/gi, 'cancelar'],
+  [/\breturn to draft\b/gi, 'devolver a borrador'],
+  [/\bworkflow\b/gi, 'flujo'],
+  [/\bactions?\b/gi, 'acciones'],
+  [/\bpermission(s)?\b/gi, 'permiso$1'],
+  [/\brole(s)?\b/gi, 'rol$1'],
+]
+
+const translatePermissionText = (value?: string | null): string => {
+  if (!value) return ''
+  let translated = value
+  STATUS_TRANSLATIONS.forEach(([pattern, replacement]) => {
+    translated = translated.replace(pattern, replacement)
+  })
+  TERM_TRANSLATIONS.forEach(([pattern, replacement]) => {
+    translated = translated.replace(pattern, replacement)
+  })
+  return translated
+}
+
+const toModuleLabel = (moduleCode: string): string => {
+  const normalized = moduleCode.trim().toLowerCase()
+  return MODULE_LABELS[normalized] ?? moduleCode
+}
 
 interface FeedbackState {
   tone: 'success' | 'error' | 'info' | 'warning'
@@ -11,12 +65,6 @@ interface FeedbackState {
 }
 
 export const RolePermissionsPage = () => {
-  const { user } = useAuth()
-  const isAdmin = useMemo(
-    () => user?.roles?.some((role) => role.toLowerCase() === 'admin') ?? false,
-    [user?.roles],
-  )
-
   const {
     roles,
     catalog,
@@ -36,7 +84,7 @@ export const RolePermissionsPage = () => {
     createRole,
     save,
     loadRoleData,
-  } = useRolePermissionsAdmin({ enabled: isAdmin })
+  } = useRolePermissionsAdmin()
 
   const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -46,10 +94,14 @@ export const RolePermissionsPage = () => {
     const term = search.trim().toLowerCase()
     if (!term) return catalog
     return catalog.filter((permission) => {
+      const localizedName = translatePermissionText(permission.name)
+      const localizedDescription = translatePermissionText(permission.description ?? '')
       return (
         permission.code.toLowerCase().includes(term) ||
         permission.name.toLowerCase().includes(term) ||
-        (permission.description ?? '').toLowerCase().includes(term)
+        (permission.description ?? '').toLowerCase().includes(term) ||
+        localizedName.toLowerCase().includes(term) ||
+        localizedDescription.toLowerCase().includes(term)
       )
     })
   }, [catalog, search])
@@ -71,19 +123,25 @@ export const RolePermissionsPage = () => {
 
     return Array.from(groups.entries())
       .map(([moduleName, permissions]) => ({
-        moduleName,
+        moduleName: toModuleLabel(moduleName),
         permissions: permissions.sort((a, b) => a.code.localeCompare(b.code)),
       }))
       .sort((a, b) => a.moduleName.localeCompare(b.moduleName))
   }, [filteredCatalog])
 
-  if (!isAdmin) {
+  const isUnauthorized = useMemo(() => {
+    const errors = [rolesError, roleDataError, saveError, createRoleError]
+    return errors.some((error) =>
+      (error ?? '').toLowerCase().includes('no autorizado'),
+    )
+  }, [createRoleError, roleDataError, rolesError, saveError])
+
+  if (isUnauthorized && !isLoadingRoles && !isLoadingRoleData && !roles.length) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
-        <p className="font-semibold">Acceso restringido</p>
+        <p className="font-semibold">No autorizado</p>
         <p className="text-sm">
-          Solo los usuarios con rol <span className="font-semibold">Admin</span>{' '}
-          pueden administrar permisos por rol.
+          Tu usuario no tiene permisos para administrar permisos por rol.
         </p>
       </div>
     )
@@ -252,14 +310,14 @@ export const RolePermissionsPage = () => {
                               />
                               <span className="min-w-0">
                                 <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
-                                  {permission.name}
+                                  {translatePermissionText(permission.name)}
                                 </span>
                                 <span className="block text-xs text-slate-500 dark:text-slate-400">
                                   {permission.code}
                                 </span>
                                 {permission.description ? (
                                   <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-300">
-                                    {permission.description}
+                                    {translatePermissionText(permission.description)}
                                   </span>
                                 ) : null}
                               </span>

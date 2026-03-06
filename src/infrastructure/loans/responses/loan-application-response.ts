@@ -28,8 +28,13 @@ export interface LoanApplicationResponse {
   approvedOperationalDate?: string | null
   rejectedOperationalDate?: string | null
   cancelledOperationalDate?: string | null
+  returnedToDraftOperationalDate?: string | null
   rejectedReason?: string | null
   cancelledReason?: string | null
+  returnToDraftReason?: string | null
+  returnedToDraftReason?: string | null
+  workflowReason?: string | null
+  lastWorkflowReason?: string | null
   approvedLoanId?: string | null
   createdAt: string
 }

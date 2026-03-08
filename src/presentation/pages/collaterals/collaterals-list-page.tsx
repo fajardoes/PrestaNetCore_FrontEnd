@@ -11,9 +11,11 @@ import { TableContainer } from '@/presentation/share/components/table-container'
 import { useCollateralCatalogsCache } from '@/presentation/features/collaterals/hooks/use-collateral-catalogs-cache'
 import { useCollateralsList } from '@/presentation/features/collaterals/hooks/use-collaterals-list'
 import { useCollateralClientSearch } from '@/presentation/features/collaterals/hooks/use-collateral-client-search'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100]
+const PERSONAL_GUARANTOR_TYPE_CODE = 'PERSONAL_GUARANTOR'
 
 const formatDate = (value?: string | null) => {
   if (!value) return '—'
@@ -30,10 +32,21 @@ const formatMoney = (value?: number | null) => {
   }).format(value)
 }
 
+const isPersonalGuarantorType = (typeCode?: string | null) =>
+  (typeCode ?? '').trim().toUpperCase() === PERSONAL_GUARANTOR_TYPE_CODE
+
 export const CollateralsListPage = () => {
   const navigate = useNavigate()
+  const {
+    hasPermission,
+    isLoading: isLoadingPermissions,
+  } = useUserPermissions()
+  const canReadCollaterals = hasPermission('collaterals.read')
+  const canCreateCollaterals = hasPermission('collaterals.create')
+  const canUpdateCollaterals = hasPermission('collaterals.update')
+  const canReadCatalogs = hasPermission('collaterals.catalogs.read')
   const { types, statuses, isLoading: isLoadingCatalogs } =
-    useCollateralCatalogsCache()
+    useCollateralCatalogsCache({ enabled: canReadCatalogs })
   const { searchClients } = useCollateralClientSearch()
   const {
     items,
@@ -46,7 +59,7 @@ export const CollateralsListPage = () => {
     setPage,
     setPageSize,
     applyFilters,
-  } = useCollateralsList()
+  } = useCollateralsList({ enabled: canReadCollaterals })
 
   const [search, setSearch] = useState(filters.search ?? '')
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>(
@@ -67,6 +80,11 @@ export const CollateralsListPage = () => {
     () => statuses.find((item) => item.id === statusId),
     [statusId, statuses],
   )
+  const showGuarantorColumns = useMemo(
+    () => items.some((item) => isPersonalGuarantorType(item.collateralTypeCode)),
+    [items],
+  )
+  const tableColumnCount = showGuarantorColumns ? 12 : 10
 
   const applyCurrentFilters = () => {
     applyFilters({
@@ -77,6 +95,25 @@ export const CollateralsListPage = () => {
         statusFilter === 'all' ? undefined : statusFilter === 'active' ? true : false,
       search: search.trim() || undefined,
     })
+  }
+
+  if (isLoadingPermissions) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        Cargando permisos...
+      </div>
+    )
+  }
+
+  if (!canReadCollaterals) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">No autorizado</p>
+        <p className="text-sm">
+          Tu usuario no tiene permiso para consultar garantías.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -90,13 +127,15 @@ export const CollateralsListPage = () => {
             Administra garantías reutilizables por cliente y su estado operativo.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn-primary px-4 py-2 text-sm"
-          onClick={() => navigate('/clients/collaterals/new')}
-        >
-          Nueva Garantía
-        </button>
+        {canCreateCollaterals ? (
+          <button
+            type="button"
+            className="btn-primary px-4 py-2 text-sm"
+            onClick={() => navigate('/clients/collaterals/new')}
+          >
+            Nueva Garantía
+          </button>
+        ) : null}
       </div>
 
       <div className="space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -160,7 +199,7 @@ export const CollateralsListPage = () => {
                 value={typeId}
                 onChange={(event) => setTypeId(event.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                disabled={isLoadingCatalogs}
+                disabled={!canReadCatalogs || isLoadingCatalogs}
               >
                 <option value="">Todos los tipos</option>
                 {types.map((item) => (
@@ -179,7 +218,7 @@ export const CollateralsListPage = () => {
                 value={statusId}
                 onChange={(event) => setStatusId(event.target.value)}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                disabled={isLoadingCatalogs}
+                disabled={!canReadCatalogs || isLoadingCatalogs}
               >
                 <option value="">Todos los estados</option>
                 {statuses.map((item) => (
@@ -213,6 +252,16 @@ export const CollateralsListPage = () => {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Identidad
                 </th>
+                {showGuarantorColumns ? (
+                  <>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Cliente Aval
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      Identidad Aval
+                    </th>
+                  </>
+                ) : null}
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Valor Avalúo
                 </th>
@@ -233,19 +282,19 @@ export const CollateralsListPage = () => {
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {isLoading ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
+                  <td colSpan={tableColumnCount} className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
                     Cargando garantías...
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300">
+                  <td colSpan={tableColumnCount} className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300">
                     {error}
                   </td>
                 </tr>
               ) : !items.length ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
+                  <td colSpan={tableColumnCount} className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
                     No hay garantías con los filtros actuales.
                   </td>
                 </tr>
@@ -269,6 +318,22 @@ export const CollateralsListPage = () => {
                         value={item.ownerIdentity ?? item.ownerClientIdentityNo}
                       />
                     </td>
+                    {showGuarantorColumns ? (
+                      <>
+                        <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                          {isPersonalGuarantorType(item.collateralTypeCode)
+                            ? item.guarantorClientFullName || '—'
+                            : '—'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
+                          {isPersonalGuarantorType(item.collateralTypeCode) ? (
+                            <HnIdentityText value={item.guarantorClientIdentityNo} />
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                      </>
+                    ) : null}
                     <td className="px-4 py-3 text-right text-sm text-slate-700 dark:text-slate-300">
                       {formatMoney(item.appraisedValue)}
                     </td>
@@ -298,13 +363,15 @@ export const CollateralsListPage = () => {
                         >
                           Ver
                         </button>
-                        <button
-                          type="button"
-                          className="btn-table-action"
-                          onClick={() => navigate(`/clients/collaterals/${item.id}/edit`)}
-                        >
-                          Editar
-                        </button>
+                        {canUpdateCollaterals ? (
+                          <button
+                            type="button"
+                            className="btn-table-action"
+                            onClick={() => navigate(`/clients/collaterals/${item.id}/edit`)}
+                          >
+                            Editar
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>

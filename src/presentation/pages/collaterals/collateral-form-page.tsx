@@ -2,16 +2,16 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { listMunicipalitiesAction } from '@/core/actions/geography/list-municipalities.action'
 import { formatHnIdentity } from '@/core/helpers/hn-identity'
-import AsyncSelect, {
-  type AsyncSelectOption,
-} from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import { useNotifications } from '@/providers/NotificationProvider'
+import { CollateralClientPickerModal } from '@/presentation/features/collaterals/components/collateral-client-picker-modal'
 import { useCollateralCatalogsCache } from '@/presentation/features/collaterals/hooks/use-collateral-catalogs-cache'
 import { useCollateralClientSearch } from '@/presentation/features/collaterals/hooks/use-collateral-client-search'
 import { useCollateralForm } from '@/presentation/features/collaterals/hooks/use-collateral-form'
 import { useCollateralDetail } from '@/presentation/features/collaterals/hooks/use-collateral-detail'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import {
   collateralCreateSchema,
   collateralUpdateSchema,
@@ -21,10 +21,29 @@ import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { CreateCollateralRequestDto } from '@/infrastructure/intranet/requests/collaterals/create-collateral-request'
 import type { UpdateCollateralRequestDto } from '@/infrastructure/intranet/requests/collaterals/update-collateral-request'
 
+const PERSONAL_GUARANTOR_TYPE_CODE = 'PERSONAL_GUARANTOR'
+
+type ClientPickerTarget = 'owner' | 'guarantor' | null
+
+type SelectedClient = {
+  id: string
+  fullName: string
+  identityNo?: string | null
+}
+
 const normalizeEmpty = (value?: string | null) => {
   const text = value?.trim()
   return text ? text : null
 }
+
+const isPersonalGuarantorType = (code?: string | null) =>
+  (code ?? '').trim().toUpperCase() === PERSONAL_GUARANTOR_TYPE_CODE
+
+const mapClientToSelected = (client: ClientListItem): SelectedClient => ({
+  id: client.id,
+  fullName: client.nombreCompleto,
+  identityNo: client.identidad,
+})
 
 type CollateralFormValues = CollateralCreateFormValues & {
   statusId?: string | null
@@ -36,16 +55,32 @@ export const CollateralFormPage = () => {
   const { id } = useParams()
   const isEdit = Boolean(id)
   const { notify } = useNotifications()
+  const {
+    hasPermission,
+    isLoading: isLoadingPermissions,
+  } = useUserPermissions()
+  const canReadCollaterals = hasPermission('collaterals.read')
+  const canCreateCollaterals = hasPermission('collaterals.create')
+  const canUpdateCollaterals = hasPermission('collaterals.update')
+  const canReadCatalogs = hasPermission('collaterals.catalogs.read')
 
   const { types, statuses, isLoading: isLoadingCatalogs, error: catalogsError } =
-    useCollateralCatalogsCache()
-  const { searchClients } = useCollateralClientSearch()
+    useCollateralCatalogsCache({ enabled: canReadCatalogs })
+  const { listClients } = useCollateralClientSearch()
   const { collateral, isLoading, error: detailError, loadById } = useCollateralDetail()
   const { create, update, isSaving, error, errorsByField } = useCollateralForm()
 
-  const [selectedClient, setSelectedClient] = useState<
-    AsyncSelectOption<ClientListItem> | null
-  >(null)
+  const [selectedOwnerClient, setSelectedOwnerClient] = useState<SelectedClient | null>(null)
+  const [selectedGuarantorClient, setSelectedGuarantorClient] = useState<SelectedClient | null>(null)
+
+  const [pickerTarget, setPickerTarget] = useState<ClientPickerTarget>(null)
+  const [pickerSearch, setPickerSearch] = useState('')
+  const [pickerPage, setPickerPage] = useState(1)
+  const [pickerTotalPages, setPickerTotalPages] = useState(1)
+  const [pickerClients, setPickerClients] = useState<ClientListItem[]>([])
+  const [pickerError, setPickerError] = useState<string | null>(null)
+  const [isPickerLoading, setIsPickerLoading] = useState(false)
+  const [municipalityNameById, setMunicipalityNameById] = useState<Record<string, string>>({})
 
   const resolver = useMemo(
     () => yupResolver(isEdit ? collateralUpdateSchema : collateralCreateSchema),
@@ -65,48 +100,113 @@ export const CollateralFormPage = () => {
     resolver,
     defaultValues: {
       ownerClientId: '',
+      guarantorClientId: null,
       collateralTypeId: '',
+      collateralTypeCode: '',
       statusId: '',
       referenceNo: '',
       description: '',
-      appraisedValue: null,
+      appraisedValue: undefined,
       appraisedDate: '',
       isActive: true,
     },
   })
 
+  const ownerClientId = watch('ownerClientId') ?? ''
+  const guarantorClientId = watch('guarantorClientId') ?? ''
+  const collateralTypeId = watch('collateralTypeId') ?? ''
+
+  const selectedCollateralType = useMemo(
+    () => types.find((item) => item.id === collateralTypeId),
+    [types, collateralTypeId],
+  )
+
+  const requiresGuarantor = isPersonalGuarantorType(selectedCollateralType?.code)
+
   useEffect(() => {
-    if (!id) return
+    if (!id || !canReadCollaterals) return
     void loadById(id)
-  }, [id, loadById])
+  }, [canReadCollaterals, id, loadById])
+
+  useEffect(() => {
+    if (!canReadCatalogs) return
+    const loadMunicipalities = async () => {
+      const result = await listMunicipalitiesAction()
+      if (!result.success) return
+
+      const next = result.data.reduce<Record<string, string>>((acc, item) => {
+        acc[item.id] = `${item.departmentName} · ${item.name}`
+        return acc
+      }, {})
+
+      setMunicipalityNameById(next)
+    }
+
+    void loadMunicipalities()
+  }, [canReadCatalogs])
 
   useEffect(() => {
     if (!collateral) return
 
     reset({
       ownerClientId: collateral.ownerClientId,
+      guarantorClientId: collateral.guarantorClientId ?? null,
       collateralTypeId: collateral.collateralTypeId,
+      collateralTypeCode: collateral.collateralTypeCode ?? '',
       statusId: collateral.statusId,
       referenceNo: collateral.referenceNo ?? '',
       description: collateral.description ?? '',
-      appraisedValue: collateral.appraisedValue ?? null,
+      appraisedValue: collateral.appraisedValue ?? undefined,
       appraisedDate: collateral.appraisedDate ?? '',
       isActive: collateral.isActive,
     })
 
     if (collateral.ownerClientId) {
-      setSelectedClient({
-        value: collateral.ownerClientId,
-        label: `${collateral.ownerClientName ?? collateral.ownerClientFullName ?? 'Cliente'}${
-          collateral.ownerIdentity ?? collateral.ownerClientIdentityNo
-            ? ` - ${formatHnIdentity(
-                collateral.ownerIdentity ?? collateral.ownerClientIdentityNo,
-              )}`
-            : ''
-        }`,
+      setSelectedOwnerClient({
+        id: collateral.ownerClientId,
+        fullName: collateral.ownerClientName ?? collateral.ownerClientFullName ?? 'Cliente',
+        identityNo: collateral.ownerIdentity ?? collateral.ownerClientIdentityNo,
       })
+    } else {
+      setSelectedOwnerClient(null)
+    }
+
+    if (collateral.guarantorClientId) {
+      setSelectedGuarantorClient({
+        id: collateral.guarantorClientId,
+        fullName: collateral.guarantorClientFullName ?? 'Cliente aval',
+        identityNo: collateral.guarantorClientIdentityNo,
+      })
+    } else {
+      setSelectedGuarantorClient(null)
     }
   }, [collateral, reset])
+
+  useEffect(() => {
+    setValue('collateralTypeCode', selectedCollateralType?.code ?? '', {
+      shouldValidate: true,
+    })
+  }, [selectedCollateralType?.code, setValue])
+
+  useEffect(() => {
+    if (requiresGuarantor) return
+
+    setSelectedGuarantorClient(null)
+    setValue('guarantorClientId', null, { shouldValidate: true })
+    clearErrors('guarantorClientId')
+  }, [clearErrors, requiresGuarantor, setValue])
+
+  useEffect(() => {
+    if (!ownerClientId || !guarantorClientId) return
+    if (ownerClientId !== guarantorClientId) return
+
+    setSelectedGuarantorClient(null)
+    setValue('guarantorClientId', null, { shouldValidate: true })
+    setError('guarantorClientId', {
+      type: 'validate',
+      message: 'El cliente aval debe ser distinto del titular.',
+    })
+  }, [guarantorClientId, ownerClientId, setError, setValue])
 
   useEffect(() => {
     clearErrors()
@@ -120,10 +220,100 @@ export const CollateralFormPage = () => {
     })
   }, [clearErrors, errorsByField, setError])
 
+  useEffect(() => {
+    if (!pickerTarget) return
+
+    let isActive = true
+
+    const loadClients = async () => {
+      setIsPickerLoading(true)
+      setPickerError(null)
+
+      try {
+        const result = await listClients({
+          pageNumber: pickerPage,
+          pageSize: 10,
+          search: pickerSearch,
+          active: true,
+        })
+
+        if (!isActive) return
+
+        setPickerClients(result.items)
+        setPickerTotalPages(result.totalPages)
+      } catch (loadError) {
+        if (!isActive) return
+        setPickerClients([])
+        setPickerTotalPages(1)
+        setPickerError(
+          loadError instanceof Error
+            ? loadError.message
+            : 'No fue posible cargar clientes.',
+        )
+      } finally {
+        if (!isActive) return
+        setIsPickerLoading(false)
+      }
+    }
+
+    void loadClients()
+
+    return () => {
+      isActive = false
+    }
+  }, [listClients, pickerPage, pickerSearch, pickerTarget])
+
+  const openPicker = (target: Exclude<ClientPickerTarget, null>) => {
+    setPickerTarget(target)
+    setPickerSearch('')
+    setPickerPage(1)
+    setPickerError(null)
+  }
+
+  const closePicker = () => {
+    setPickerTarget(null)
+    setPickerClients([])
+    setPickerTotalPages(1)
+    setPickerPage(1)
+    setPickerSearch('')
+    setPickerError(null)
+  }
+
+  const handleSelectClient = (client: ClientListItem) => {
+    if (pickerTarget === 'owner') {
+      const nextOwner = mapClientToSelected(client)
+      setSelectedOwnerClient(nextOwner)
+      setValue('ownerClientId', client.id, { shouldValidate: true })
+
+      if (guarantorClientId === client.id) {
+        setSelectedGuarantorClient(null)
+        setValue('guarantorClientId', null, { shouldValidate: true })
+      }
+
+      closePicker()
+      return
+    }
+
+    if (pickerTarget === 'guarantor') {
+      if (ownerClientId && ownerClientId === client.id) {
+        return
+      }
+
+      setSelectedGuarantorClient(mapClientToSelected(client))
+      setValue('guarantorClientId', client.id, { shouldValidate: true })
+      closePicker()
+    }
+  }
+
   const submitHandler = handleSubmit(async (values) => {
+    const shouldSendGuarantor = isPersonalGuarantorType(values.collateralTypeCode)
+
     const commonPayload = {
       ownerClientId: values.ownerClientId,
       collateralTypeId: values.collateralTypeId,
+      guarantorClientId: shouldSendGuarantor
+        ? normalizeEmpty(values.guarantorClientId ?? '')
+        : null,
       referenceNo: normalizeEmpty(values.referenceNo),
       description: normalizeEmpty(values.description),
       appraisedValue:
@@ -158,6 +348,58 @@ export const CollateralFormPage = () => {
       navigate(`/clients/collaterals/${result.data.id}`)
     }
   })
+
+  if (isLoadingPermissions) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        Cargando permisos...
+      </div>
+    )
+  }
+
+  if (!canReadCatalogs) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">No autorizado</p>
+        <p className="text-sm">
+          Tu usuario no tiene permiso para consultar catálogos de garantías.
+        </p>
+      </div>
+    )
+  }
+
+  if (isEdit && !canReadCollaterals) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">No autorizado</p>
+        <p className="text-sm">
+          Tu usuario no tiene permiso para consultar garantías.
+        </p>
+      </div>
+    )
+  }
+
+  if (isEdit && !canUpdateCollaterals) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">No autorizado</p>
+        <p className="text-sm">
+          Tu usuario no tiene permiso para editar garantías.
+        </p>
+      </div>
+    )
+  }
+
+  if (!isEdit && !canCreateCollaterals) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">No autorizado</p>
+        <p className="text-sm">
+          Tu usuario no tiene permiso para crear garantías.
+        </p>
+      </div>
+    )
+  }
 
   if (isEdit && isLoading && !collateral) {
     return (
@@ -201,21 +443,26 @@ export const CollateralFormPage = () => {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Cliente
+              Cliente titular
             </label>
-            <AsyncSelect<ClientListItem>
-              value={selectedClient}
-              onChange={(option) => {
-                setSelectedClient(option)
-                setValue('ownerClientId', option?.value ?? '', {
-                  shouldValidate: true,
-                })
-              }}
-              loadOptions={searchClients}
-              placeholder="Buscar cliente..."
-              noOptionsMessage="Sin resultados"
-              isDisabled={isSaving || isEdit}
-            />
+            <div className="space-y-2 rounded-lg border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+              <p className="text-sm text-slate-800 dark:text-slate-100">
+                {selectedOwnerClient?.fullName ?? 'No se ha seleccionado un cliente.'}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {selectedOwnerClient?.identityNo
+                  ? formatHnIdentity(selectedOwnerClient.identityNo)
+                  : 'Identidad no disponible'}
+              </p>
+              <button
+                type="button"
+                className="btn-secondary px-3 py-1.5 text-xs"
+                onClick={() => openPicker('owner')}
+                disabled={isSaving || isEdit}
+              >
+                {selectedOwnerClient ? 'Cambiar titular' : 'Seleccionar titular'}
+              </button>
+            </div>
             <input type="hidden" {...register('ownerClientId')} />
             {errors.ownerClientId ? (
               <p className="text-xs text-red-500">{errors.ownerClientId.message}</p>
@@ -238,10 +485,46 @@ export const CollateralFormPage = () => {
                 </option>
               ))}
             </select>
+            <input type="hidden" {...register('collateralTypeCode')} />
             {errors.collateralTypeId ? (
               <p className="text-xs text-red-500">{errors.collateralTypeId.message}</p>
             ) : null}
           </div>
+
+          {requiresGuarantor ? (
+            <div className="space-y-2 md:col-span-2">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                Cliente aval
+              </label>
+              <div className="space-y-2 rounded-lg border border-slate-300 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+                <p className="text-sm text-slate-800 dark:text-slate-100">
+                  {selectedGuarantorClient?.fullName ?? 'No se ha seleccionado cliente aval.'}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {selectedGuarantorClient?.identityNo
+                    ? formatHnIdentity(selectedGuarantorClient.identityNo)
+                    : 'Identidad no disponible'}
+                </p>
+                <button
+                  type="button"
+                  className="btn-secondary px-3 py-1.5 text-xs"
+                  onClick={() => openPicker('guarantor')}
+                  disabled={isSaving || !ownerClientId}
+                >
+                  {selectedGuarantorClient ? 'Cambiar aval' : 'Seleccionar aval'}
+                </button>
+                {!ownerClientId ? (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Selecciona primero un titular para elegir un aval distinto.
+                  </p>
+                ) : null}
+              </div>
+              <input type="hidden" {...register('guarantorClientId')} />
+              {errors.guarantorClientId ? (
+                <p className="text-xs text-red-500">{errors.guarantorClientId.message}</p>
+              ) : null}
+            </div>
+          ) : null}
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -268,7 +551,7 @@ export const CollateralFormPage = () => {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Referencia
+              Referencia *
             </label>
             <input
               type="text"
@@ -284,7 +567,7 @@ export const CollateralFormPage = () => {
 
           <div className="space-y-2 md:col-span-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Descripción
+              Descripción *
             </label>
             <textarea
               rows={3}
@@ -300,7 +583,7 @@ export const CollateralFormPage = () => {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-              Valor Avalúo
+              Valor Avalúo *
             </label>
             <input
               type="number"
@@ -383,6 +666,32 @@ export const CollateralFormPage = () => {
           </button>
         </div>
       </form>
+
+      <CollateralClientPickerModal
+        open={pickerTarget !== null}
+        title={pickerTarget === 'guarantor' ? 'Seleccionar cliente aval' : 'Seleccionar cliente titular'}
+        description={
+          pickerTarget === 'guarantor'
+            ? 'Busca por nombre o identidad y selecciona un cliente activo distinto del titular.'
+            : 'Busca por nombre o identidad y selecciona un cliente activo.'
+        }
+        clients={pickerClients}
+        search={pickerSearch}
+        page={pickerPage}
+        totalPages={pickerTotalPages}
+        isLoading={isPickerLoading}
+        error={pickerError}
+        selectedClientId={pickerTarget === 'guarantor' ? guarantorClientId : ownerClientId}
+        excludedClientId={pickerTarget === 'guarantor' ? ownerClientId : undefined}
+        municipalityNameById={municipalityNameById}
+        onSearchChange={(value) => {
+          setPickerSearch(value)
+          setPickerPage(1)
+        }}
+        onPageChange={setPickerPage}
+        onSelect={handleSelectClient}
+        onClose={closePicker}
+      />
     </div>
   )
 }

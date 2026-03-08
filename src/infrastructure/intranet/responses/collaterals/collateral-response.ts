@@ -5,6 +5,9 @@ export interface CollateralResponseDto {
   ownerClientFullName?: string | null
   ownerIdentity?: string | null
   ownerClientIdentityNo?: string | null
+  guarantorClientId?: string | null
+  guarantorClientFullName?: string | null
+  guarantorClientIdentityNo?: string | null
   collateralTypeId: string
   collateralTypeCode?: string | null
   collateralTypeName?: string | null

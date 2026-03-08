@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useNotifications } from '@/providers/NotificationProvider'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import { FilePreviewModal } from '@/presentation/share/components/file-preview-modal'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import { useCollateralDocuments } from '@/presentation/features/collaterals/hooks/use-collateral-documents'
@@ -47,6 +48,13 @@ const formatBytes = (value?: number | string | null) => {
 export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPanelProps) => {
   const { notify } = useNotifications()
   const {
+    hasPermission,
+    isLoading: isLoadingPermissions,
+  } = useUserPermissions()
+  const canReadDocuments = hasPermission('collaterals.documents.read')
+  const canUploadDocuments = hasPermission('collaterals.documents.upload')
+  const canDeleteDocuments = hasPermission('collaterals.documents.delete')
+  const {
     documents,
     isLoading,
     isUploading,
@@ -85,8 +93,9 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
   })
 
   useEffect(() => {
+    if (!canReadDocuments) return
     void load(collateralId)
-  }, [collateralId, load])
+  }, [canReadDocuments, collateralId, load])
 
   useEffect(() => {
     return () => {
@@ -116,76 +125,103 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
     return map
   }, [])
 
+  if (isLoadingPermissions) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        Cargando permisos...
+      </div>
+    )
+  }
+
+  if (!canReadDocuments) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">No autorizado</p>
+        <p className="text-sm">
+          Tu usuario no tiene permiso para consultar documentos de garantías.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-          Subir documento
-        </h3>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Formatos permitidos: PDF, JPG, PNG. Tamaño máximo 10 MB.
-        </p>
+      {canUploadDocuments ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+            Subir documento
+          </h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Formatos permitidos: PDF, JPG, PNG. Tamaño máximo 10 MB.
+          </p>
 
-        <form className="mt-4 grid gap-3 md:grid-cols-[1fr_220px_auto]" onSubmit={submitUpload} noValidate>
-          <div className="space-y-1">
-            <label className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
-              <span className="rounded-md bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
-                Seleccionar archivo
-              </span>
-              <span className="truncate text-xs text-slate-500 dark:text-slate-400">
-                {selectedFile ? selectedFile.name : 'Ningún archivo seleccionado'}
-              </span>
-              <input
-                type="file"
-                accept="application/pdf,image/jpeg,image/png"
-                className="sr-only"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  setValue('file', file as File, { shouldValidate: true })
-                }}
+          <form className="mt-4 grid gap-3 md:grid-cols-[1fr_220px_auto]" onSubmit={submitUpload} noValidate>
+            <div className="space-y-1">
+              <label className="flex w-full cursor-pointer items-center gap-3 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800">
+                <span className="rounded-md bg-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
+                  Seleccionar archivo
+                </span>
+                <span className="truncate text-xs text-slate-500 dark:text-slate-400">
+                  {selectedFile ? selectedFile.name : 'Ningún archivo seleccionado'}
+                </span>
+                <input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png"
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+                    setValue('file', file as File, { shouldValidate: true })
+                  }}
+                  disabled={isUploading}
+                />
+              </label>
+              {selectedFile ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Seleccionado: {selectedFile.name}
+                </p>
+              ) : null}
+              {errors.file ? <p className="text-xs text-red-500">{errors.file.message}</p> : null}
+            </div>
+
+            <div className="space-y-1">
+              <select
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                {...register('documentType')}
                 disabled={isUploading}
-              />
-            </label>
-            {selectedFile ? (
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Seleccionado: {selectedFile.name}
-              </p>
-            ) : null}
-            {errors.file ? <p className="text-xs text-red-500">{errors.file.message}</p> : null}
-          </div>
+              >
+                {DOCUMENT_TYPES.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              {errors.documentType ? (
+                <p className="text-xs text-red-500">{errors.documentType.message}</p>
+              ) : null}
+            </div>
 
-          <div className="space-y-1">
-            <select
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-              {...register('documentType')}
+            <button
+              type="submit"
+              className="btn-primary h-10 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isUploading}
             >
-              {DOCUMENT_TYPES.map((item) => (
-                <option key={item.value} value={item.value}>
-                  {item.label}
-                </option>
-              ))}
-            </select>
-            {errors.documentType ? (
-              <p className="text-xs text-red-500">{errors.documentType.message}</p>
-            ) : null}
-          </div>
+              {isUploading ? 'Subiendo...' : 'Subir'}
+            </button>
+          </form>
 
-          <button
-            type="submit"
-            className="btn-primary h-10 px-4 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={isUploading}
-          >
-            {isUploading ? 'Subiendo...' : 'Subir'}
-          </button>
-        </form>
+          {error ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+              {error}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
-        {error ? (
-          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
-            {error}
-          </div>
-        ) : null}
-      </div>
+      {error && !canUploadDocuments ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+          {error}
+        </div>
+      ) : null}
 
       <TableContainer mode="legacy-compact">
         <div className="overflow-x-auto">
@@ -287,16 +323,18 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
                         >
                           Descargar
                         </button>
-                        <button
-                          type="button"
-                          className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
-                          disabled={isDeleting}
-                          onClick={() => {
-                            setPendingDeleteDocument(item)
-                          }}
-                        >
-                          Eliminar
-                        </button>
+                        {canDeleteDocuments ? (
+                          <button
+                            type="button"
+                            className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                            disabled={isDeleting}
+                            onClick={() => {
+                              setPendingDeleteDocument(item)
+                            }}
+                          >
+                            Eliminar
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -308,7 +346,7 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
       </TableContainer>
 
       <ConfirmModal
-        open={Boolean(pendingDeleteDocument)}
+        open={canDeleteDocuments && Boolean(pendingDeleteDocument)}
         title="Eliminar documento"
         description="¿Estás seguro de eliminar este documento? Esta acción no se puede deshacer."
         confirmLabel="Eliminar"

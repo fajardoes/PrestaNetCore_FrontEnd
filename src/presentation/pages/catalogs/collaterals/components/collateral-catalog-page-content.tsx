@@ -3,10 +3,10 @@ import type { StatusFilterValue } from '@/presentation/share/components/list-fil
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import { useNotifications } from '@/providers/NotificationProvider'
 import { useCollateralCatalogAdmin } from '@/presentation/features/collaterals/hooks/use-collateral-catalog-admin'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import type { CollateralCatalogItemDto } from '@/infrastructure/intranet/responses/collaterals/collateral-catalog-item-dto'
 import type { CollateralCatalogItemFormValues } from '@/infrastructure/validations/collaterals/collateral-catalog-item.schema'
 import { CollateralCatalogEditorModal } from '@/presentation/pages/catalogs/collaterals/components/collateral-catalog-editor-modal'
-import { useAuth } from '@/hooks/useAuth'
 import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface CollateralCatalogPageContentProps {
@@ -21,9 +21,12 @@ export const CollateralCatalogPageContent = ({
   description,
 }: CollateralCatalogPageContentProps) => {
   const { notify } = useNotifications()
-  const { user } = useAuth()
-  const isAdmin =
-    user?.roles.some((role) => role.toLowerCase() === 'admin') ?? false
+  const {
+    hasPermission,
+    isLoading: isLoadingPermissions,
+  } = useUserPermissions()
+  const canReadCatalogs = hasPermission('collaterals.catalogs.read')
+  const canManageCatalogs = hasPermission('collaterals.catalogs.manage')
 
   const { items, isLoading, isSaving, error, load, create, update, toggleStatus } =
     useCollateralCatalogAdmin(kind)
@@ -36,11 +39,11 @@ export const CollateralCatalogPageContent = ({
   )
 
   useEffect(() => {
-    if (!isAdmin) return
+    if (!canReadCatalogs) return
     const active =
       status === 'all' ? undefined : status === 'active' ? true : false
     void load(active)
-  }, [isAdmin, load, status])
+  }, [canReadCatalogs, load, status])
 
   const filteredItems = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -53,13 +56,20 @@ export const CollateralCatalogPageContent = ({
     })
   }, [items, search])
 
-  if (!isAdmin) {
+  if (isLoadingPermissions) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        Cargando permisos...
+      </div>
+    )
+  }
+
+  if (!canReadCatalogs) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
-        <p className="font-semibold">Acceso restringido</p>
+        <p className="font-semibold">No autorizado</p>
         <p className="text-sm">
-          Solo los usuarios con rol <span className="font-semibold">Admin</span>{' '}
-          pueden administrar catálogos de garantías.
+          Tu usuario no tiene permiso para consultar catálogos de garantías.
         </p>
       </div>
     )
@@ -108,16 +118,18 @@ export const CollateralCatalogPageContent = ({
         status={status}
         onStatusChange={setStatus}
         actions={
-          <button
-            type="button"
-            className="btn-primary px-4 py-2 text-sm"
-            onClick={() => {
-              setEditingItem(null)
-              setIsModalOpen(true)
-            }}
-          >
-            Nuevo
-          </button>
+          canManageCatalogs ? (
+            <button
+              type="button"
+              className="btn-primary px-4 py-2 text-sm"
+              onClick={() => {
+                setEditingItem(null)
+                setIsModalOpen(true)
+              }}
+            >
+              Nuevo
+            </button>
+          ) : null
         }
       />
 
@@ -193,56 +205,60 @@ export const CollateralCatalogPageContent = ({
                     </td>
                     <td className="px-4 py-3 text-right text-sm">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          className="btn-table-action"
-                          onClick={() => {
-                            setEditingItem(item)
-                            setIsModalOpen(true)
-                          }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-table-action"
-                          disabled={isSaving}
-                          onClick={async () => {
-                            if (
-                              item.isSystem &&
-                              item.isActive &&
-                              !window.confirm(
-                                'Este registro es de sistema. ¿Confirmas desactivarlo?',
-                              )
-                            ) {
-                              return
-                            }
+                        {canManageCatalogs ? (
+                          <>
+                            <button
+                              type="button"
+                              className="btn-table-action"
+                              onClick={() => {
+                                setEditingItem(item)
+                                setIsModalOpen(true)
+                              }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-table-action"
+                              disabled={isSaving}
+                              onClick={async () => {
+                                if (
+                                  item.isSystem &&
+                                  item.isActive &&
+                                  !window.confirm(
+                                    'Este registro es de sistema. ¿Confirmas desactivarlo?',
+                                  )
+                                ) {
+                                  return
+                                }
 
-                            if (
-                              !window.confirm(
-                                item.isActive
-                                  ? '¿Desactivar este registro?'
-                                  : '¿Activar este registro?',
-                              )
-                            ) {
-                              return
-                            }
+                                if (
+                                  !window.confirm(
+                                    item.isActive
+                                      ? '¿Desactivar este registro?'
+                                      : '¿Activar este registro?',
+                                  )
+                                ) {
+                                  return
+                                }
 
-                            const result = await toggleStatus(item.id, !item.isActive)
-                            if (result.success) {
-                              notify('Estado actualizado correctamente.', 'success')
-                              await load(
-                                status === 'all'
-                                  ? undefined
-                                  : status === 'active'
-                                    ? true
-                                    : false,
-                              )
-                            }
-                          }}
-                        >
-                          {item.isActive ? 'Desactivar' : 'Activar'}
-                        </button>
+                                const result = await toggleStatus(item.id, !item.isActive)
+                                if (result.success) {
+                                  notify('Estado actualizado correctamente.', 'success')
+                                  await load(
+                                    status === 'all'
+                                      ? undefined
+                                      : status === 'active'
+                                        ? true
+                                        : false,
+                                  )
+                                }
+                              }}
+                            >
+                              {item.isActive ? 'Desactivar' : 'Activar'}
+                            </button>
+                          </>
+                        ) : null}
                       </div>
                     </td>
                   </tr>

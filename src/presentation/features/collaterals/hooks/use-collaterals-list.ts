@@ -12,7 +12,12 @@ interface CollateralsFilters {
 
 const DEFAULT_PAGE_SIZE = 20
 
-export const useCollateralsList = () => {
+interface UseCollateralsListOptions {
+  enabled?: boolean
+}
+
+export const useCollateralsList = (options?: UseCollateralsListOptions) => {
+  const enabled = options?.enabled ?? true
   const [items, setItems] = useState<CollateralResponseDto[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -24,6 +29,14 @@ export const useCollateralsList = () => {
   const [totalCount, setTotalCount] = useState(0)
 
   const load = useCallback(async () => {
+    if (!enabled) {
+      setItems([])
+      setTotalCount(0)
+      setError(null)
+      setIsLoading(false)
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -47,11 +60,12 @@ export const useCollateralsList = () => {
     setTotalCount(0)
     setError(result.error)
     setIsLoading(false)
-  }, [filters, page, pageSize])
+  }, [enabled, filters, page, pageSize])
 
   useEffect(() => {
+    if (!enabled) return
     void load()
-  }, [load])
+  }, [enabled, load])
 
   const totalPages = useMemo(() => {
     if (!totalCount) return 1

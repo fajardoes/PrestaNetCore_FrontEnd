@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CreateRoleModal } from '@/presentation/features/security/components/create-role-modal'
 import { useRolePermissionsAdmin } from '@/presentation/features/security/hooks/use-role-permissions-admin'
 import { MessageModal } from '@/presentation/share/components/message-modal'
@@ -6,6 +6,7 @@ import { MessageModal } from '@/presentation/share/components/message-modal'
 const MODULE_LABELS: Record<string, string> = {
   loan_applications: 'Solicitudes de credito',
   loans: 'Prestamos',
+  collateral: 'Garantias',
   accounting: 'Contabilidad',
   clients: 'Clientes',
   security: 'Seguridad',
@@ -30,6 +31,15 @@ const TERM_TRANSLATIONS: Array<[RegExp, string]> = [
   [/\bread\b/gi, 'leer'],
   [/\bupdate\b/gi, 'editar'],
   [/\bdelete\b/gi, 'eliminar'],
+  [/\bmanage\b/gi, 'administrar'],
+  [/\bupload\b/gi, 'subir'],
+  [/\bdownload\b/gi, 'descargar'],
+  [/\bcatalog(s)?\b/gi, 'catalogo$1'],
+  [/\bdocument(s)?\b/gi, 'documento$1'],
+  [/\bcollateral(s)?\b/gi, 'garantia$1'],
+  [/\btype(s)?\b/gi, 'tipo$1'],
+  [/\bstatuses\b/gi, 'estados'],
+  [/\bstatus\b/gi, 'estado'],
   [/\bsubmit\b/gi, 'enviar'],
   [/\bapprove\b/gi, 'aprobar'],
   [/\breject\b/gi, 'rechazar'],
@@ -89,6 +99,7 @@ export const RolePermissionsPage = () => {
   const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
+  const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({})
 
   const filteredCatalog = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -123,11 +134,39 @@ export const RolePermissionsPage = () => {
 
     return Array.from(groups.entries())
       .map(([moduleName, permissions]) => ({
+        moduleCode: moduleName,
         moduleName: toModuleLabel(moduleName),
         permissions: permissions.sort((a, b) => a.code.localeCompare(b.code)),
       }))
       .sort((a, b) => a.moduleName.localeCompare(b.moduleName))
   }, [filteredCatalog])
+
+  useEffect(() => {
+    setCollapsedModules((previous) => {
+      const next: Record<string, boolean> = {}
+      groupedCatalog.forEach((group) => {
+        next[group.moduleCode] = previous[group.moduleCode] ?? false
+      })
+      return next
+    })
+  }, [groupedCatalog])
+
+  const toggleModuleCollapsed = useCallback((moduleCode: string) => {
+    setCollapsedModules((previous) => ({
+      ...previous,
+      [moduleCode]: !previous[moduleCode],
+    }))
+  }, [])
+
+  const setAllModulesCollapsed = useCallback((collapsed: boolean) => {
+    setCollapsedModules(() => {
+      const next: Record<string, boolean> = {}
+      groupedCatalog.forEach((group) => {
+        next[group.moduleCode] = collapsed
+      })
+      return next
+    })
+  }, [groupedCatalog])
 
   const isUnauthorized = useMemo(() => {
     const errors = [rolesError, roleDataError, saveError, createRoleError]
@@ -272,6 +311,25 @@ export const RolePermissionsPage = () => {
             />
           </div>
 
+          <div className="mt-2 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              className="btn-secondary px-3 py-1.5 text-xs"
+              onClick={() => setAllModulesCollapsed(false)}
+              disabled={isLoadingRoleData || !groupedCatalog.length}
+            >
+              Expandir todo
+            </button>
+            <button
+              type="button"
+              className="btn-secondary px-3 py-1.5 text-xs"
+              onClick={() => setAllModulesCollapsed(true)}
+              disabled={isLoadingRoleData || !groupedCatalog.length}
+            >
+              Contraer todo
+            </button>
+          </div>
+
           <div className="mt-3 max-h-[28rem] overflow-auto rounded-lg border border-slate-200 dark:border-slate-800">
             {isLoadingRoleData ? (
               <p className="px-3 py-4 text-sm text-slate-500 dark:text-slate-400">
@@ -287,47 +345,66 @@ export const RolePermissionsPage = () => {
               </p>
             ) : (
               <div className="space-y-3 p-2">
-                {groupedCatalog.map((group) => (
-                  <section
-                    key={group.moduleName}
-                    className="rounded-lg border border-slate-200 dark:border-slate-800"
-                  >
-                    <header className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                      {group.moduleName}
-                    </header>
-                    <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-                      {group.permissions.map((permission) => {
-                        const checked = assignedSet.has(permission.code)
-                        return (
-                          <li key={permission.code} className="px-3 py-2">
-                            <label className="flex cursor-pointer items-start gap-3">
-                              <input
-                                type="checkbox"
-                                checked={checked}
-                                onChange={() => togglePermission(permission.code)}
-                                disabled={isSaving}
-                                className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900"
-                              />
-                              <span className="min-w-0">
-                                <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
-                                  {translatePermissionText(permission.name)}
-                                </span>
-                                <span className="block text-xs text-slate-500 dark:text-slate-400">
-                                  {permission.code}
-                                </span>
-                                {permission.description ? (
-                                  <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-300">
-                                    {translatePermissionText(permission.description)}
+                {groupedCatalog.map((group) => {
+                  const isCollapsed = collapsedModules[group.moduleCode] ?? false
+                  const assignedCount = group.permissions.filter((permission) =>
+                    assignedSet.has(permission.code),
+                  ).length
+
+                  return (
+                    <section
+                      key={group.moduleCode}
+                      className="rounded-lg border border-slate-200 dark:border-slate-800"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleModuleCollapsed(group.moduleCode)}
+                        className="flex w-full items-center justify-between border-b border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+                      >
+                        <span>{group.moduleName}</span>
+                        <span className="flex items-center gap-2">
+                          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-100">
+                            {assignedCount}/{group.permissions.length}
+                          </span>
+                          <span className="text-[10px]">{isCollapsed ? 'Expandir' : 'Contraer'}</span>
+                        </span>
+                      </button>
+                      {!isCollapsed ? (
+                        <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+                          {group.permissions.map((permission) => {
+                            const checked = assignedSet.has(permission.code)
+                            return (
+                              <li key={permission.code} className="px-3 py-2">
+                                <label className="flex cursor-pointer items-start gap-3">
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => togglePermission(permission.code)}
+                                    disabled={isSaving}
+                                    className="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-900"
+                                  />
+                                  <span className="min-w-0">
+                                    <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">
+                                      {translatePermissionText(permission.name)}
+                                    </span>
+                                    <span className="block text-xs text-slate-500 dark:text-slate-400">
+                                      {permission.code}
+                                    </span>
+                                    {permission.description ? (
+                                      <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-300">
+                                        {translatePermissionText(permission.description)}
+                                      </span>
+                                    ) : null}
                                   </span>
-                                ) : null}
-                              </span>
-                            </label>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </section>
-                ))}
+                                </label>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      ) : null}
+                    </section>
+                  )
+                })}
               </div>
             )}
           </div>

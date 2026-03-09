@@ -13,6 +13,7 @@ import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/lo
 import type { LoanProductListItemDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-list-item.dto'
 import type { ClientDetail, ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { CollateralResponseDto } from '@/infrastructure/intranet/responses/collaterals/collateral-response'
+import type { PagedResultDto } from '@/infrastructure/intranet/responses/collaterals/paged-result'
 import type { Municipality } from '@/infrastructure/interfaces/organization/geography'
 import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
 import type { AsyncSelectOption } from '@/presentation/share/components/async-select'
@@ -341,6 +342,37 @@ export const useLoanApplicationOptions = () => {
       .map(mapCollateralOption)
   }, [])
 
+  const listClientCollaterals = useCallback(
+    async ({
+      ownerClientId,
+      search,
+      pageNumber = 1,
+      pageSize = 10,
+    }: {
+      ownerClientId: string
+      search?: string
+      pageNumber?: number
+      pageSize?: number
+    }): Promise<PagedResultDto<CollateralResponseDto>> => {
+      const safePageNumber = Math.max(1, pageNumber)
+      const safePageSize = Math.max(1, pageSize)
+      const result = await listCollateralsAction({
+        ownerClientId: ownerClientId.trim(),
+        search: search?.trim() || undefined,
+        active: true,
+        skip: (safePageNumber - 1) * safePageSize,
+        take: safePageSize,
+      })
+
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+
+      return result.data
+    },
+    [],
+  )
+
   const listMunicipalities = useCallback(async (): Promise<Municipality[]> => {
     const result = await listMunicipalitiesAction()
     if (!result.success) return []
@@ -363,5 +395,6 @@ export const useLoanApplicationOptions = () => {
     listPaymentFrequencies,
     findPaymentFrequencyById,
     searchCollaterals,
+    listClientCollaterals,
   }
 }

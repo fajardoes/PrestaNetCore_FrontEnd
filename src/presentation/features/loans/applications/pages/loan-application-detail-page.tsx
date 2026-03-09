@@ -209,7 +209,14 @@ export const LoanApplicationDetailPage = () => {
             description: result.error,
           })
         }}
-        searchCollaterals={(input) => options.searchCollaterals(input, application.clientId)}
+        listCollaterals={({ search, pageNumber, pageSize }) =>
+          options.listClientCollaterals({
+            ownerClientId: application.clientId,
+            search,
+            pageNumber,
+            pageSize,
+          })
+        }
       />
 
       <LoanApplicationPaymentPlanModal

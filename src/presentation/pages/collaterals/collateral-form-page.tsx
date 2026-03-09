@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
+import { getBusinessDateAction } from '@/core/actions/system/get-business-date-action'
 import { listMunicipalitiesAction } from '@/core/actions/geography/list-municipalities.action'
 import { formatHnIdentity } from '@/core/helpers/hn-identity'
 import { DatePicker } from '@/presentation/share/components/date-picker'
@@ -81,10 +82,14 @@ export const CollateralFormPage = () => {
   const [pickerError, setPickerError] = useState<string | null>(null)
   const [isPickerLoading, setIsPickerLoading] = useState(false)
   const [municipalityNameById, setMunicipalityNameById] = useState<Record<string, string>>({})
+  const [businessDate, setBusinessDate] = useState<string | null>(null)
 
   const resolver = useMemo(
-    () => yupResolver(isEdit ? collateralUpdateSchema : collateralCreateSchema),
-    [isEdit],
+    () =>
+      yupResolver(isEdit ? collateralUpdateSchema : collateralCreateSchema, {
+        context: { maxAppraisedDate: businessDate },
+      }),
+    [businessDate, isEdit],
   )
 
   const {
@@ -122,6 +127,12 @@ export const CollateralFormPage = () => {
   )
 
   const requiresGuarantor = isPersonalGuarantorType(selectedCollateralType?.code)
+  const maxAppraisedDate = useMemo(() => {
+    if (!businessDate) return undefined
+    const parsed = new Date(`${businessDate}T00:00:00`)
+    if (Number.isNaN(parsed.getTime())) return undefined
+    return parsed
+  }, [businessDate])
 
   useEffect(() => {
     if (!id || !canReadCollaterals) return
@@ -144,6 +155,22 @@ export const CollateralFormPage = () => {
 
     void loadMunicipalities()
   }, [canReadCatalogs])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadBusinessDate = async () => {
+      const result = await getBusinessDateAction()
+      if (!isMounted || !result.success) return
+      setBusinessDate(result.data.businessDate)
+    }
+
+    void loadBusinessDate()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!collateral) return
@@ -614,6 +641,7 @@ export const CollateralFormPage = () => {
               onChange={(value) =>
                 setValue('appraisedDate', value, { shouldValidate: true })
               }
+              maxDate={maxAppraisedDate}
               allowFutureDates={false}
             />
             {errors.appraisedDate ? (

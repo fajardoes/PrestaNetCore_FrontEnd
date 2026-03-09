@@ -26,6 +26,25 @@ const toNullableDateOnly = (value: unknown) => {
   return trimmed.length ? trimmed : null
 }
 
+const parseIsoDateOnly = (value?: string | null) => {
+  if (!value) return null
+  const [yearText, monthText, dayText] = value.split('-')
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  if (!year || !month || !day) return null
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+  if (Number.isNaN(parsed.getTime())) return null
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null
+  }
+  return parsed
+}
+
 export const collateralCreateSchema = yup.object({
   ownerClientId: yup
     .string()
@@ -102,6 +121,27 @@ export const collateralCreateSchema = yup.object({
     .transform(toNullableDateOnly)
     .nullable()
     .matches(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato YYYY-MM-DD.')
+    .test(
+      'appraised-date-max-business-date',
+      'La fecha de avalúo no puede ser mayor a la fecha operativa del sistema.',
+      function validateAppraisedDateMaxBusinessDate(appraisedDate) {
+        if (!appraisedDate) return true
+
+        const appraised = parseIsoDateOnly(appraisedDate)
+        if (!appraised) return true
+
+        const context = this.options.context as
+          | { maxAppraisedDate?: string | null }
+          | undefined
+        const maxDateText = context?.maxAppraisedDate
+        if (!maxDateText) return true
+
+        const maxDate = parseIsoDateOnly(maxDateText)
+        if (!maxDate) return true
+
+        return appraised.getTime() <= maxDate.getTime()
+      },
+    )
     .notRequired(),
 })
 

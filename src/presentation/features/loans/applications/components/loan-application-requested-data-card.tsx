@@ -3,7 +3,11 @@ import { HnIdentityText } from '@/presentation/share/components/hn-identity-text
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
 import {
   formatDate,
+  formatDateTime,
   formatMoney,
+  formatRatio,
+  financialProfileBadgeClass,
+  financialProfileCompletenessBadgeClass,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 
 interface LoanApplicationRequestedDataCardProps {
@@ -44,6 +48,8 @@ export const LoanApplicationRequestedDataCard = ({
       value: (item.value ?? '').trim(),
     }))
     .filter((item) => item.value.length > 0)
+  const hasFinancialProfile = Boolean(application.hasFinancialProfile)
+  const isFinancialProfileComplete = Boolean(application.isFinancialProfileComplete)
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -63,6 +69,31 @@ export const LoanApplicationRequestedDataCard = ({
           label="Frecuencia sugerida"
           value={application.suggestedPaymentFrequencyName || '—'}
         />
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Ficha financiera
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <span
+              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${financialProfileBadgeClass(hasFinancialProfile)}`}
+            >
+              {hasFinancialProfile ? 'Registrada' : 'Sin ficha'}
+            </span>
+            <span
+              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${financialProfileCompletenessBadgeClass(isFinancialProfileComplete)}`}
+            >
+              {isFinancialProfileComplete ? 'Completa' : 'Incompleta'}
+            </span>
+          </div>
+          <div className="mt-3 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+            <p>Actualizacion: {formatDateTime(application.financialProfileUpdatedAt)}</p>
+            <p>Ratio pasivos / activos: {formatRatio(application.financialDebtRatio)}</p>
+            <p>
+              Ratio pasivos / patrimonio:{' '}
+              {formatRatio(application.financialDebtToEquityRatio)}
+            </p>
+          </div>
+        </div>
       </div>
       {application.notes ? (
         <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">

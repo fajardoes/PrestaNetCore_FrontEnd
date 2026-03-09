@@ -144,6 +144,11 @@ export const LoanApplicationDetailPage = () => {
         canReturnToDraft={canReturnToDraft}
         canPreview={canPreview}
         isProcessingWorkflow={isWorkflowRunning}
+        onOpenFinancialProfile={() =>
+          navigate(`/loans/applications/${application.id}/financial-profile`, {
+            state: { returnTo: `/loans/applications/${application.id}` },
+          })
+        }
         onOpenPaymentPlan={() => {
           setPaymentPlanOpen(true)
           void generatePaymentPlan()

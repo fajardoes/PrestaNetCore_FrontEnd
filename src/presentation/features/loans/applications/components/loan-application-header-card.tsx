@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
-import { formatDate, statusBadgeClass } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import {
+  formatDate,
+  statusBadgeClass,
+  translateLoanApplicationStatus,
+} from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 
 interface LoanApplicationHeaderCardProps {
   application: LoanApplicationResponse
@@ -12,6 +16,7 @@ interface LoanApplicationHeaderCardProps {
   canReturnToDraft: boolean
   canPreview: boolean
   isProcessingWorkflow?: boolean
+  onOpenFinancialProfile: () => void
   onOpenPaymentPlan: () => void
   onSubmit: () => void
   onApprove: () => void
@@ -30,6 +35,7 @@ export const LoanApplicationHeaderCard = ({
   canReturnToDraft,
   canPreview,
   isProcessingWorkflow = false,
+  onOpenFinancialProfile,
   onOpenPaymentPlan,
   onSubmit,
   onApprove,
@@ -51,7 +57,7 @@ export const LoanApplicationHeaderCard = ({
             <span
               className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${statusBadgeClass(application.statusCode)}`}
             >
-              {application.statusName}
+              {translateLoanApplicationStatus(application.statusCode, application.statusName)}
             </span>
             {application.approvedLoanId ? (
               <Link className="btn-secondary px-3 py-1 text-xs" to={`/loans/${application.approvedLoanId}`}>
@@ -70,6 +76,14 @@ export const LoanApplicationHeaderCard = ({
               Editar
             </Link>
           ) : null}
+          <button
+            type="button"
+            className="btn-secondary px-3 py-2 text-sm"
+            onClick={onOpenFinancialProfile}
+            disabled={isProcessingWorkflow}
+          >
+            Ficha financiera
+          </button>
           {canSubmit ? (
             <button
               type="button"

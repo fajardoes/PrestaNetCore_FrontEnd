@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Eye, Pencil, Plus } from 'lucide-react'
+import { CircleAlert, Eye, FileCheck2, Pencil, Plus } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
@@ -12,9 +12,11 @@ import { useLoanApplicationsList } from '@/presentation/features/loans/applicati
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import {
+  financialProfileBadgeClass,
   formatDate,
   formatMoney,
   statusBadgeClass,
+  translateLoanApplicationStatus,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100, 200]
@@ -252,6 +254,7 @@ export const LoanApplicationsListPage = () => {
                 <th className="text-right">Principal</th>
                 <th className="text-right">Plazo</th>
                 <th>Estado</th>
+                <th>Ficha financiera</th>
                 <th>Creación</th>
                 <th className="text-right">Acciones</th>
               </tr>
@@ -259,19 +262,19 @@ export const LoanApplicationsListPage = () => {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={9} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={10} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
                     Cargando solicitudes...
                   </td>
                 </tr>
               ) : error ? (
                 <tr>
-                  <td colSpan={9} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
+                  <td colSpan={10} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
                     {error}
                   </td>
                 </tr>
               ) : !items.length ? (
                 <tr>
-                  <td colSpan={9} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
+                  <td colSpan={10} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
                     No hay solicitudes para los filtros actuales.
                   </td>
                 </tr>
@@ -293,7 +296,28 @@ export const LoanApplicationsListPage = () => {
                       <span
                         className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusBadgeClass(item.statusCode)}`}
                       >
-                        {item.statusName}
+                        {translateLoanApplicationStatus(item.statusCode, item.statusName)}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${financialProfileBadgeClass(item.hasFinancialProfile)}`}
+                        title={
+                          item.hasFinancialProfile
+                            ? 'Ficha financiera registrada'
+                            : 'Sin ficha financiera registrada'
+                        }
+                        aria-label={
+                          item.hasFinancialProfile
+                            ? 'Ficha financiera registrada'
+                            : 'Sin ficha financiera registrada'
+                        }
+                      >
+                        {item.hasFinancialProfile ? (
+                          <FileCheck2 className="h-4 w-4" />
+                        ) : (
+                          <CircleAlert className="h-4 w-4 text-red-600 dark:text-red-300" />
+                        )}
                       </span>
                     </td>
                     <td>{formatDate(item.createdAt)}</td>

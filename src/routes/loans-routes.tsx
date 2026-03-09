@@ -12,6 +12,7 @@ import { LoanApplicationsListPage } from '@/presentation/features/loans/applicat
 import { LoanApplicationCreatePage } from '@/presentation/features/loans/applications/pages/loan-application-create-page'
 import { LoanApplicationDetailPage } from '@/presentation/features/loans/applications/pages/loan-application-detail-page'
 import { LoanApplicationEditPage } from '@/presentation/features/loans/applications/pages/loan-application-edit-page'
+import { LoanApplicationFinancialProfilePage } from '@/presentation/features/loans/applications/pages/loan-application-financial-profile-page'
 import { LoanDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-detail-page'
 import { LoanInstallmentDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-installment-detail-page'
 import { LoansHomePage } from '@/presentation/features/loans/loans-query/pages/loans-home-page'
@@ -48,6 +49,10 @@ export const LoansRoutes = () => (
     />
     <Route path="/loans/applications" element={<LoanApplicationsListPage />} />
     <Route path="/loans/applications/new" element={<LoanApplicationCreatePage />} />
+    <Route
+      path="/loans/applications/:id/financial-profile"
+      element={<LoanApplicationFinancialProfilePage />}
+    />
     <Route path="/loans/applications/:id" element={<LoanApplicationDetailPage />} />
     <Route
       path="/loans/applications/:id/edit"

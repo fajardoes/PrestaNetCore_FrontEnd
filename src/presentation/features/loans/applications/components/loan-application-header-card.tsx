@@ -1,9 +1,11 @@
 import {
   ArrowLeftCircle,
+  Banknote,
   CheckCircle2,
   Eye,
   FileSpreadsheet,
   Pencil,
+  Printer,
   Send,
   XCircle,
 } from 'lucide-react'
@@ -20,15 +22,20 @@ interface LoanApplicationHeaderCardProps {
   canEdit: boolean
   canSubmit: boolean
   canApprove: boolean
+  canDisburse: boolean
   canReject: boolean
   canCancel: boolean
   canReturnToDraft: boolean
   canPreview: boolean
+  canPrint: boolean
   isProcessingWorkflow?: boolean
+  isPrinting?: boolean
   onOpenFinancialProfile: () => void
   onOpenPaymentPlan: () => void
+  onPrint: () => void
   onSubmit: () => void
   onApprove: () => void
+  onDisburse: () => void
   onReject: () => void
   onCancel: () => void
   onReturnToDraft: () => void
@@ -39,15 +46,20 @@ export const LoanApplicationHeaderCard = ({
   canEdit,
   canSubmit,
   canApprove,
+  canDisburse,
   canReject,
   canCancel,
   canReturnToDraft,
   canPreview,
+  canPrint,
   isProcessingWorkflow = false,
+  isPrinting = false,
   onOpenFinancialProfile,
   onOpenPaymentPlan,
+  onPrint,
   onSubmit,
   onApprove,
+  onDisburse,
   onReject,
   onCancel,
   onReturnToDraft,
@@ -58,6 +70,7 @@ export const LoanApplicationHeaderCard = ({
   const primaryActionClassName = `${actionClassName} btn-primary shadow-lg shadow-primary/15`
   const dangerActionClassName =
     'inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-400/60 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20 dark:focus:ring-red-500/40 dark:focus:ring-offset-slate-950'
+  const loanIsDisbursed = (application.statusCode ?? '').trim().toUpperCase() === 'DISBURSED'
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -75,7 +88,7 @@ export const LoanApplicationHeaderCard = ({
             >
               {translateLoanApplicationStatus(application.statusCode, application.statusName)}
             </span>
-            {application.approvedLoanId ? (
+            {loanIsDisbursed && application.approvedLoanId ? (
               <Link
                 className="btn-secondary inline-flex items-center gap-2 px-3 py-1 text-xs"
                 to={`/loans/${application.approvedLoanId}`}
@@ -122,6 +135,17 @@ export const LoanApplicationHeaderCard = ({
                   Ver plan de pagos
                 </button>
               ) : null}
+              {canPrint ? (
+                <button
+                  type="button"
+                  className="btn-print min-h-10 px-4 py-2"
+                  onClick={onPrint}
+                  disabled={isProcessingWorkflow || isPrinting}
+                >
+                  <Printer className="h-4 w-4" />
+                  {isPrinting ? 'Generando...' : 'Imprimir'}
+                </button>
+              ) : null}
               {canSubmit ? (
                 <button
                   type="button"
@@ -142,6 +166,17 @@ export const LoanApplicationHeaderCard = ({
                 >
                   <CheckCircle2 className="h-4 w-4" />
                   Aprobar
+                </button>
+              ) : null}
+              {canDisburse ? (
+                <button
+                  type="button"
+                  className={primaryActionClassName}
+                  onClick={onDisburse}
+                  disabled={isProcessingWorkflow}
+                >
+                  <Banknote className="h-4 w-4" />
+                  Desembolsar
                 </button>
               ) : null}
               {canReject ? (

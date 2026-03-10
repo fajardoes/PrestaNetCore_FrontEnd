@@ -26,6 +26,7 @@ export interface LoanApplicationResponse {
   createdOperationalDate: string
   submittedOperationalDate?: string | null
   approvedOperationalDate?: string | null
+  disbursedOperationalDate?: string | null
   rejectedOperationalDate?: string | null
   cancelledOperationalDate?: string | null
   returnedToDraftOperationalDate?: string | null

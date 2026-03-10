@@ -3,6 +3,7 @@ import { AddLoanApplicationCollateralAction } from '@/core/actions/loan-applicat
 import { ApproveLoanApplicationAction } from '@/core/actions/loan-applications/approve-loan-application.action'
 import { CancelLoanApplicationAction } from '@/core/actions/loan-applications/cancel-loan-application.action'
 import { CreateLoanApplicationAction } from '@/core/actions/loan-applications/create-loan-application.action'
+import { DisburseLoanApplicationAction } from '@/core/actions/loan-applications/disburse-loan-application.action'
 import { PreviewLoanApplicationScheduleAction } from '@/core/actions/loan-applications/preview-loan-application-schedule.action'
 import { RejectLoanApplicationAction } from '@/core/actions/loan-applications/reject-loan-application.action'
 import { RemoveLoanApplicationCollateralAction } from '@/core/actions/loan-applications/remove-loan-application-collateral.action'
@@ -14,6 +15,7 @@ import type { LoanApplicationApproveRequest } from '@/infrastructure/loans/reque
 import type { LoanApplicationCancelRequest } from '@/infrastructure/loans/requests/loan-application-cancel-request'
 import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans/requests/loan-application-collateral-add-request'
 import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/requests/loan-application-create-request'
+import type { LoanApplicationDisburseRequest } from '@/infrastructure/loans/requests/loan-application-disburse-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
 import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
@@ -99,6 +101,20 @@ export const useLoanApplicationMutations = () => {
     }))
     return result
   }, [])
+
+  const disburse = useCallback(
+    async (id: string, payload: LoanApplicationDisburseRequest) => {
+      setState((prev) => ({ ...prev, isWorkflowRunning: true, error: null }))
+      const result = await new DisburseLoanApplicationAction().execute(id, payload)
+      setState((prev) => ({
+        ...prev,
+        isWorkflowRunning: false,
+        error: result.success ? null : mapErrorMessage(result),
+      }))
+      return result
+    },
+    [],
+  )
 
   const reject = useCallback(async (id: string, payload: LoanApplicationRejectRequest) => {
     setState((prev) => ({ ...prev, isWorkflowRunning: true, error: null }))
@@ -191,6 +207,7 @@ export const useLoanApplicationMutations = () => {
     update,
     submit,
     approve,
+    disburse,
     reject,
     cancel,
     returnToDraft,

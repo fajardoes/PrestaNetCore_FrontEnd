@@ -74,8 +74,11 @@ export const IncomeStatementSummary = ({
       </div>
 
       <div className="space-y-4">
-        {data.groups.map((group) => (
-          <TableContainer key={group.groupKey} mode="legacy-compact">
+        {data.groups.map((group, groupIndex) => (
+          <TableContainer
+            key={`${group.groupKey || group.groupName || 'group'}-${groupIndex}`}
+            mode="legacy-compact"
+          >
             <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-50">
                 {group.groupName}
@@ -100,9 +103,11 @@ export const IncomeStatementSummary = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {group.accounts.map((account) => (
+                  {group.accounts.map((account, accountIndex) => (
                     <tr
-                      key={account.accountId}
+                      key={
+                        `${account.accountId || account.accountCode || account.accountName || 'account'}-${accountIndex}`
+                      }
                       className="hover:bg-slate-50/70 dark:hover:bg-slate-900"
                     >
                       <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">

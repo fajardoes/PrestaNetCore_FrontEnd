@@ -7,7 +7,10 @@ import {
   type LoanSchedulePreviewFormValues,
 } from '@/infrastructure/validations/loans/loan-schedule-preview.schema'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
-import { formatMoney } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import {
+  formatInterestCalculationMethod,
+  formatMoney,
+} from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
@@ -31,14 +34,6 @@ const defaultValues: LoanSchedulePreviewFormValues = {
   paymentFrequencyIdOverride: null,
   nominalRateOverride: null,
   firstDueDateOverride: null,
-}
-
-const formatInterestMethod = (value: string) => {
-  const normalized = value.trim().toLowerCase()
-  if (normalized === 'interest_by_days') return 'Interés por días'
-  if (normalized === 'interest_by_period') return 'Interés por período'
-  if (normalized === 'flat') return 'Interés fijo'
-  return value.replaceAll('_', ' ')
 }
 
 export const LoanApplicationPaymentPlanModal = ({
@@ -269,7 +264,7 @@ export const LoanApplicationPaymentPlanModal = ({
                 />
                 <Meta
                   label="Método de interés"
-                  value={formatInterestMethod(preview.metadata.interestCalculationMethod)}
+                  value={formatInterestCalculationMethod(preview.metadata.interestCalculationMethod)}
                 />
                 <Meta
                   label="Ajuste de última cuota"

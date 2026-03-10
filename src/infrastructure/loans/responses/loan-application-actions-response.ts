@@ -4,10 +4,12 @@ export type LoanApplicationAllowedAction =
   | 'remove_collateral'
   | 'submit'
   | 'approve'
+  | 'disburse'
   | 'reject'
   | 'cancel'
   | 'return_to_draft'
   | 'preview_schedule'
+  | 'print'
 
 export interface LoanApplicationActionsResponse {
   loanApplicationId: string

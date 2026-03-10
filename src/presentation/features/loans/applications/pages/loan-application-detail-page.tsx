@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { LoanApplicationReport } from '@/presentation/components/reports/loans/loan-application-report'
+import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { LoanApplicationAddCollateralModal } from '@/presentation/features/loans/applications/components/loan-application-add-collateral-modal'
 import { LoanApplicationCollateralsCard } from '@/presentation/features/loans/applications/components/loan-application-collaterals-card'
@@ -7,6 +9,7 @@ import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applica
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
 import { LoanApplicationRequestedDataCard } from '@/presentation/features/loans/applications/components/loan-application-requested-data-card'
 import { useLoanApplication } from '@/presentation/features/loans/applications/hooks/use-loan-application'
+import { useLoanApplicationReport } from '@/presentation/features/loans/applications/hooks/use-loan-application-report'
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { MessageModal } from '@/presentation/share/components/message-modal'
@@ -19,6 +22,7 @@ import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rat
 type ConfirmAction =
   | 'submit'
   | 'approve'
+  | 'disburse'
   | 'reject'
   | 'cancel'
   | 'return_to_draft'
@@ -46,12 +50,15 @@ export const LoanApplicationDetailPage = () => {
     setApplication,
     setCollaterals,
   } = useLoanApplication()
+  const { report, isLoading: isReportLoading, loadReport, clearReport } =
+    useLoanApplicationReport()
   const {
     isWorkflowRunning,
     isCollateralSaving,
     isPreviewLoading,
     submit,
     approve,
+    disburse,
     reject,
     cancel,
     returnToDraft,
@@ -69,6 +76,7 @@ export const LoanApplicationDetailPage = () => {
   const workflowInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [preview, setPreview] = useState<LoanSchedulePreviewResponse | null>(null)
   const [paymentPlanOpen, setPaymentPlanOpen] = useState(false)
+  const [reportOpen, setReportOpen] = useState(false)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
 
   useEffect(() => {
@@ -92,10 +100,12 @@ export const LoanApplicationDetailPage = () => {
   const canEdit = hasAction('update_draft')
   const canSubmit = hasAction('submit')
   const canApprove = hasAction('approve')
+  const canDisburse = hasAction('disburse')
   const canReject = hasAction('reject')
   const canCancel = hasAction('cancel')
   const canReturnToDraft = hasAction('return_to_draft')
   const canPreview = hasAction('preview_schedule')
+  const canPrint = hasAction('print')
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
   const reasonRequiredActions: ConfirmAction[] = ['reject', 'cancel', 'return_to_draft']
@@ -107,6 +117,20 @@ export const LoanApplicationDetailPage = () => {
   const closeConfirmModal = () => {
     setConfirmAction(null)
     setWorkflowInputError(null)
+  }
+
+  const openPrintPreview = async () => {
+    if (!canPrint) return
+    const result = await loadReport(id)
+    if (result.success) {
+      setReportOpen(true)
+      return
+    }
+    setFeedback({
+      tone: 'error',
+      title: 'No se pudo preparar la impresion',
+      description: result.error,
+    })
   }
 
   const generatePaymentPlan = async (values?: LoanSchedulePreviewFormValues) => {
@@ -132,6 +156,10 @@ export const LoanApplicationDetailPage = () => {
     })
   }
 
+  const refreshApplicationState = async () => {
+    await loadById(id)
+  }
+
   return (
     <div className="space-y-4">
       <LoanApplicationHeaderCard
@@ -139,11 +167,14 @@ export const LoanApplicationDetailPage = () => {
         canEdit={canEdit}
         canSubmit={canSubmit}
         canApprove={canApprove}
+        canDisburse={canDisburse}
         canReject={canReject}
         canCancel={canCancel}
         canReturnToDraft={canReturnToDraft}
         canPreview={canPreview}
+        canPrint={canPrint}
         isProcessingWorkflow={isWorkflowRunning}
+        isPrinting={isReportLoading}
         onOpenFinancialProfile={() =>
           navigate(`/loans/applications/${application.id}/financial-profile`, {
             state: { returnTo: `/loans/applications/${application.id}` },
@@ -153,8 +184,12 @@ export const LoanApplicationDetailPage = () => {
           setPaymentPlanOpen(true)
           void generatePaymentPlan()
         }}
+        onPrint={() => {
+          void openPrintPreview()
+        }}
         onSubmit={() => openConfirmModal('submit')}
         onApprove={() => openConfirmModal('approve')}
+        onDisburse={() => openConfirmModal('disburse')}
         onReject={() => openConfirmModal('reject')}
         onCancel={() => openConfirmModal('cancel')}
         onReturnToDraft={() => openConfirmModal('return_to_draft')}
@@ -253,6 +288,8 @@ export const LoanApplicationDetailPage = () => {
             ? 'Enviar solicitud'
             : confirmAction === 'approve'
               ? 'Aprobar solicitud'
+              : confirmAction === 'disburse'
+                ? 'Desembolsar solicitud'
               : confirmAction === 'reject'
                 ? 'Rechazar solicitud'
                 : confirmAction === 'return_to_draft'
@@ -260,8 +297,8 @@ export const LoanApplicationDetailPage = () => {
                 : 'Cancelar solicitud'
         }
         description={
-          confirmAction === 'return_to_draft'
-            ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
+            confirmAction === 'return_to_draft'
+              ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
             : confirmAction === 'reject' || confirmAction === 'cancel'
               ? 'Esta acción cambiará el estado de la solicitud y requiere motivo.'
               : 'Esta acción cambiará el estado de la solicitud. Puedes registrar una nota.'
@@ -284,6 +321,8 @@ export const LoanApplicationDetailPage = () => {
               ? await submit(id, { notes: note || null })
               : confirmAction === 'approve'
                 ? await approve(id, { notes: note || null })
+                : confirmAction === 'disburse'
+                  ? await disburse(id, { notes: note || null })
                 : confirmAction === 'reject'
                   ? await reject(id, { reason: note })
                   : confirmAction === 'return_to_draft'
@@ -301,11 +340,14 @@ export const LoanApplicationDetailPage = () => {
                 ? 'Solicitud rechazada'
                 : appliedAction === 'approve'
                   ? 'Solicitud aprobada'
+                  : appliedAction === 'disburse'
+                    ? 'Solicitud desembolsada'
                   : appliedAction === 'submit'
                     ? 'Solicitud enviada'
                     : appliedAction === 'cancel'
                       ? 'Solicitud cancelada'
                       : 'Acción aplicada'
+            await refreshApplicationState()
             if (
               appliedAction === 'submit' ||
               appliedAction === 'return_to_draft' ||
@@ -327,9 +369,6 @@ export const LoanApplicationDetailPage = () => {
               tone: 'success',
               title: successTitle,
               description: 'La operación se ejecutó correctamente.',
-              onAcknowledge: () => {
-                void loadById(id)
-              },
             })
             return
           }
@@ -417,6 +456,18 @@ export const LoanApplicationDetailPage = () => {
           callback?.()
         }}
       />
+
+      {report ? (
+        <PdfViewerDialog
+          isOpen={reportOpen}
+          onClose={() => {
+            setReportOpen(false)
+            clearReport()
+          }}
+          title={`Solicitud ${application.applicationNo || application.id.slice(0, 8)}`}
+          document={<LoanApplicationReport data={report} organizationName="PrestaNet" />}
+        />
+      ) : null}
     </div>
   )
 }

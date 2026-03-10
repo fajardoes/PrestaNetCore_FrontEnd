@@ -3,6 +3,7 @@ import type { LoanApplicationApproveRequest } from '@/infrastructure/loans/reque
 import type { LoanApplicationCancelRequest } from '@/infrastructure/loans/requests/loan-application-cancel-request'
 import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans/requests/loan-application-collateral-add-request'
 import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/requests/loan-application-create-request'
+import type { LoanApplicationDisburseRequest } from '@/infrastructure/loans/requests/loan-application-disburse-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
 import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSearchRequest } from '@/infrastructure/loans/requests/loan-application-search-request'
@@ -11,6 +12,7 @@ import type { LoanApplicationUpdateRequest } from '@/infrastructure/loans/reques
 import type { LoanSchedulePreviewRequest } from '@/infrastructure/loans/requests/loan-schedule-preview-request'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
 import type { LoanApplicationActionsResponse } from '@/infrastructure/loans/responses/loan-application-actions-response'
+import type { LoanApplicationReportResponse } from '@/infrastructure/loans/responses/loan-application-report-response'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
 import type { LoanApplicationSearchResponse } from '@/infrastructure/loans/responses/loan-application-search-response'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
@@ -100,6 +102,17 @@ export const approveApplication = async (
   return data
 }
 
+export const disburseApplication = async (
+  id: string,
+  dto: LoanApplicationDisburseRequest,
+): Promise<LoanApplicationResponse> => {
+  const { data } = await httpClient.post<LoanApplicationResponse>(
+    `${basePath}/${id}/disburse`,
+    dto,
+  )
+  return data
+}
+
 export const rejectApplication = async (
   id: string,
   dto: LoanApplicationRejectRequest,
@@ -149,6 +162,15 @@ export const getLoanApplicationActions = async (
 ): Promise<LoanApplicationActionsResponse> => {
   const { data } = await httpClient.get<LoanApplicationActionsResponse>(
     `${basePath}/${id}/actions`,
+  )
+  return data
+}
+
+export const getLoanApplicationReport = async (
+  id: string,
+): Promise<LoanApplicationReportResponse> => {
+  const { data } = await httpClient.get<LoanApplicationReportResponse>(
+    `${basePath}/${id}/report`,
   )
   return data
 }

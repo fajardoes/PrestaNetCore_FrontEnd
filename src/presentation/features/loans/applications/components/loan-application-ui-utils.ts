@@ -26,6 +26,19 @@ export const formatMoney = (value?: number | null) => {
   }).format(value)
 }
 
+export const formatInterestCalculationMethod = (value?: string | null) => {
+  const normalized = (value ?? '').trim().toLowerCase()
+  if (!normalized) return '—'
+  if (normalized === 'interest_by_days') return 'Interés por días'
+  if (normalized === 'interest_by_period') return 'Interés por período'
+  if (normalized === 'flat') return 'Interés fijo'
+  if (normalized.includes('day')) return 'Interés por días'
+  if (normalized.includes('period')) return 'Interés por período'
+  if (normalized.includes('flat') || normalized.includes('fixed interest')) return 'Interés fijo'
+
+  return normalized.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
 export const formatRatio = (value?: number | null) => {
   if (value === null || value === undefined) return '—'
   return new Intl.NumberFormat('es-HN', {
@@ -42,6 +55,7 @@ export const translateLoanApplicationStatus = (
   if (normalized === 'DRAFT') return 'Borrador'
   if (normalized === 'SUBMITTED') return 'Enviada'
   if (normalized === 'APPROVED') return 'Aprobada'
+  if (normalized === 'DISBURSED') return 'Desembolsada'
   if (normalized === 'REJECTED') return 'Rechazada'
   if (normalized === 'CANCELLED') return 'Cancelada'
   return statusName?.trim() || statusCode || '—'
@@ -57,6 +71,9 @@ export const statusBadgeClass = (statusCode?: string | null) => {
   }
   if (normalized === 'APPROVED') {
     return 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-200 dark:ring-emerald-500/40'
+  }
+  if (normalized === 'DISBURSED') {
+    return 'bg-teal-100 text-teal-700 ring-1 ring-teal-200 dark:bg-teal-500/20 dark:text-teal-200 dark:ring-teal-500/40'
   }
   if (normalized === 'REJECTED') {
     return 'bg-red-100 text-red-700 ring-1 ring-red-200 dark:bg-red-500/20 dark:text-red-200 dark:ring-red-500/40'

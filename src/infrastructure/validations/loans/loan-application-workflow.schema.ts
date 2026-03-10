@@ -8,6 +8,10 @@ export const loanApplicationApproveSchema = yup.object({
   notes: yup.string().trim().max(500, 'Máximo 500 caracteres.').nullable().optional(),
 })
 
+export const loanApplicationDisburseSchema = yup.object({
+  notes: yup.string().trim().max(500, 'Máximo 500 caracteres.').nullable().optional(),
+})
+
 export const loanApplicationRejectSchema = yup.object({
   reason: yup.string().trim().max(500, 'Máximo 500 caracteres.').nullable().optional(),
 })
@@ -21,6 +25,9 @@ export type LoanApplicationSubmitValues = yup.InferType<
 >
 export type LoanApplicationApproveValues = yup.InferType<
   typeof loanApplicationApproveSchema
+>
+export type LoanApplicationDisburseValues = yup.InferType<
+  typeof loanApplicationDisburseSchema
 >
 export type LoanApplicationRejectValues = yup.InferType<
   typeof loanApplicationRejectSchema

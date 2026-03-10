@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from '@react-pdf/renderer'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
 import { ReportLayout } from '@/presentation/components/reports/report-layout'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
+import { formatInterestCalculationMethod } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 
 export interface LoanPaymentPlanReportProps {
   preview: LoanSchedulePreviewResponse
@@ -15,14 +16,6 @@ const formatMoney = (value: number) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
-}
-
-const formatInterestMethod = (value: string) => {
-  const normalized = value.trim().toLowerCase()
-  if (normalized === 'interest_by_days') return 'Interes por dias'
-  if (normalized === 'interest_by_period') return 'Interes por periodo'
-  if (normalized === 'flat') return 'Interes fijo'
-  return value.replaceAll('_', ' ')
 }
 
 const InfoItem = ({ label, value }: { label: string; value: string }) => (
@@ -56,7 +49,7 @@ export const LoanPaymentPlanReport = ({
         />
         <InfoItem
           label="Metodo de interes"
-          value={formatInterestMethod(preview.metadata.interestCalculationMethod)}
+          value={formatInterestCalculationMethod(preview.metadata.interestCalculationMethod)}
         />
         <InfoItem
           label="Ajuste ultima cuota"

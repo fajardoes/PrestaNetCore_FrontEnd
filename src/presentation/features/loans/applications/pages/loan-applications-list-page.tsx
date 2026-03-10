@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CircleAlert, Eye, FileCheck2, Pencil, Plus } from 'lucide-react'
+import { CircleAlert, Eye, FileCheck2, Pencil, Plus, Printer } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { LoanApplicationReport } from '@/presentation/components/reports/loans/loan-application-report'
+import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
 import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
@@ -8,6 +10,7 @@ import { MessageModal } from '@/presentation/share/components/message-modal'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
+import { useLoanApplicationReport } from '@/presentation/features/loans/applications/hooks/use-loan-application-report'
 import { useLoanApplicationsList } from '@/presentation/features/loans/applications/hooks/use-loan-applications-list'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
@@ -33,6 +36,11 @@ interface LoanApplicationsListLocationState {
   workflowFeedback?: ListWorkflowFeedback
 }
 
+interface PrintDialogState {
+  id: string
+  label: string
+}
+
 export const LoanApplicationsListPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -56,6 +64,12 @@ export const LoanApplicationsListPage = () => {
     searchPromoters,
     searchLoanProducts,
   } = useLoanApplicationOptions()
+  const {
+    report,
+    isLoading: isReportLoading,
+    loadReport,
+    clearReport,
+  } = useLoanApplicationReport()
   const { hasPermission, isLoading: isLoadingPermissions } = useUserPermissions()
   const canCreateLoanApplication = hasPermission('loan_applications.create')
   const locationState = location.state as LoanApplicationsListLocationState | null
@@ -75,6 +89,20 @@ export const LoanApplicationsListPage = () => {
   const [workflowFeedback, setWorkflowFeedback] = useState<ListWorkflowFeedback | null>(
     workflowFeedbackFromNavigation,
   )
+  const [printDialog, setPrintDialog] = useState<PrintDialogState | null>(null)
+
+  const openPrintPreview = async (id: string, label: string) => {
+    const result = await loadReport(id)
+    if (result.success) {
+      setPrintDialog({ id, label })
+      return
+    }
+    setWorkflowFeedback({
+      tone: 'error',
+      title: 'No se pudo preparar la impresion',
+      description: result.error,
+    })
+  }
 
   useEffect(() => {
     if (!workflowFeedbackFromNavigation) return
@@ -352,6 +380,23 @@ export const LoanApplicationsListPage = () => {
                             <Pencil className="mx-auto h-4 w-4" />
                           </button>
                         ) : null}
+                        {allowedActionsById[item.id]?.includes('print') ? (
+                          <button
+                            type="button"
+                            className="btn-table-action w-7 px-0"
+                            onClick={() =>
+                              void openPrintPreview(
+                                item.id,
+                                item.applicationNo || item.id.slice(0, 8),
+                              )
+                            }
+                            title="Imprimir solicitud"
+                            aria-label="Imprimir"
+                            disabled={isReportLoading}
+                          >
+                            <Printer className="mx-auto h-4 w-4" />
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -380,6 +425,18 @@ export const LoanApplicationsListPage = () => {
           navigate('/loans/applications', { replace: true, state: null })
         }}
       />
+
+      {report && printDialog ? (
+        <PdfViewerDialog
+          isOpen={Boolean(printDialog)}
+          onClose={() => {
+            setPrintDialog(null)
+            clearReport()
+          }}
+          title={`Solicitud ${printDialog.label}`}
+          document={<LoanApplicationReport data={report} organizationName="PrestaNet" />}
+        />
+      ) : null}
     </div>
   )
 }

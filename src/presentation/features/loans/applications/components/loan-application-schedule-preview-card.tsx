@@ -9,7 +9,10 @@ import {
 } from '@/infrastructure/validations/loans/loan-schedule-preview.schema'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
-import { formatMoney } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import {
+  formatInterestCalculationMethod,
+  formatMoney,
+} from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 
 interface LoanApplicationSchedulePreviewCardProps {
@@ -175,7 +178,7 @@ export const LoanApplicationSchedulePreviewCard = ({
             />
             <Meta
               label="Método de interés"
-              value={preview.metadata.interestCalculationMethod}
+              value={formatInterestCalculationMethod(preview.metadata.interestCalculationMethod)}
             />
             <Meta
               label="Ajuste de última cuota"

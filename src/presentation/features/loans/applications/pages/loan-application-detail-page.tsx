@@ -242,6 +242,7 @@ export const LoanApplicationDetailPage = () => {
               : mapRateToPercentValue(application.requestedRateOverride),
           firstDueDateOverride: null,
         }}
+        applicationLabel={application.applicationNo || application.id.slice(0, 8)}
         onClose={() => setPaymentPlanOpen(false)}
       />
 

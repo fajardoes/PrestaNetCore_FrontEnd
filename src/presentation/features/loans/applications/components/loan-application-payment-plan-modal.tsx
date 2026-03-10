@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
+import { Printer } from 'lucide-react'
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import {
   loanSchedulePreviewSchema,
@@ -10,6 +11,8 @@ import { formatMoney } from '@/presentation/features/loans/applications/componen
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
+import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
+import { LoanPaymentPlanReport } from '@/presentation/components/reports/loans/loan-payment-plan-report'
 
 interface LoanApplicationPaymentPlanModalProps {
   open: boolean
@@ -18,6 +21,7 @@ interface LoanApplicationPaymentPlanModalProps {
   onGenerate: (values: LoanSchedulePreviewFormValues) => void
   listPaymentFrequencies: () => Promise<LoanCatalogItemDto[]>
   initialValues?: Partial<LoanSchedulePreviewFormValues>
+  applicationLabel?: string
   onClose: () => void
 }
 
@@ -44,9 +48,11 @@ export const LoanApplicationPaymentPlanModal = ({
   onGenerate,
   listPaymentFrequencies,
   initialValues,
+  applicationLabel,
   onClose,
 }: LoanApplicationPaymentPlanModalProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [isPdfOpen, setIsPdfOpen] = useState(false)
   const [frequencyOptions, setFrequencyOptions] = useState<LoanCatalogItemDto[]>([])
   const [frequencyLoading, setFrequencyLoading] = useState(false)
   const [frequencyError, setFrequencyError] = useState<string | null>(null)
@@ -112,6 +118,15 @@ export const LoanApplicationPaymentPlanModal = ({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="btn-print px-3 py-1.5 text-xs"
+              onClick={() => setIsPdfOpen(true)}
+              disabled={!preview}
+            >
+              <Printer className="h-4 w-4" />
+              Imprimir
+            </button>
             <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={() => {
               reset(resolvedDefaultValues)
               setShowAdvanced((prev) => !prev)
@@ -290,6 +305,20 @@ export const LoanApplicationPaymentPlanModal = ({
           )}
         </div>
       </div>
+
+      {preview ? (
+        <PdfViewerDialog
+          isOpen={isPdfOpen}
+          onClose={() => setIsPdfOpen(false)}
+          title="Plan de pagos"
+          document={
+            <LoanPaymentPlanReport
+              preview={preview}
+              applicationLabel={applicationLabel}
+            />
+          }
+        />
+      ) : null}
     </div>
   )
 }

@@ -1,3 +1,12 @@
+import {
+  ArrowLeftCircle,
+  CheckCircle2,
+  Eye,
+  FileSpreadsheet,
+  Pencil,
+  Send,
+  XCircle,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
 import {
@@ -43,6 +52,13 @@ export const LoanApplicationHeaderCard = ({
   onCancel,
   onReturnToDraft,
 }: LoanApplicationHeaderCardProps) => {
+  const actionClassName =
+    'inline-flex min-h-10 items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60'
+  const secondaryActionClassName = `${actionClassName} btn-secondary border-slate-300/90 bg-white/90 hover:bg-white dark:border-slate-700/90 dark:bg-slate-900/90`
+  const primaryActionClassName = `${actionClassName} btn-primary shadow-lg shadow-primary/15`
+  const dangerActionClassName =
+    'inline-flex min-h-10 items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 shadow-sm transition hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-400/60 focus:ring-offset-2 focus:ring-offset-white disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200 dark:hover:bg-red-500/20 dark:focus:ring-red-500/40 dark:focus:ring-offset-slate-950'
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -60,90 +76,109 @@ export const LoanApplicationHeaderCard = ({
               {translateLoanApplicationStatus(application.statusCode, application.statusName)}
             </span>
             {application.approvedLoanId ? (
-              <Link className="btn-secondary px-3 py-1 text-xs" to={`/loans/${application.approvedLoanId}`}>
+              <Link
+                className="btn-secondary inline-flex items-center gap-2 px-3 py-1 text-xs"
+                to={`/loans/${application.approvedLoanId}`}
+              >
+                <Eye className="h-3.5 w-3.5" />
                 Ir al préstamo
               </Link>
             ) : null}
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          {canEdit ? (
-            <Link
-              className="btn-secondary px-3 py-2 text-sm"
-              to={`/loans/applications/${application.id}/edit`}
-              state={{ returnTo: `/loans/applications/${application.id}` }}
-            >
-              Editar
-            </Link>
-          ) : null}
-          <button
-            type="button"
-            className="btn-secondary px-3 py-2 text-sm"
-            onClick={onOpenFinancialProfile}
-            disabled={isProcessingWorkflow}
-          >
-            Ficha financiera
-          </button>
-          {canSubmit ? (
-            <button
-              type="button"
-              className="btn-primary px-3 py-2 text-sm"
-              onClick={onSubmit}
-              disabled={isProcessingWorkflow}
-            >
-              Enviar
-            </button>
-          ) : null}
-          {canApprove ? (
-            <button
-              type="button"
-              className="btn-primary px-3 py-2 text-sm"
-              onClick={onApprove}
-              disabled={isProcessingWorkflow}
-            >
-              Aprobar
-            </button>
-          ) : null}
-          {canReject ? (
-            <button
-              type="button"
-              className="btn-secondary px-3 py-2 text-sm"
-              onClick={onReject}
-              disabled={isProcessingWorkflow}
-            >
-              Rechazar
-            </button>
-          ) : null}
-          {canCancel ? (
-            <button
-              type="button"
-              className="btn-secondary px-3 py-2 text-sm"
-              onClick={onCancel}
-              disabled={isProcessingWorkflow}
-            >
-              Cancelar
-            </button>
-          ) : null}
-          {canReturnToDraft ? (
-            <button
-              type="button"
-              className="btn-secondary px-3 py-2 text-sm"
-              onClick={onReturnToDraft}
-              disabled={isProcessingWorkflow}
-            >
-              Devolver a borrador
-            </button>
-          ) : null}
-          {canPreview ? (
-            <button
-              type="button"
-              className="btn-secondary px-3 py-2 text-sm"
-              onClick={onOpenPaymentPlan}
-              disabled={isProcessingWorkflow}
-            >
-              Previsualizar cronograma
-            </button>
-          ) : null}
+        <div className="w-full min-[1180px]:w-auto">
+          <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 p-3 shadow-inner dark:border-slate-800 dark:bg-slate-900/60">
+            <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+              Acciones disponibles
+            </p>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {canEdit ? (
+                <Link
+                  className={secondaryActionClassName}
+                  to={`/loans/applications/${application.id}/edit`}
+                  state={{ returnTo: `/loans/applications/${application.id}` }}
+                >
+                  <Pencil className="h-4 w-4" />
+                  Editar
+                </Link>
+              ) : null}
+              <button
+                type="button"
+                className={secondaryActionClassName}
+                onClick={onOpenFinancialProfile}
+                disabled={isProcessingWorkflow}
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Ficha financiera
+              </button>
+              {canPreview ? (
+                <button
+                  type="button"
+                  className={secondaryActionClassName}
+                  onClick={onOpenPaymentPlan}
+                  disabled={isProcessingWorkflow}
+                >
+                  <Eye className="h-4 w-4" />
+                  Ver plan de pagos
+                </button>
+              ) : null}
+              {canSubmit ? (
+                <button
+                  type="button"
+                  className={primaryActionClassName}
+                  onClick={onSubmit}
+                  disabled={isProcessingWorkflow}
+                >
+                  <Send className="h-4 w-4" />
+                  Enviar
+                </button>
+              ) : null}
+              {canApprove ? (
+                <button
+                  type="button"
+                  className={primaryActionClassName}
+                  onClick={onApprove}
+                  disabled={isProcessingWorkflow}
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  Aprobar
+                </button>
+              ) : null}
+              {canReject ? (
+                <button
+                  type="button"
+                  className={dangerActionClassName}
+                  onClick={onReject}
+                  disabled={isProcessingWorkflow}
+                >
+                  <XCircle className="h-4 w-4" />
+                  Rechazar
+                </button>
+              ) : null}
+              {canCancel ? (
+                <button
+                  type="button"
+                  className={dangerActionClassName}
+                  onClick={onCancel}
+                  disabled={isProcessingWorkflow}
+                >
+                  <XCircle className="h-4 w-4" />
+                  Cancelar
+                </button>
+              ) : null}
+              {canReturnToDraft ? (
+                <button
+                  type="button"
+                  className={secondaryActionClassName}
+                  onClick={onReturnToDraft}
+                  disabled={isProcessingWorkflow}
+                >
+                  <ArrowLeftCircle className="h-4 w-4" />
+                  Devolver a borrador
+                </button>
+              ) : null}
+            </div>
+          </div>
         </div>
       </div>
     </section>

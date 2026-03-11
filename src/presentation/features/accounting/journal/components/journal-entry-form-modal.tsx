@@ -5,6 +5,8 @@ import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-cen
 import type { JournalEntryFormValues } from '@/infrastructure/validations/accounting/journal-entry.schema'
 import AsyncSelect from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
+import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
+import { formatAccountingDate, getPeriodLabel } from '@/presentation/features/accounting/accounting-ui'
 
 interface JournalEntryFormModalProps {
   open: boolean
@@ -17,6 +19,9 @@ interface JournalEntryFormModalProps {
   isEdit?: boolean
   accounts: ChartAccountListItem[]
   costCenters?: CostCenter[]
+  businessDate?: string | null
+  operationalPeriodLabel?: string
+  adjustmentPeriods?: AccountingPeriodDto[]
 }
 
 const formatAmount = (value: number) => {
@@ -45,6 +50,9 @@ export const JournalEntryFormModal = ({
   isEdit = false,
   accounts,
   costCenters = [],
+  businessDate,
+  operationalPeriodLabel,
+  adjustmentPeriods = [],
 }: JournalEntryFormModalProps) => {
   const menuPortalTarget = typeof document !== 'undefined' ? document.body : null
 
@@ -73,6 +81,18 @@ export const JournalEntryFormModal = ({
     control,
     name: 'date',
   })
+  const selectedEventDate = useWatch({
+    control,
+    name: 'eventDate',
+  })
+  const postingMode = useWatch({
+    control,
+    name: 'postingMode',
+  })
+  const selectedRequestedPostingPeriodId = useWatch({
+    control,
+    name: 'requestedPostingPeriodId',
+  })
   const linesError = (errors.lines as { message?: string } | undefined)?.message
   const accountOptions = accounts.map((account) => ({
     value: account.id,
@@ -81,6 +101,14 @@ export const JournalEntryFormModal = ({
   const costCenterOptions = costCenters.map((center) => ({
     value: center.id,
     label: `${center.code} - ${center.name}`,
+  }))
+  const postingModeOptions = [
+    { value: 'MANUAL_REGULAR', label: 'Asiento manual regular' },
+    { value: 'MANUAL_ADJUSTMENT', label: 'Ajuste manual' },
+  ]
+  const adjustmentPeriodOptions = adjustmentPeriods.map((period) => ({
+    value: period.id,
+    label: getPeriodLabel(period),
   }))
   const filterOptions = async (
     options: Array<{ value: string; label: string }>,
@@ -143,13 +171,20 @@ export const JournalEntryFormModal = ({
           </div>
         ) : (
           <form className="flex min-h-0 flex-1 flex-col gap-5" onSubmit={onSubmit} noValidate>
+            <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-900/50 dark:bg-sky-500/10 dark:text-sky-100">
+              <p className="font-semibold">
+                Fecha de negocio: {formatAccountingDate(businessDate)}
+              </p>
+              <p>Periodo operativo resuelto: {operationalPeriodLabel || '—'}</p>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-2">
                 <label
                   htmlFor="date"
                   className="block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
-                  Fecha
+                  Fecha contable
                 </label>
                 <DatePicker
                   value={selectedDate}
@@ -171,6 +206,69 @@ export const JournalEntryFormModal = ({
                   disabled={isSaving}
                 />
                 <input type="hidden" {...register('date')} />
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+                  Tipo de asiento
+                </label>
+                <AsyncSelect
+                  value={
+                    postingModeOptions.find((option) => option.value === postingMode) ?? null
+                  }
+                  onChange={(option) => {
+                    const nextValue =
+                      (option?.value as JournalEntryFormValues['postingMode']) ?? 'MANUAL_REGULAR'
+                    setValue('postingMode', nextValue, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    })
+                    if (nextValue !== 'MANUAL_ADJUSTMENT') {
+                      setValue('requestedPostingPeriodId', '', {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                  }}
+                  loadOptions={(inputValue) => filterOptions(postingModeOptions, inputValue)}
+                  defaultOptions={postingModeOptions}
+                  isClearable={false}
+                  isDisabled={isSaving}
+                  instanceId="accounting-journal-entry-posting-mode"
+                  noOptionsMessage="Sin modos"
+                />
+                <input type="hidden" {...register('postingMode')} />
+                {errors.postingMode ? (
+                  <p className="text-xs text-red-500">{errors.postingMode.message}</p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <label
+                  htmlFor="eventDate"
+                  className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+                >
+                  Fecha del evento (opcional)
+                </label>
+                <DatePicker
+                  value={selectedEventDate ?? ''}
+                  onChange={(value) =>
+                    setValue('eventDate', value, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  onBlur={() =>
+                    setValue('eventDate', getValues('eventDate'), {
+                      shouldValidate: true,
+                      shouldTouch: true,
+                    })
+                  }
+                  placeholder="Selecciona una fecha"
+                  disabled={isSaving}
+                />
+                <input type="hidden" {...register('eventDate')} />
               </div>
 
               <div className="space-y-2">
@@ -208,6 +306,48 @@ export const JournalEntryFormModal = ({
               </div>
 
               <div className="space-y-2 md:col-span-3">
+                {postingMode === 'MANUAL_ADJUSTMENT' ? (
+                  <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/10 dark:text-amber-100">
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-semibold">Periodo de ajuste</p>
+                        <p>
+                          Debes seleccionar el periodo y la fecha contable debe pertenecer a ese mismo mes.
+                        </p>
+                      </div>
+                      <div className="max-w-sm space-y-2">
+                        <AsyncSelect
+                          value={
+                            adjustmentPeriodOptions.find(
+                              (option) => option.value === selectedRequestedPostingPeriodId,
+                            ) ?? null
+                          }
+                          onChange={(option) =>
+                            setValue('requestedPostingPeriodId', option?.value ?? '', {
+                              shouldValidate: true,
+                              shouldDirty: true,
+                            })
+                          }
+                          loadOptions={(inputValue) =>
+                            filterOptions(adjustmentPeriodOptions, inputValue)
+                          }
+                          defaultOptions={adjustmentPeriodOptions}
+                          isClearable={false}
+                          isDisabled={isSaving}
+                          instanceId="accounting-journal-entry-adjustment-period"
+                          noOptionsMessage="Sin periodos de ajuste"
+                        />
+                        <input type="hidden" {...register('requestedPostingPeriodId')} />
+                        {errors.requestedPostingPeriodId ? (
+                          <p className="text-xs text-red-500">
+                            {errors.requestedPostingPeriodId.message}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 <label
                   htmlFor="description"
                   className="block text-sm font-medium text-slate-700 dark:text-slate-200"

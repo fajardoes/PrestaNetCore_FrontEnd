@@ -1,7 +1,11 @@
 import { httpClient } from '@/infrastructure/api/httpClient'
 import type { ChartAccountDetail, ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
-import type { AccountingPeriodDto, AccountingPeriodState } from '@/infrastructure/interfaces/accounting/accounting-period'
+import type {
+  AccountingPeriodDto,
+  AccountingPeriodState,
+  AccountingPostingContext,
+} from '@/infrastructure/interfaces/accounting/accounting-period'
 import type { ClosePeriodResult } from '@/infrastructure/interfaces/accounting/close-period-result'
 import type { PagedResponse } from '@/infrastructure/interfaces/accounting/paged-response'
 import type { CreateChartAccountRequest } from '@/infrastructure/interfaces/accounting/requests/create-chart-account.request'
@@ -105,8 +109,15 @@ export const accountingApi = {
 
   async openPeriod(payload: OpenPeriodRequest): Promise<AccountingPeriodDto> {
     const { data } = await httpClient.post<AccountingPeriodDto>(
-      '/accounting/periods/open',
+      '/accounting/periods/open-month',
       payload,
+    )
+    return data
+  },
+
+  async getPostingContext(): Promise<AccountingPostingContext> {
+    const { data } = await httpClient.get<AccountingPostingContext>(
+      '/accounting/periods/posting-context',
     )
     return data
   },
@@ -122,18 +133,58 @@ export const accountingApi = {
     return data
   },
 
+  async enableAdjustments(periodId: string): Promise<AccountingPeriodDto> {
+    const { data } = await httpClient.post<AccountingPeriodDto>(
+      `/accounting/periods/${periodId}/enable-adjustments`,
+      {},
+    )
+    return data
+  },
+
+  async disableAdjustments(periodId: string): Promise<AccountingPeriodDto> {
+    const { data } = await httpClient.post<AccountingPeriodDto>(
+      `/accounting/periods/${periodId}/disable-adjustments`,
+      {},
+    )
+    return data
+  },
+
+  async lockPeriod(periodId: string): Promise<AccountingPeriodDto> {
+    const { data } = await httpClient.post<AccountingPeriodDto>(
+      `/accounting/periods/${periodId}/lock`,
+      {},
+    )
+    return data
+  },
+
+  async enableAutomaticPosting(periodId: string): Promise<AccountingPeriodDto> {
+    const { data } = await httpClient.post<AccountingPeriodDto>(
+      `/accounting/periods/${periodId}/enable-automatic-posting`,
+      {},
+    )
+    return data
+  },
+
+  async disableAutomaticPosting(periodId: string): Promise<AccountingPeriodDto> {
+    const { data } = await httpClient.post<AccountingPeriodDto>(
+      `/accounting/periods/${periodId}/disable-automatic-posting`,
+      {},
+    )
+    return data
+  },
+
   async getJournalEntries(
     params: JournalFilter,
   ): Promise<PagedResponse<JournalEntryListItem>> {
     const { data } = await httpClient.get<PagedResponse<JournalEntryListItem>>(
-      '/accounting/journal',
+      '/accounting/journals',
       { params },
     )
     return data
   },
 
   async getJournalEntryById(id: string): Promise<JournalEntryDetail> {
-    const { data } = await httpClient.get<JournalEntryDetail>(`/accounting/journal/${id}`)
+    const { data } = await httpClient.get<JournalEntryDetail>(`/accounting/journals/${id}`)
     return data
   },
 
@@ -141,7 +192,7 @@ export const accountingApi = {
     payload: CreateJournalEntryRequest,
   ): Promise<JournalEntryDetail> {
     const { data } = await httpClient.post<JournalEntryDetail>(
-      '/accounting/journal',
+      '/accounting/journals',
       payload,
     )
     return data
@@ -152,7 +203,7 @@ export const accountingApi = {
     payload: UpdateJournalEntryRequest,
   ): Promise<JournalEntryDetail> {
     const { data } = await httpClient.put<JournalEntryDetail>(
-      `/accounting/journal/${id}`,
+      `/accounting/journals/${id}`,
       payload,
     )
     return data
@@ -160,7 +211,7 @@ export const accountingApi = {
 
   async postJournalEntry(id: string): Promise<JournalEntryDetail> {
     const { data } = await httpClient.post<JournalEntryDetail>(
-      `/accounting/journal/${id}/post`,
+      `/accounting/journals/${id}/post`,
       {},
     )
     return data
@@ -171,7 +222,7 @@ export const accountingApi = {
     payload: VoidJournalEntryRequest,
   ): Promise<JournalEntryDetail> {
     const { data } = await httpClient.post<JournalEntryDetail>(
-      `/accounting/journal/${id}/void`,
+      `/accounting/journals/${id}/void`,
       payload,
     )
     return data

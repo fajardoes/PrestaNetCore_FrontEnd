@@ -65,6 +65,7 @@ export const LoanApplicationRequestedDataCard = ({
         <Info label="Principal" value={formatMoney(application.requestedPrincipal)} />
         <Info label="Plazo" value={String(application.requestedTerm)} />
         <Info label="Frecuencia" value={application.requestedPaymentFrequencyName} />
+        <Info label="Préstamo desembolsado" value={application.approvedLoanNo || '—'} />
         <Info
           label="Frecuencia sugerida"
           value={application.suggestedPaymentFrequencyName || '—'}

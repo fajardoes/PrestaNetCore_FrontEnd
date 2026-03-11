@@ -2,6 +2,11 @@ import type { JournalEntryListItem } from '@/infrastructure/interfaces/accountin
 import { JournalEntryStateBadge } from './journal-entry-state-badge'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import {
+  formatAccountingDate,
+  getJournalAccountingDate,
+  getPostingModeLabel,
+} from '@/presentation/features/accounting/accounting-ui'
 
 interface JournalTableProps {
   items: JournalEntryListItem[]
@@ -85,7 +90,14 @@ export const JournalTable = ({
           {entry.number || '—'}
         </td>
         <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-          {entry.date}
+          <div className="flex flex-col gap-1">
+            <span>{formatAccountingDate(getJournalAccountingDate(entry))}</span>
+            {entry.eventDate ? (
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Evento: {formatAccountingDate(entry.eventDate)}
+              </span>
+            ) : null}
+          </div>
         </td>
         <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
           {entry.description}
@@ -101,7 +113,15 @@ export const JournalTable = ({
           </div>
         </td>
         <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-          {entry.source === 'manual' ? 'Manual' : 'Sistema'}
+          <div className="flex flex-col gap-1">
+            <span>{entry.source === 'manual' ? 'Manual' : 'Sistema'}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {getPostingModeLabel(entry.postingMode)}
+            </span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {entry.postingPeriodName || entry.periodName || 'Periodo no definido'}
+            </span>
+          </div>
         </td>
         <td className="px-4 py-3 text-right text-sm text-slate-700 dark:text-slate-200">
           {formatAmount(entry.totalDebit)}

@@ -14,7 +14,10 @@ import { JournalEntryDetailModal } from '@/presentation/features/accounting/jour
 import { JournalEntryPostModal } from '@/presentation/features/accounting/journal/components/journal-entry-post-modal'
 import { usePostableAccounts } from '@/presentation/features/accounting/hooks/use-postable-accounts'
 import { useCostCenterOptions } from '@/presentation/features/accounting/hooks/use-cost-center-options'
+import { usePostingContext } from '@/presentation/features/accounting/hooks/use-posting-context'
+import { usePeriodOptions } from '@/presentation/features/accounting/hooks/use-period-options'
 import type { JournalEntryListItem } from '@/infrastructure/interfaces/accounting/journal-entry'
+import { formatAccountingDate, getPeriodLabel, getPostingContextMessages } from '@/presentation/features/accounting/accounting-ui'
 
 export const JournalPage = () => {
   const { user } = useAuth()
@@ -37,6 +40,8 @@ export const JournalPage = () => {
 
   const accountsHook = usePostableAccounts({ enabled: isAdmin })
   const costCentersHook = useCostCenterOptions({ enabled: isAdmin })
+  const periodOptionsHook = usePeriodOptions({ enabled: isAdmin })
+  const postingContextHook = usePostingContext({ enabled: isAdmin })
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -46,6 +51,7 @@ export const JournalPage = () => {
 
   const formHook = useJournalEntryForm({
     entryId: editingId,
+    adjustmentPeriods: postingContextHook.postingContext?.adjustmentPeriods ?? [],
     onCompleted: async () => {
       notify(
         editingId ? 'Asiento actualizado correctamente.' : 'Asiento creado en borrador.',
@@ -53,7 +59,7 @@ export const JournalPage = () => {
       )
       setIsFormOpen(false)
       setEditingId(null)
-      await refresh()
+      await Promise.all([refresh(), postingContextHook.refresh()])
     },
   })
 
@@ -75,6 +81,7 @@ export const JournalPage = () => {
   const postDetailHook = useJournalEntryDetail()
 
   const canCreate = isAdmin
+  const postingMessages = getPostingContextMessages(postingContextHook.postingContext)
 
   const handleView = async (entry: JournalEntryListItem) => {
     setIsDetailOpen(true)
@@ -121,6 +128,33 @@ export const JournalPage = () => {
         </p>
       </div>
 
+      {postingContextHook.postingContext ? (
+        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm text-sky-900 shadow-sm dark:border-sky-900/50 dark:bg-sky-500/10 dark:text-sky-100">
+          <div className="flex flex-col gap-1">
+            <p className="font-semibold">
+              Fecha de negocio: {formatAccountingDate(postingContextHook.postingContext.businessDate)}
+            </p>
+            <p>
+              Periodo operativo resuelto:{' '}
+              {getPeriodLabel(
+                postingContextHook.postingContext.operationalPeriodResolvedFromBusinessDate,
+              )}
+            </p>
+          </div>
+          {postingMessages.length ? (
+            <div className="mt-3 space-y-1 border-t border-sky-200 pt-3 dark:border-sky-800/60">
+              {postingMessages.map((message) => (
+                <p key={message}>{message}</p>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : postingContextHook.error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 shadow-sm dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+          {postingContextHook.error}
+        </div>
+      ) : null}
+
       <JournalFiltersBar
         filters={filters}
         onFiltersChange={(next) => setFilters((prev) => ({ ...prev, ...next }))}
@@ -144,6 +178,7 @@ export const JournalPage = () => {
             </button>
           ) : null
         }
+        periods={periodOptionsHook.periods}
       />
 
       <JournalTable
@@ -174,6 +209,11 @@ export const JournalPage = () => {
         isEdit={Boolean(editingId)}
         accounts={accountsHook.accounts}
         costCenters={costCentersHook.costCenters}
+        businessDate={postingContextHook.postingContext?.businessDate}
+        operationalPeriodLabel={getPeriodLabel(
+          postingContextHook.postingContext?.operationalPeriodResolvedFromBusinessDate,
+        )}
+        adjustmentPeriods={postingContextHook.postingContext?.adjustmentPeriods ?? []}
       />
 
       <JournalEntryPostModal

@@ -2,6 +2,7 @@ import type { LoanDisbursementChargeResponse } from './loan-disbursement-charge-
 
 export interface LoanResponse {
   id: string
+  loanNo?: string | null
   applicationId: string
   clientId: string
   loanProductId: string

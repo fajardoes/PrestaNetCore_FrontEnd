@@ -137,7 +137,7 @@ export const LoanApplicationsListPage = () => {
           onStatusChange={() => undefined}
           showStatus={false}
           layout="two-rows"
-          placeholder="Buscar por número, cliente o producto..."
+          placeholder="Buscar por SCC-..., PRE-..., cliente o producto..."
           actions={
             <div className="flex items-center gap-2">
               <button
@@ -275,7 +275,7 @@ export const LoanApplicationsListPage = () => {
           <table className="min-w-full">
             <thead>
               <tr>
-                <th>Código</th>
+                <th>Solicitud / préstamo</th>
                 <th>Cliente</th>
                 <th>Producto</th>
                 <th>Promotor</th>
@@ -309,7 +309,18 @@ export const LoanApplicationsListPage = () => {
               ) : (
                 items.map((item) => (
                   <tr key={item.id}>
-                    <td className="font-medium">{item.applicationNo || item.id.slice(0, 8)}</td>
+                    <td>
+                      <div>
+                        <p className="font-medium">
+                          {item.applicationNo || item.id.slice(0, 8)}
+                        </p>
+                        {item.approvedLoanNo ? (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                            Préstamo: {item.approvedLoanNo}
+                          </p>
+                        ) : null}
+                      </div>
+                    </td>
                     <td>
                       <div>
                         <p>{item.clientFullName}</p>

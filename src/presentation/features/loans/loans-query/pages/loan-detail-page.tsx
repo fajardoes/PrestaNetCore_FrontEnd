@@ -39,13 +39,16 @@ export const LoanDetailPage = () => {
     )
   }
 
+  const loanLabel = loan.loanNo?.trim() || loan.id
+
   return (
     <div className="space-y-4">
       <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Préstamo</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{loanLabel}</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">ID: {loan.id}</p>
 
         <div className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+          <Meta label="No. de préstamo" value={loan.loanNo?.trim() || '—'} />
           <Meta label="Estado" value={loan.statusName} />
           <Meta label="Principal" value={formatCurrency(loan.principal)} />
           <Meta label="Plazo" value={String(loan.term)} />

@@ -39,6 +39,7 @@ export interface LoanApplicationResponse {
   workflowReason?: string | null
   lastWorkflowReason?: string | null
   approvedLoanId?: string | null
+  approvedLoanNo?: string | null
   hasFinancialProfile?: boolean
   isFinancialProfileComplete?: boolean
   financialProfileUpdatedAt?: string | null

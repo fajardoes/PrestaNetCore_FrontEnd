@@ -60,8 +60,10 @@ export const LoanProductDetailModal = ({
     const accountIds = [
       product.glLoanPortfolioAccountId,
       product.glInterestIncomeAccountId,
+      product.glInterestReceivableAccountId,
       product.glInterestSuspenseAccountId,
       product.glFeeIncomeAccountId,
+      product.glDeferredFeeAccountId,
       product.glInsurancePayableAccountId,
     ].filter((value): value is string => Boolean(value))
 
@@ -115,12 +117,18 @@ export const LoanProductDetailModal = ({
         interestIncome:
           glAccounts[product.glInterestIncomeAccountId] ||
           product.glInterestIncomeAccountId,
+        interestReceivable:
+          glAccounts[product.glInterestReceivableAccountId] ||
+          product.glInterestReceivableAccountId,
         interestSuspense: product.glInterestSuspenseAccountId
           ? glAccounts[product.glInterestSuspenseAccountId] ||
             product.glInterestSuspenseAccountId
           : null,
         feeIncome: product.glFeeIncomeAccountId
           ? glAccounts[product.glFeeIncomeAccountId] || product.glFeeIncomeAccountId
+          : null,
+        deferredFee: product.glDeferredFeeAccountId
+          ? glAccounts[product.glDeferredFeeAccountId] || product.glDeferredFeeAccountId
           : null,
         insurancePayable: product.glInsurancePayableAccountId
           ? glAccounts[product.glInsurancePayableAccountId] ||
@@ -325,6 +333,13 @@ export const LoanProductDetailModal = ({
                 }
               />
               <DetailItem
+                label="Interés por cobrar"
+                value={
+                  glAccounts[product.glInterestReceivableAccountId] ||
+                  product.glInterestReceivableAccountId
+                }
+              />
+              <DetailItem
                 label="Intereses suspendidos"
                 value={
                   product.glInterestSuspenseAccountId
@@ -339,6 +354,15 @@ export const LoanProductDetailModal = ({
                   product.glFeeIncomeAccountId
                     ? glAccounts[product.glFeeIncomeAccountId] ||
                       product.glFeeIncomeAccountId
+                    : '—'
+                }
+              />
+              <DetailItem
+                label="Comisión diferida"
+                value={
+                  product.glDeferredFeeAccountId
+                    ? glAccounts[product.glDeferredFeeAccountId] ||
+                      product.glDeferredFeeAccountId
                     : '—'
                 }
               />

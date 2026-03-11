@@ -1,5 +1,18 @@
 import * as yup from 'yup'
 
+const EMPTY_GUID = '00000000-0000-0000-0000-000000000000'
+
+const requiredCatalogId = (label: string) =>
+  yup
+    .string()
+    .trim()
+    .required(`${label} es requerido.`)
+    .test(
+      'not-empty-guid',
+      `${label} es requerido.`,
+      (value) => Boolean(value) && value !== EMPTY_GUID,
+    )
+
 export const feeSchema = yup.object({
   feeTypeId: yup.string().trim().required('El tipo de comisión es requerido.'),
   chargeBaseId: yup.string().trim().required('La base de cobro es requerida.'),
@@ -112,28 +125,16 @@ export const loanProductFormSchema = yup.object({
         return value >= minTerm
       },
     ),
-  termUnitId: yup
-    .string()
-    .trim()
-    .required('La unidad de plazo es requerida.'),
-  interestRateTypeId: yup
-    .string()
-    .trim()
-    .required('El tipo de tasa es requerido.'),
+  termUnitId: requiredCatalogId('La unidad de plazo'),
+  interestRateTypeId: requiredCatalogId('El tipo de tasa'),
   nominalRate: yup
     .number()
     .typeError('La tasa nominal es requerida.')
     .min(0, 'La tasa nominal debe ser mayor o igual a 0.')
     .required('La tasa nominal es requerida.'),
-  rateBaseId: yup.string().trim().required('La base de tasa es requerida.'),
-  amortizationMethodId: yup
-    .string()
-    .trim()
-    .required('El método de amortización es requerido.'),
-  paymentFrequencyId: yup
-    .string()
-    .trim()
-    .required('La frecuencia de pago es requerida.'),
+  rateBaseId: requiredCatalogId('La base de tasa'),
+  amortizationMethodId: requiredCatalogId('El método de amortización'),
+  paymentFrequencyId: requiredCatalogId('La frecuencia de pago'),
   gracePrincipal: yup
     .number()
     .typeError('La gracia de capital es requerida.')
@@ -158,10 +159,10 @@ export const loanProductFormSchema = yup.object({
       otherwise: (schema) => schema.nullable().optional(),
     }),
   hasInsurance: yup.boolean().required(),
-  portfolioTypeId: yup
-    .string()
-    .trim()
-    .required('El tipo de cartera es requerido.'),
+  portfolioTypeId: requiredCatalogId('El tipo de cartera'),
+  dayRuleId: requiredCatalogId('La regla de días'),
+  roundingModeId: requiredCatalogId('El modo de redondeo'),
+  holidayAdjustmentRuleId: requiredCatalogId('La regla de ajuste por feriado'),
   glLoanPortfolioAccountId: yup
     .string()
     .trim()
@@ -170,9 +171,43 @@ export const loanProductFormSchema = yup.object({
     .string()
     .trim()
     .required('La cuenta de ingresos por intereses es requerida.'),
+  glInterestReceivableAccountId: yup
+    .string()
+    .trim()
+    .required('La cuenta de interés por cobrar es requerida.'),
   glInterestSuspenseAccountId: yup.string().trim().nullable().optional(),
-  glFeeIncomeAccountId: yup.string().trim().nullable().optional(),
-  glInsurancePayableAccountId: yup.string().trim().nullable().optional(),
+  hasActiveDisbursementFees: yup.boolean().required(),
+  hasActiveDisbursementInsurances: yup.boolean().required(),
+  glFeeIncomeAccountId: yup
+    .string()
+    .trim()
+    .nullable()
+    .when('hasActiveDisbursementFees', {
+      is: true,
+      then: (schema) =>
+        schema.required('La cuenta de ingresos por comisiones es requerida.'),
+      otherwise: (schema) => schema.optional(),
+    }),
+  glDeferredFeeAccountId: yup
+    .string()
+    .trim()
+    .nullable()
+    .when('hasActiveDisbursementFees', {
+      is: true,
+      then: (schema) =>
+        schema.required('La cuenta de comisión diferida es requerida.'),
+      otherwise: (schema) => schema.optional(),
+    }),
+  glInsurancePayableAccountId: yup
+    .string()
+    .trim()
+    .nullable()
+    .when('hasActiveDisbursementInsurances', {
+      is: true,
+      then: (schema) =>
+        schema.required('La cuenta de seguros por pagar es requerida.'),
+      otherwise: (schema) => schema.optional(),
+    }),
   fees: yup.array().of(feeSchema).required(),
   insurances: yup.array().of(insuranceSchema).required(),
   collateralRules: yup.array().of(collateralRuleSchema).required(),

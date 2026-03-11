@@ -1,3 +1,5 @@
+import type { LoanDisbursementChargeResponse } from './loan-disbursement-charge-response'
+
 export interface LoanResponse {
   id: string
   applicationId: string
@@ -18,4 +20,12 @@ export interface LoanResponse {
   firstDueDate?: string | null
   maturityDate?: string | null
   nominalRate: number
+  grossDisbursementAmount?: number | null
+  netDisbursementAmount?: number | null
+  totalDisbursementFees?: number | null
+  totalDisbursementInsurance?: number | null
+  disbursementJournalEntryId?: string | null
+  interestRecognitionPolicyCode?: string | null
+  feeRecognitionPolicyCode?: string | null
+  disbursementCharges?: LoanDisbursementChargeResponse[]
 }

@@ -8,6 +8,8 @@ import { LoanApplicationCollateralsCard } from '@/presentation/features/loans/ap
 import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applications/components/loan-application-header-card'
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
 import { LoanApplicationRequestedDataCard } from '@/presentation/features/loans/applications/components/loan-application-requested-data-card'
+import { DisburseLoanModal } from '@/presentation/features/loans/components/disburse-loan-modal'
+import { DisbursementSummaryCard } from '@/presentation/features/loans/components/disbursement-summary-card'
 import { useLoanApplication } from '@/presentation/features/loans/applications/hooks/use-loan-application'
 import { useLoanApplicationReport } from '@/presentation/features/loans/applications/hooks/use-loan-application-report'
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
@@ -78,6 +80,7 @@ export const LoanApplicationDetailPage = () => {
   const [paymentPlanOpen, setPaymentPlanOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
+  const [disburseModalOpen, setDisburseModalOpen] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -160,6 +163,11 @@ export const LoanApplicationDetailPage = () => {
     await loadById(id)
   }
 
+  const openDisbursementModal = () => {
+    setDisburseModalOpen(true)
+    void generatePaymentPlan()
+  }
+
   return (
     <div className="space-y-4">
       <LoanApplicationHeaderCard
@@ -189,7 +197,7 @@ export const LoanApplicationDetailPage = () => {
         }}
         onSubmit={() => openConfirmModal('submit')}
         onApprove={() => openConfirmModal('approve')}
-        onDisburse={() => openConfirmModal('disburse')}
+        onDisburse={openDisbursementModal}
         onReject={() => openConfirmModal('reject')}
         onCancel={() => openConfirmModal('cancel')}
         onReturnToDraft={() => openConfirmModal('return_to_draft')}
@@ -202,6 +210,14 @@ export const LoanApplicationDetailPage = () => {
       ) : null}
 
       <LoanApplicationRequestedDataCard application={application} />
+
+      {(canDisburse || application.disbursedOperationalDate) && (
+        <DisbursementSummaryCard
+          title="Resumen de desembolso"
+          emptyMessage="Aún no hay datos detallados del desembolso para esta solicitud."
+          data={preview?.disbursement ?? application}
+        />
+      )}
 
       <LoanApplicationCollateralsCard
         collaterals={collaterals}
@@ -282,14 +298,12 @@ export const LoanApplicationDetailPage = () => {
       />
 
       <ConfirmModal
-        open={Boolean(confirmAction)}
+        open={Boolean(confirmAction) && confirmAction !== 'disburse'}
         title={
           confirmAction === 'submit'
             ? 'Enviar solicitud'
             : confirmAction === 'approve'
               ? 'Aprobar solicitud'
-              : confirmAction === 'disburse'
-                ? 'Desembolsar solicitud'
               : confirmAction === 'reject'
                 ? 'Rechazar solicitud'
                 : confirmAction === 'return_to_draft'
@@ -297,8 +311,8 @@ export const LoanApplicationDetailPage = () => {
                 : 'Cancelar solicitud'
         }
         description={
-            confirmAction === 'return_to_draft'
-              ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
+          confirmAction === 'return_to_draft'
+            ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
             : confirmAction === 'reject' || confirmAction === 'cancel'
               ? 'Esta acción cambiará el estado de la solicitud y requiere motivo.'
               : 'Esta acción cambiará el estado de la solicitud. Puedes registrar una nota.'
@@ -321,8 +335,6 @@ export const LoanApplicationDetailPage = () => {
               ? await submit(id, { notes: note || null })
               : confirmAction === 'approve'
                 ? await approve(id, { notes: note || null })
-                : confirmAction === 'disburse'
-                  ? await disburse(id, { notes: note || null })
                 : confirmAction === 'reject'
                   ? await reject(id, { reason: note })
                   : confirmAction === 'return_to_draft'
@@ -340,8 +352,6 @@ export const LoanApplicationDetailPage = () => {
                 ? 'Solicitud rechazada'
                 : appliedAction === 'approve'
                   ? 'Solicitud aprobada'
-                  : appliedAction === 'disburse'
-                    ? 'Solicitud desembolsada'
                   : appliedAction === 'submit'
                     ? 'Solicitud enviada'
                     : appliedAction === 'cancel'
@@ -413,6 +423,35 @@ export const LoanApplicationDetailPage = () => {
           </div>
         ) : null}
       </ConfirmModal>
+
+      <DisburseLoanModal
+        open={disburseModalOpen}
+        application={application}
+        previewDisbursement={preview?.disbursement ?? null}
+        isPreviewLoading={isPreviewLoading}
+        isProcessing={isWorkflowRunning}
+        onCancel={() => setDisburseModalOpen(false)}
+        onConfirm={async (notes) => {
+          const result = await disburse(id, { notes })
+          if (result.success) {
+            setApplication(result.data)
+            setDisburseModalOpen(false)
+            await refreshApplicationState()
+            setFeedback({
+              tone: 'success',
+              title: 'Solicitud desembolsada',
+              description: 'La operación se ejecutó correctamente.',
+            })
+            return
+          }
+
+          setFeedback({
+            tone: 'error',
+            title: 'No se pudo desembolsar la solicitud',
+            description: result.error,
+          })
+        }}
+      />
 
       <ConfirmModal
         open={Boolean(pendingCollateral)}

@@ -10,6 +10,9 @@ interface LoanCatalogsCacheState {
   amortizationMethods: LoanCatalogItemDto[]
   paymentFrequencies: LoanCatalogItemDto[]
   portfolioTypes: LoanCatalogItemDto[]
+  dayRules: LoanCatalogItemDto[]
+  roundingModes: LoanCatalogItemDto[]
+  holidayAdjustmentRules: LoanCatalogItemDto[]
   feeTypes: LoanCatalogItemDto[]
   feeChargeBases: LoanCatalogItemDto[]
   feeValueTypes: LoanCatalogItemDto[]
@@ -28,6 +31,9 @@ const emptyState: LoanCatalogsCacheState = {
   amortizationMethods: [],
   paymentFrequencies: [],
   portfolioTypes: [],
+  dayRules: [],
+  roundingModes: [],
+  holidayAdjustmentRules: [],
   feeTypes: [],
   feeChargeBases: [],
   feeValueTypes: [],
@@ -80,6 +86,9 @@ export const useLoanCatalogsCache = () => {
         amortizationMethods,
         paymentFrequencies,
         portfolioTypes,
+        dayRules,
+        roundingModes,
+        holidayAdjustmentRules,
         feeTypes,
         feeChargeBases,
         feeValueTypes,
@@ -96,6 +105,9 @@ export const useLoanCatalogsCache = () => {
         loadCatalog('amortization-methods'),
         loadCatalog('payment-frequencies'),
         loadCatalog('portfolio-types'),
+        loadCatalog('day-rules'),
+        loadCatalog('rounding-modes'),
+        loadCatalog('holiday-adjustment-rules'),
         loadCatalog('fee-types'),
         loadCatalog('fee-charge-bases'),
         loadCatalog('fee-value-types'),
@@ -114,6 +126,9 @@ export const useLoanCatalogsCache = () => {
         amortizationMethods,
         paymentFrequencies,
         portfolioTypes,
+        dayRules,
+        roundingModes,
+        holidayAdjustmentRules,
         feeTypes,
         feeChargeBases,
         feeValueTypes,

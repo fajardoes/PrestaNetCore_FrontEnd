@@ -16,8 +16,10 @@ export interface LoanProductReportData {
   glAccounts: {
     loanPortfolio?: string
     interestIncome?: string
+    interestReceivable?: string
     interestSuspense?: string | null
     feeIncome?: string | null
+    deferredFee?: string | null
     insurancePayable?: string | null
   }
   fees: Array<{
@@ -124,8 +126,10 @@ export const LoanProductReport = ({
         <View style={styles.grid}>
           <InfoItem label="Cuenta cartera" value={data.glAccounts.loanPortfolio || product.glLoanPortfolioAccountId} />
           <InfoItem label="Intereses" value={data.glAccounts.interestIncome || product.glInterestIncomeAccountId} />
+          <InfoItem label="Interés por cobrar" value={data.glAccounts.interestReceivable || product.glInterestReceivableAccountId} />
           <InfoItem label="Intereses suspendidos" value={data.glAccounts.interestSuspense || '—'} />
           <InfoItem label="Comisiones" value={data.glAccounts.feeIncome || '—'} />
+          <InfoItem label="Comisión diferida" value={data.glAccounts.deferredFee || '—'} />
           <InfoItem label="Seguros por pagar" value={data.glAccounts.insurancePayable || '—'} />
         </View>
       </View>

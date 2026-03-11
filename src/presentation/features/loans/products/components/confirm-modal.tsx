@@ -6,6 +6,7 @@ interface ConfirmModalProps {
   description: string
   confirmLabel?: string
   cancelLabel?: string
+  panelClassName?: string
   isProcessing?: boolean
   confirmDisabled?: boolean
   children?: ReactNode
@@ -19,6 +20,7 @@ export const ConfirmModal = ({
   description,
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
+  panelClassName,
   isProcessing,
   confirmDisabled,
   children,
@@ -29,7 +31,11 @@ export const ConfirmModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
+      <div
+        className={`w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950 ${
+          panelClassName ?? 'max-w-md'
+        }`}
+      >
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
             {title}

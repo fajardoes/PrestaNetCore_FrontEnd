@@ -26,6 +26,14 @@ export const formatMoney = (value?: number | null) => {
   }).format(value)
 }
 
+export const formatCurrency = (value?: number | null) =>
+  value === null || value === undefined ? '—' : `L ${formatMoney(value)}`
+
+export const formatPercentValue = (value?: number | null) => {
+  if (value === null || value === undefined) return '—'
+  return `${formatMoney(value)}%`
+}
+
 export const formatInterestCalculationMethod = (value?: string | null) => {
   const normalized = (value ?? '').trim().toLowerCase()
   if (!normalized) return '—'
@@ -46,6 +54,67 @@ export const formatRatio = (value?: number | null) => {
     maximumFractionDigits: 2,
   }).format(value)
 }
+
+export const formatYesNo = (value?: boolean | null) => (value ? 'Sí' : 'No')
+
+export const formatChargeTypeCode = (value?: string | null) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'FEE') return 'Comisión'
+  if (normalized === 'INSURANCE') return 'Seguro'
+  return value?.trim() || '—'
+}
+
+export const formatChargeRateOrValue = (
+  value?: number | null,
+  valueTypeCode?: string | null,
+) => {
+  const normalized = (valueTypeCode ?? '').trim().toUpperCase()
+  if (normalized === 'PERCENTAGE') return formatPercentValue(value)
+  if (normalized === 'FIXED_AMOUNT') return formatCurrency(value)
+  return value === null || value === undefined ? '—' : formatMoney(value)
+}
+
+export const formatChargeTimingCode = (value?: string | null) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'DISBURSEMENT') return 'Al desembolso'
+  return value?.trim() || '—'
+}
+
+export const formatDisbursementChargeSource = (
+  sourceType?: string | null,
+) => {
+  const normalized = (sourceType ?? '').trim().toUpperCase()
+  if (normalized === 'LOAN_PRODUCT_FEE') return 'Comisión configurada'
+  if (normalized === 'LOAN_PRODUCT_INSURANCE') return 'Seguro configurado'
+  if (normalized === 'FEE') return 'Comisión configurada'
+  if (normalized === 'INSURANCE') return 'Seguro configurado'
+  return 'Cargo configurado'
+}
+
+export const translateRecognitionPolicy = (
+  value?: string | null,
+  type: 'interest' | 'fee' = 'interest',
+) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (!normalized) return 'No definida'
+  if (normalized === 'ACCRUAL_ON_DUE') return 'Devengo al vencimiento'
+  if (normalized === 'STRAIGHT_LINE') return 'Reconocimiento lineal'
+  if (type === 'interest' && normalized === 'ACCRUAL_DAILY') return 'Devengo diario'
+  return normalized.replaceAll('_', ' ').toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
+export const hasDisbursementData = (value: {
+  grossDisbursementAmount?: number | null
+  totalDisbursementFees?: number | null
+  totalDisbursementInsurance?: number | null
+  netDisbursementAmount?: number | null
+  disbursementJournalEntryId?: string | null
+}) =>
+  value.grossDisbursementAmount != null ||
+  value.totalDisbursementFees != null ||
+  value.totalDisbursementInsurance != null ||
+  value.netDisbursementAmount != null ||
+  Boolean(value.disbursementJournalEntryId?.trim())
 
 export const translateLoanApplicationStatus = (
   statusCode?: string | null,

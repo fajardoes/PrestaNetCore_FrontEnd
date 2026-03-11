@@ -2,8 +2,14 @@ import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { useLoan } from '@/presentation/features/loans/loans-query/hooks/use-loan'
 import { useLoanInstallments } from '@/presentation/features/loans/loans-query/hooks/use-loan-installments'
+import { DisbursementChargesTable } from '@/presentation/features/loans/components/disbursement-charges-table'
+import { DisbursementSummaryCard } from '@/presentation/features/loans/components/disbursement-summary-card'
+import { RecognitionPolicyBadges } from '@/presentation/features/loans/components/recognition-policy-badges'
 import { TableContainer } from '@/presentation/share/components/table-container'
-import { formatMoney } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import {
+  formatCurrency,
+  formatMoney,
+} from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 
 export const LoanDetailPage = () => {
@@ -41,13 +47,29 @@ export const LoanDetailPage = () => {
 
         <div className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
           <Meta label="Estado" value={loan.statusName} />
-          <Meta label="Principal" value={formatMoney(loan.principal)} />
+          <Meta label="Principal" value={formatCurrency(loan.principal)} />
           <Meta label="Plazo" value={String(loan.term)} />
           <Meta label="Frecuencia" value={loan.paymentFrequencyName} />
           <Meta label="Tasa nominal" value={formatRateAsPercent(loan.nominalRate)} />
           <Meta label="Vence" value={loan.maturityDate ?? '—'} />
         </div>
       </section>
+
+      <DisbursementSummaryCard data={loan} />
+
+      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          Políticas informativas
+        </h2>
+        <div className="mt-3">
+          <RecognitionPolicyBadges
+            interestPolicyCode={loan.interestRecognitionPolicyCode}
+            feePolicyCode={loan.feeRecognitionPolicyCode}
+          />
+        </div>
+      </section>
+
+      <DisbursementChargesTable charges={loan.disbursementCharges} />
 
       <TableContainer mode="legacy-compact" variant="strong">
         <div className="overflow-x-auto">

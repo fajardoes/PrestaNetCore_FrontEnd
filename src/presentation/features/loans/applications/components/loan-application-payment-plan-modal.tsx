@@ -16,6 +16,8 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
 import { LoanPaymentPlanReport } from '@/presentation/components/reports/loans/loan-payment-plan-report'
+import { DisbursementChargesTable } from '@/presentation/features/loans/components/disbursement-charges-table'
+import { DisbursementSummaryCard } from '@/presentation/features/loans/components/disbursement-summary-card'
 
 interface LoanApplicationPaymentPlanModalProps {
   open: boolean
@@ -271,6 +273,16 @@ export const LoanApplicationPaymentPlanModal = ({
                   value={formatMoney(preview.metadata.lastInstallmentAdjustment)}
                 />
               </div>
+
+              {preview.disbursement ? (
+                <>
+                  <DisbursementSummaryCard
+                    title="Resumen proyectado del desembolso"
+                    data={preview.disbursement}
+                  />
+                  <DisbursementChargesTable charges={preview.disbursement.charges} />
+                </>
+              ) : null}
 
               <table className="min-w-full text-sm">
                 <thead>

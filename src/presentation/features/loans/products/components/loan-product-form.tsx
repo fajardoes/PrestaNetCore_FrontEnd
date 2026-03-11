@@ -22,6 +22,9 @@ interface LoanCatalogOptions {
   amortizationMethods: LoanCatalogItemDto[]
   paymentFrequencies: LoanCatalogItemDto[]
   portfolioTypes: LoanCatalogItemDto[]
+  dayRules: LoanCatalogItemDto[]
+  roundingModes: LoanCatalogItemDto[]
+  holidayAdjustmentRules: LoanCatalogItemDto[]
   feeTypes: LoanCatalogItemDto[]
   feeChargeBases: LoanCatalogItemDto[]
   feeValueTypes: LoanCatalogItemDto[]
@@ -71,11 +74,18 @@ const defaultValues: LoanProductFormValues = {
   minCollateralRatio: undefined,
   hasInsurance: false,
   portfolioTypeId: '',
+  dayRuleId: '',
+  roundingModeId: '',
+  holidayAdjustmentRuleId: '',
   glLoanPortfolioAccountId: '',
   glInterestIncomeAccountId: '',
+  glInterestReceivableAccountId: '',
   glInterestSuspenseAccountId: null,
   glFeeIncomeAccountId: null,
+  glDeferredFeeAccountId: null,
   glInsurancePayableAccountId: null,
+  hasActiveDisbursementFees: false,
+  hasActiveDisbursementInsurances: false,
   fees: [],
   insurances: [],
   collateralRules: [],
@@ -139,12 +149,19 @@ export const LoanProductForm = ({
   const requiresCollateral = useWatch({ control, name: 'requiresCollateral' })
   const hasInsurance = useWatch({ control, name: 'hasInsurance' })
   const insurances = useWatch({ control, name: 'insurances' })
+  const fees = useWatch({ control, name: 'fees' })
   const termUnitId = useWatch({ control, name: 'termUnitId' })
   const interestRateTypeId = useWatch({ control, name: 'interestRateTypeId' })
   const rateBaseId = useWatch({ control, name: 'rateBaseId' })
   const amortizationMethodId = useWatch({ control, name: 'amortizationMethodId' })
   const paymentFrequencyId = useWatch({ control, name: 'paymentFrequencyId' })
   const portfolioTypeId = useWatch({ control, name: 'portfolioTypeId' })
+  const dayRuleId = useWatch({ control, name: 'dayRuleId' })
+  const roundingModeId = useWatch({ control, name: 'roundingModeId' })
+  const holidayAdjustmentRuleId = useWatch({
+    control,
+    name: 'holidayAdjustmentRuleId',
+  })
   const selectedTermUnit = catalogs.termUnits.find((item) => item.id === termUnitId)
   const termUnitLabel = selectedTermUnit?.name ?? 'unidad'
   const termUnitOptions = useMemo(
@@ -201,12 +218,63 @@ export const LoanProductForm = ({
       })),
     [catalogs.portfolioTypes],
   )
+  const dayRuleOptions = useMemo(
+    () =>
+      catalogs.dayRules.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.dayRules],
+  )
+  const roundingModeOptions = useMemo(
+    () =>
+      catalogs.roundingModes.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.roundingModes],
+  )
+  const holidayAdjustmentRuleOptions = useMemo(
+    () =>
+      catalogs.holidayAdjustmentRules.map((item) => ({
+        value: item.id,
+        label: getOptionLabel(item),
+        meta: item,
+      })),
+    [catalogs.holidayAdjustmentRules],
+  )
 
   useEffect(() => {
     if (!requiresCollateral) {
       setValue('minCollateralRatio', null)
     }
   }, [requiresCollateral, setValue])
+
+  useEffect(() => {
+    const hasActiveDisbursementFees = (fees ?? []).some((fee) => {
+      if (fee.isActive === false) return false
+      const timing = catalogs.feeChargeTimings.find((item) => item.id === fee.chargeTimingId)
+      return (timing?.code ?? '').trim().toUpperCase() === 'DISBURSEMENT'
+    })
+    setValue('hasActiveDisbursementFees', hasActiveDisbursementFees, {
+      shouldValidate: true,
+    })
+  }, [catalogs.feeChargeTimings, fees, setValue])
+
+  useEffect(() => {
+    const hasActiveDisbursementInsurances = (insurances ?? []).some((insurance) => {
+      if (insurance.isActive === false) return false
+      const timing = catalogs.insuranceChargeTimings.find(
+        (item) => item.id === insurance.chargeTimingId,
+      )
+      return (timing?.code ?? '').trim().toUpperCase() === 'DISBURSEMENT'
+    })
+    setValue('hasActiveDisbursementInsurances', hasActiveDisbursementInsurances, {
+      shouldValidate: true,
+    })
+  }, [catalogs.insuranceChargeTimings, insurances, setValue])
 
   const submitHandler = handleSubmit((values) => {
     const normalized: LoanProductFormValues = {
@@ -221,10 +289,15 @@ export const LoanProductForm = ({
       amortizationMethodId: values.amortizationMethodId.trim(),
       paymentFrequencyId: values.paymentFrequencyId.trim(),
       portfolioTypeId: values.portfolioTypeId.trim(),
+      dayRuleId: values.dayRuleId.trim(),
+      roundingModeId: values.roundingModeId.trim(),
+      holidayAdjustmentRuleId: values.holidayAdjustmentRuleId.trim(),
       glLoanPortfolioAccountId: values.glLoanPortfolioAccountId.trim(),
       glInterestIncomeAccountId: values.glInterestIncomeAccountId.trim(),
+      glInterestReceivableAccountId: values.glInterestReceivableAccountId.trim(),
       glInterestSuspenseAccountId: toOptionalText(values.glInterestSuspenseAccountId),
       glFeeIncomeAccountId: toOptionalText(values.glFeeIncomeAccountId),
+      glDeferredFeeAccountId: toOptionalText(values.glDeferredFeeAccountId),
       glInsurancePayableAccountId: toOptionalText(values.glInsurancePayableAccountId),
       minCollateralRatio: values.requiresCollateral
         ? values.minCollateralRatio
@@ -695,6 +768,94 @@ export const LoanProductForm = ({
               </p>
             ) : null}
           </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
+              Regla de días
+            </label>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={dayRuleOptions.find((option) => option.value === dayRuleId) ?? null}
+              onChange={(option) =>
+                setValue('dayRuleId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(dayRuleOptions, inputValue))
+              }
+              placeholder="Selecciona una regla"
+              inputId="dayRuleId"
+              instanceId="loan-product-day-rule-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={dayRuleOptions}
+              noOptionsMessage="Sin reglas de días"
+            />
+            <input type="hidden" {...register('dayRuleId')} />
+            {errors.dayRuleId ? (
+              <p className="text-xs text-red-500">{errors.dayRuleId.message}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
+              Modo de redondeo
+            </label>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={
+                roundingModeOptions.find((option) => option.value === roundingModeId) ?? null
+              }
+              onChange={(option) =>
+                setValue('roundingModeId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(filterOptions(roundingModeOptions, inputValue))
+              }
+              placeholder="Selecciona un modo"
+              inputId="roundingModeId"
+              instanceId="loan-product-rounding-mode-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={roundingModeOptions}
+              noOptionsMessage="Sin modos de redondeo"
+            />
+            <input type="hidden" {...register('roundingModeId')} />
+            {errors.roundingModeId ? (
+              <p className="text-xs text-red-500">{errors.roundingModeId.message}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
+              Regla de ajuste por feriado
+            </label>
+            <AsyncSelect<LoanCatalogItemDto>
+              value={
+                holidayAdjustmentRuleOptions.find(
+                  (option) => option.value === holidayAdjustmentRuleId,
+                ) ?? null
+              }
+              onChange={(option) =>
+                setValue('holidayAdjustmentRuleId', option?.value ?? '', {
+                  shouldValidate: true,
+                })
+              }
+              loadOptions={(inputValue) =>
+                Promise.resolve(
+                  filterOptions(holidayAdjustmentRuleOptions, inputValue),
+                )
+              }
+              placeholder="Selecciona una regla"
+              inputId="holidayAdjustmentRuleId"
+              instanceId="loan-product-holiday-adjustment-rule-id"
+              isDisabled={isSaving || isLoadingCatalogs}
+              defaultOptions={holidayAdjustmentRuleOptions}
+              noOptionsMessage="Sin reglas de ajuste"
+            />
+            <input type="hidden" {...register('holidayAdjustmentRuleId')} />
+            {errors.holidayAdjustmentRuleId ? (
+              <p className="text-xs text-red-500">
+                {errors.holidayAdjustmentRuleId.message}
+              </p>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -705,8 +866,12 @@ export const LoanProductForm = ({
         <div className="grid grid-cols-1 gap-3">
           <input type="hidden" {...register('glLoanPortfolioAccountId')} />
           <input type="hidden" {...register('glInterestIncomeAccountId')} />
+          <input type="hidden" {...register('glInterestReceivableAccountId')} />
           <input type="hidden" {...register('glInterestSuspenseAccountId')} />
+          <input type="hidden" {...register('hasActiveDisbursementFees')} />
+          <input type="hidden" {...register('hasActiveDisbursementInsurances')} />
           <input type="hidden" {...register('glFeeIncomeAccountId')} />
+          <input type="hidden" {...register('glDeferredFeeAccountId')} />
           <input type="hidden" {...register('glInsurancePayableAccountId')} />
           <GlAccountsSelector
             label="Cuenta cartera (requerida)"
@@ -739,6 +904,28 @@ export const LoanProductForm = ({
           ) : null}
 
           <GlAccountsSelector
+            label="Cuenta de interés por cobrar (requerida)"
+            value={useWatch({ control, name: 'glInterestReceivableAccountId' })}
+            onChange={(accountId) =>
+              setValue('glInterestReceivableAccountId', accountId, {
+                shouldValidate: true,
+              })
+            }
+            onSearch={onSearchAccounts}
+            onResolveAccount={onResolveAccount}
+            isSearching={isSearchingAccounts}
+            error={accountsError ?? undefined}
+          />
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Cuenta utilizada para registrar el interés devengado pendiente de cobro.
+          </p>
+          {errors.glInterestReceivableAccountId ? (
+            <p className="text-xs text-red-500">
+              {errors.glInterestReceivableAccountId.message}
+            </p>
+          ) : null}
+
+          <GlAccountsSelector
             label="Cuenta intereses suspendidos (opcional)"
             value={useWatch({ control, name: 'glInterestSuspenseAccountId' })}
             onChange={(accountId) => setValue('glInterestSuspenseAccountId', accountId)}
@@ -749,24 +936,56 @@ export const LoanProductForm = ({
           />
 
           <GlAccountsSelector
-            label="Cuenta ingresos por comisiones (opcional)"
+            label="Cuenta ingresos por comisiones"
             value={useWatch({ control, name: 'glFeeIncomeAccountId' })}
-            onChange={(accountId) => setValue('glFeeIncomeAccountId', accountId)}
+            onChange={(accountId) =>
+              setValue('glFeeIncomeAccountId', accountId, { shouldValidate: true })
+            }
             onSearch={onSearchAccounts}
             onResolveAccount={onResolveAccount}
             isSearching={isSearchingAccounts}
             error={accountsError ?? undefined}
           />
+          {errors.glFeeIncomeAccountId ? (
+            <p className="text-xs text-red-500">{errors.glFeeIncomeAccountId.message}</p>
+          ) : null}
 
           <GlAccountsSelector
-            label="Cuenta seguros por pagar (opcional)"
-            value={useWatch({ control, name: 'glInsurancePayableAccountId' })}
-            onChange={(accountId) => setValue('glInsurancePayableAccountId', accountId)}
+            label="Cuenta de comisión diferida"
+            value={useWatch({ control, name: 'glDeferredFeeAccountId' })}
+            onChange={(accountId) =>
+              setValue('glDeferredFeeAccountId', accountId, { shouldValidate: true })
+            }
             onSearch={onSearchAccounts}
             onResolveAccount={onResolveAccount}
             isSearching={isSearchingAccounts}
             error={accountsError ?? undefined}
           />
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Cuenta utilizada para registrar inicialmente las comisiones descontadas al desembolso.
+          </p>
+          {errors.glDeferredFeeAccountId ? (
+            <p className="text-xs text-red-500">{errors.glDeferredFeeAccountId.message}</p>
+          ) : null}
+
+          <GlAccountsSelector
+            label="Cuenta seguros por pagar"
+            value={useWatch({ control, name: 'glInsurancePayableAccountId' })}
+            onChange={(accountId) =>
+              setValue('glInsurancePayableAccountId', accountId, {
+                shouldValidate: true,
+              })
+            }
+            onSearch={onSearchAccounts}
+            onResolveAccount={onResolveAccount}
+            isSearching={isSearchingAccounts}
+            error={accountsError ?? undefined}
+          />
+          {errors.glInsurancePayableAccountId ? (
+            <p className="text-xs text-red-500">
+              {errors.glInsurancePayableAccountId.message}
+            </p>
+          ) : null}
         </div>
       </section>
 

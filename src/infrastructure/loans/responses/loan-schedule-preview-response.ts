@@ -1,3 +1,5 @@
+import type { LoanDisbursementChargeResponse } from './loan-disbursement-charge-response'
+
 export interface LoanSchedulePreviewInstallmentComponentResponse {
   componentCode: string
   amount: number
@@ -23,7 +25,16 @@ export interface LoanSchedulePreviewMetadataResponse {
   lastInstallmentAdjustment: number
 }
 
+export interface LoanSchedulePreviewDisbursementResponse {
+  grossDisbursementAmount: number
+  netDisbursementAmount: number
+  totalDisbursementFees: number
+  totalDisbursementInsurance: number
+  charges: LoanDisbursementChargeResponse[]
+}
+
 export interface LoanSchedulePreviewResponse {
   installments: LoanSchedulePreviewInstallmentResponse[]
   metadata: LoanSchedulePreviewMetadataResponse
+  disbursement?: LoanSchedulePreviewDisbursementResponse | null
 }

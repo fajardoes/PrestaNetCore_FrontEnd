@@ -279,7 +279,7 @@ export const LoanApplicationsListPage = () => {
                 <th>Cliente</th>
                 <th>Producto</th>
                 <th>Promotor</th>
-                <th className="text-right">Principal</th>
+                <th className="text-right">Capital</th>
                 <th className="text-right">Plazo</th>
                 <th>Estado</th>
                 <th>Ficha financiera</th>

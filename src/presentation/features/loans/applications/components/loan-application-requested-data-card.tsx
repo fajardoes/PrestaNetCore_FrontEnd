@@ -62,7 +62,7 @@ export const LoanApplicationRequestedDataCard = ({
         />
         <Info label="Producto" value={`${application.loanProductCode} - ${application.loanProductName}`} />
         <Info label="Promotor" value={application.promoterClientFullName} />
-        <Info label="Principal" value={formatMoney(application.requestedPrincipal)} />
+        <Info label="Capital" value={formatMoney(application.requestedPrincipal)} />
         <Info label="Plazo" value={String(application.requestedTerm)} />
         <Info label="Frecuencia" value={application.requestedPaymentFrequencyName} />
         <Info label="Préstamo desembolsado" value={application.approvedLoanNo || '—'} />

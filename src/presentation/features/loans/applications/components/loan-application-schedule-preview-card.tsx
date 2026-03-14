@@ -66,7 +66,7 @@ export const LoanApplicationSchedulePreviewCard = ({
       >
         <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Principal (ajuste)
+            Capital (ajuste)
           </label>
           <input
             type="number"
@@ -193,7 +193,7 @@ export const LoanApplicationSchedulePreviewCard = ({
                   <th className="px-2 py-2">#</th>
                   <th className="px-2 py-2">Vence</th>
                   <th className="px-2 py-2">Ajustada</th>
-                  <th className="px-2 py-2">Principal</th>
+                  <th className="px-2 py-2">Capital</th>
                   <th className="px-2 py-2">Interés</th>
                   <th className="px-2 py-2">Total</th>
                 </tr>

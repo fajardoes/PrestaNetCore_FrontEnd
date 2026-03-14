@@ -115,6 +115,7 @@ Configurados en `tsconfig.app.json` y `vite.config.ts`:
 - Siempre ofrecer soporte para tema claro/oscuro mediante utilidades Tailwind.
 - Formularios nuevos deben integrarse con `react-hook-form` y un esquema Yup/Zod correspondiente.
 - Centralizar feedback (éxito/error) usando componentes compartidos dentro de `presentation/share/components`.
+- En módulos financieros para UI de usuario final en LATAM, evitar el label `Principal` para montos de préstamos; preferir `Capital`, `Saldo de capital` o `Capital solicitado` según el contexto. Mantener `principal` solo como nombre técnico interno si así viene del backend o del modelo.
 - En tablas de administración:
   - Usar `TableContainer` como wrapper estándar (preferencia `mode="legacy-compact"` para vistas densas tipo sistema).
   - Homologar acciones de fila con `.btn-table-action`; íconos compactos permitidos con `w-7 px-0`.

@@ -5,7 +5,10 @@ export interface LoanResponse {
   loanNo?: string | null
   applicationId: string
   clientId: string
+  clientFullName?: string | null
+  clientIdentityNo?: string | null
   loanProductId: string
+  loanProductName?: string | null
   statusId: string
   statusCode: string
   statusName: string
@@ -26,6 +29,12 @@ export interface LoanResponse {
   totalDisbursementFees?: number | null
   totalDisbursementInsurance?: number | null
   disbursementJournalEntryId?: string | null
+  disbursementJournalEntryNumber?: string | null
+  isDisbursementReversed?: boolean | null
+  disbursementReversedAt?: string | null
+  disbursementReversalReason?: string | null
+  disbursementReversalJournalEntryId?: string | null
+  disbursementReversalJournalEntryNumber?: string | null
   interestRecognitionPolicyCode?: string | null
   feeRecognitionPolicyCode?: string | null
   disbursementCharges?: LoanDisbursementChargeResponse[]

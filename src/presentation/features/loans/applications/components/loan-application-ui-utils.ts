@@ -109,11 +109,13 @@ export const hasDisbursementData = (value: {
   totalDisbursementInsurance?: number | null
   netDisbursementAmount?: number | null
   disbursementJournalEntryId?: string | null
+  disbursementJournalEntryNumber?: string | null
 }) =>
   value.grossDisbursementAmount != null ||
   value.totalDisbursementFees != null ||
   value.totalDisbursementInsurance != null ||
   value.netDisbursementAmount != null ||
+  Boolean(value.disbursementJournalEntryNumber?.trim()) ||
   Boolean(value.disbursementJournalEntryId?.trim())
 
 export const translateLoanApplicationStatus = (
@@ -125,32 +127,40 @@ export const translateLoanApplicationStatus = (
   if (normalized === 'SUBMITTED') return 'Enviada'
   if (normalized === 'APPROVED') return 'Aprobada'
   if (normalized === 'DISBURSED') return 'Desembolsada'
+  if (normalized === 'ACTIVE') return 'Activo'
   if (normalized === 'REJECTED') return 'Rechazada'
   if (normalized === 'CANCELLED') return 'Cancelada'
+  if (normalized === 'DISBURSEMENT_REVERSED') return 'Desembolso revertido'
   return statusName?.trim() || statusCode || '—'
 }
 
 export const statusBadgeClass = (statusCode?: string | null) => {
   const normalized = (statusCode ?? '').toUpperCase()
   if (normalized === 'DRAFT') {
-    return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700'
+    return 'bg-slate-100 text-slate-800 ring-1 ring-slate-300 dark:bg-slate-800/80 dark:text-slate-100 dark:ring-slate-600'
   }
   if (normalized === 'SUBMITTED') {
-    return 'bg-sky-100 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/20 dark:text-sky-200 dark:ring-sky-500/40'
+    return 'bg-blue-100 text-blue-800 ring-1 ring-blue-300 dark:bg-blue-500/20 dark:text-blue-100 dark:ring-blue-500/40'
   }
   if (normalized === 'APPROVED') {
-    return 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-200 dark:ring-emerald-500/40'
+    return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-100 dark:ring-emerald-500/40'
   }
   if (normalized === 'DISBURSED') {
-    return 'bg-teal-100 text-teal-700 ring-1 ring-teal-200 dark:bg-teal-500/20 dark:text-teal-200 dark:ring-teal-500/40'
+    return 'bg-cyan-100 text-cyan-800 ring-1 ring-cyan-300 dark:bg-cyan-500/20 dark:text-cyan-100 dark:ring-cyan-500/40'
+  }
+  if (normalized === 'ACTIVE') {
+    return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-100 dark:ring-emerald-500/40'
   }
   if (normalized === 'REJECTED') {
-    return 'bg-red-100 text-red-700 ring-1 ring-red-200 dark:bg-red-500/20 dark:text-red-200 dark:ring-red-500/40'
+    return 'bg-rose-100 text-rose-800 ring-1 ring-rose-300 dark:bg-rose-500/20 dark:text-rose-100 dark:ring-rose-500/40'
   }
   if (normalized === 'CANCELLED') {
-    return 'bg-rose-100 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/20 dark:text-rose-200 dark:ring-rose-500/40'
+    return 'bg-stone-100 text-stone-700 ring-1 ring-stone-300 dark:bg-stone-500/20 dark:text-stone-100 dark:ring-stone-500/40'
   }
-  return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700'
+  if (normalized === 'DISBURSEMENT_REVERSED') {
+    return 'bg-amber-100 text-amber-800 ring-1 ring-amber-300 dark:bg-amber-500/20 dark:text-amber-100 dark:ring-amber-500/40'
+  }
+  return 'bg-slate-100 text-slate-800 ring-1 ring-slate-300 dark:bg-slate-800/80 dark:text-slate-100 dark:ring-slate-600'
 }
 
 export const financialProfileBadgeClass = (hasFinancialProfile?: boolean | null) =>

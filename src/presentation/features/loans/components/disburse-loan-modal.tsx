@@ -50,7 +50,7 @@ export const DisburseLoanModal = ({
       <div className="space-y-4">
         <DisbursementSummaryCard
           title="Resumen del desembolso"
-          emptyMessage="No hay cargos registrados; el sistema usará el principal aprobado como referencia para el desembolso."
+          emptyMessage="No hay cargos registrados; el sistema usará el capital aprobado como referencia para el desembolso."
           data={previewDisbursement ?? application}
         />
 

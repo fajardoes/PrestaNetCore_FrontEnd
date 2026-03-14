@@ -6,6 +6,7 @@ interface DisbursementSummaryData {
   totalDisbursementInsurance?: number | null
   netDisbursementAmount?: number | null
   disbursementJournalEntryId?: string | null
+  disbursementJournalEntryNumber?: string | null
 }
 
 interface DisbursementSummaryCardProps {
@@ -44,7 +45,11 @@ export const DisbursementSummaryCard = ({
         <Metric label="Neto desembolsado" value={formatCurrency(data.netDisbursementAmount)} />
         <Metric
           label="Asiento de desembolso"
-          value={data.disbursementJournalEntryId?.trim() || '—'}
+          value={
+            data.disbursementJournalEntryNumber?.trim() ||
+            data.disbursementJournalEntryId?.trim() ||
+            '—'
+          }
         />
       </div>
     </section>

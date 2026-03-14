@@ -194,7 +194,11 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
     <aside
       className={`fixed inset-y-0 hidden transform border-r border-slate-300 bg-white text-slate-900 transition-[width] duration-200 dark:border-slate-800 dark:bg-sidebar dark:text-slate-100 lg:flex lg:flex-col ${sidebarWidth}`}
     >
-      <div className={`flex flex-col items-center justify-center px-3 ${collapsed ? 'py-5' : 'py-6'}`}>
+      <NavLink
+        to="/"
+        className={`flex flex-col items-center justify-center px-3 transition-opacity hover:opacity-90 ${collapsed ? 'py-5' : 'py-6'}`}
+        aria-label="Ir al inicio"
+      >
         <img
           src={logoLight}
           alt="Prestanet"
@@ -212,7 +216,7 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
         >
           PRESTANET
         </span>
-      </div>
+      </NavLink>
       <nav className="flex-1 space-y-2 px-3">
         {!isAuthenticated ? null : isLoading ? (
           <SidebarSkeleton collapsed={collapsed} />

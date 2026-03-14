@@ -96,7 +96,7 @@ export const LoanApplicationFinancialProfilePage = () => {
           <CompactInfo label="Cliente" value={application.clientFullName} />
           <CompactInfo label="Producto" value={application.loanProductName} />
           <CompactInfo label="Promotor" value={application.promoterClientFullName} />
-          <CompactInfo label="Principal" value={formatMoney(application.requestedPrincipal)} />
+          <CompactInfo label="Capital" value={formatMoney(application.requestedPrincipal)} />
           <CompactInfo label="Plazo" value={String(application.requestedTerm)} />
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
             <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">

@@ -8,6 +8,7 @@ import { PreviewLoanApplicationScheduleAction } from '@/core/actions/loan-applic
 import { RejectLoanApplicationAction } from '@/core/actions/loan-applications/reject-loan-application.action'
 import { RemoveLoanApplicationCollateralAction } from '@/core/actions/loan-applications/remove-loan-application-collateral.action'
 import { ReturnLoanApplicationToDraftAction } from '@/core/actions/loan-applications/return-loan-application-to-draft.action'
+import { SaveLoanApplicationFeeOverridesAction } from '@/core/actions/loan-applications/save-loan-application-fee-overrides.action'
 import { SubmitLoanApplicationAction } from '@/core/actions/loan-applications/submit-loan-application.action'
 import { UpdateLoanApplicationAction } from '@/core/actions/loan-applications/update-loan-application.action'
 import type { ApiResult } from '@/core/helpers/api-result'
@@ -16,10 +17,12 @@ import type { LoanApplicationCancelRequest } from '@/infrastructure/loans/reques
 import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans/requests/loan-application-collateral-add-request'
 import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/requests/loan-application-create-request'
 import type { LoanApplicationDisburseRequest } from '@/infrastructure/loans/requests/loan-application-disburse-request'
+import type { LoanApplicationFeeOverridesUpsertRequest } from '@/infrastructure/loans/requests/loan-application-fee-overrides-upsert-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
 import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
 import type { LoanApplicationUpdateRequest } from '@/infrastructure/loans/requests/loan-application-update-request'
+import type { LoanApplicationFeeResponse } from '@/infrastructure/loans/responses/loan-application-fee-response'
 import type { LoanSchedulePreviewRequest } from '@/infrastructure/loans/requests/loan-schedule-preview-request'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
 
@@ -28,6 +31,7 @@ interface LoanApplicationMutationsState {
   isWorkflowRunning: boolean
   isCollateralSaving: boolean
   isPreviewLoading: boolean
+  isFeeSaving: boolean
   error: string | null
 }
 
@@ -51,6 +55,7 @@ export const useLoanApplicationMutations = () => {
     isWorkflowRunning: false,
     isCollateralSaving: false,
     isPreviewLoading: false,
+    isFeeSaving: false,
     error: null,
   })
 
@@ -200,6 +205,23 @@ export const useLoanApplicationMutations = () => {
     [],
   )
 
+  const saveFeeOverrides = useCallback(
+    async (
+      id: string,
+      payload: LoanApplicationFeeOverridesUpsertRequest,
+    ): Promise<ApiResult<LoanApplicationFeeResponse[]>> => {
+      setState((prev) => ({ ...prev, isFeeSaving: true, error: null }))
+      const result = await new SaveLoanApplicationFeeOverridesAction().execute(id, payload)
+      setState((prev) => ({
+        ...prev,
+        isFeeSaving: false,
+        error: result.success ? null : mapErrorMessage(result),
+      }))
+      return result
+    },
+    [],
+  )
+
   return {
     ...state,
     setError,
@@ -214,5 +236,6 @@ export const useLoanApplicationMutations = () => {
     addCollateral,
     removeCollateral,
     previewSchedule,
+    saveFeeOverrides,
   }
 }

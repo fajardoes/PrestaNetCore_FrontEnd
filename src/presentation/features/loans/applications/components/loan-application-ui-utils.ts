@@ -77,7 +77,108 @@ export const formatChargeRateOrValue = (
 export const formatChargeTimingCode = (value?: string | null) => {
   const normalized = (value ?? '').trim().toUpperCase()
   if (normalized === 'DISBURSEMENT') return 'Al desembolso'
+  if (normalized === 'SCHEDULED') return 'Programado en cuotas'
+  if (normalized === 'INSTALLMENT') return 'En cuota'
   return value?.trim() || '—'
+}
+
+export const formatFinancialComponentCode = (
+  value?: string | null,
+  fallbackName?: string | null,
+) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'PRINCIPAL') return 'Capital'
+  if (normalized === 'INTEREST') return 'Interés'
+  if (normalized === 'INSURANCE') return 'Seguro'
+  if (normalized === 'FEE') return 'Comisión'
+  return fallbackName?.trim() || value?.trim() || '—'
+}
+
+export const getInstallmentComponentAmount = <
+  T extends { componentCode?: string | null; financialComponentCode?: string | null; amount?: number; amountProjected?: number | null },
+>(
+  components: T[] | null | undefined,
+  code: string,
+) => {
+  const normalizedTarget = code.trim().toUpperCase()
+  return (components ?? []).reduce((sum, component) => {
+    const normalizedCode = (
+      component.componentCode ??
+      component.financialComponentCode ??
+      ''
+    )
+      .trim()
+      .toUpperCase()
+    if (normalizedCode !== normalizedTarget) return sum
+    const amount = component.amount ?? component.amountProjected ?? 0
+    return sum + amount
+  }, 0)
+}
+
+export const formatInsuranceStatusCode = (value?: string | null) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'SCHEDULED') return 'Programado'
+  if (normalized === 'COLLECTED') return 'Cobrado'
+  if (normalized === 'CANCELLED') return 'Cancelado'
+  if (normalized === 'REVERSED') return 'Revertido'
+  return value?.trim() || '—'
+}
+
+export const insuranceStatusBadgeClass = (value?: string | null) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'SCHEDULED') {
+    return 'bg-blue-100 text-blue-800 ring-1 ring-blue-300 dark:bg-blue-500/20 dark:text-blue-100 dark:ring-blue-500/40'
+  }
+  if (normalized === 'COLLECTED') {
+    return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-100 dark:ring-emerald-500/40'
+  }
+  if (normalized === 'CANCELLED') {
+    return 'bg-rose-100 text-rose-800 ring-1 ring-rose-300 dark:bg-rose-500/20 dark:text-rose-100 dark:ring-rose-500/40'
+  }
+  if (normalized === 'REVERSED') {
+    return 'bg-amber-100 text-amber-800 ring-1 ring-amber-300 dark:bg-amber-500/20 dark:text-amber-100 dark:ring-amber-500/40'
+  }
+  return 'bg-slate-100 text-slate-800 ring-1 ring-slate-300 dark:bg-slate-800/80 dark:text-slate-100 dark:ring-slate-600'
+}
+
+export const formatInsuranceCalculationBaseCode = (value?: string | null) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'ORIGINAL_PRINCIPAL') return 'Capital original'
+  if (normalized === 'OUTSTANDING_PRINCIPAL_AT_BLOCK_START') {
+    return 'Saldo de capital al inicio del bloque'
+  }
+  if (normalized === 'MATURITY_PRINCIPAL') return 'Capital al vencimiento'
+  if (normalized === 'DISBURSED_NET_AMOUNT') return 'Neto desembolsado'
+  if (normalized === 'CUSTOM_RULE') return 'Regla personalizada'
+  return value?.trim() || '—'
+}
+
+export const formatInsuranceValueTypeCode = (
+  value?: string | null,
+  configuredValue?: number | null,
+) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'PERCENTAGE') return formatPercentValue(configuredValue)
+  if (normalized === 'FIXED_AMOUNT') return formatCurrency(configuredValue)
+  return configuredValue == null ? '—' : formatMoney(configuredValue)
+}
+
+export const formatFeeOverrideMode = (value?: string | null, isRemoved?: boolean) => {
+  if (isRemoved) return 'Removida'
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'MODIFIED') return 'Modificada'
+  if (normalized === 'REMOVED') return 'Removida'
+  return 'Heredada'
+}
+
+export const feeOverrideBadgeClass = (value?: string | null, isRemoved?: boolean) => {
+  if (isRemoved || (value ?? '').trim().toUpperCase() === 'REMOVED') {
+    return 'bg-red-100 text-red-800 ring-1 ring-red-200 dark:bg-red-500/15 dark:text-red-100 dark:ring-red-500/40'
+  }
+  if ((value ?? '').trim().toUpperCase() === 'MODIFIED') {
+    return 'bg-amber-100 text-amber-800 ring-1 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-100 dark:ring-amber-500/40'
+  }
+  return 'bg-slate-100 text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700'
 }
 
 export const formatDisbursementChargeSource = (
@@ -107,6 +208,7 @@ export const hasDisbursementData = (value: {
   grossDisbursementAmount?: number | null
   totalDisbursementFees?: number | null
   totalDisbursementInsurance?: number | null
+  totalScheduledInsurance?: number | null
   netDisbursementAmount?: number | null
   disbursementJournalEntryId?: string | null
   disbursementJournalEntryNumber?: string | null
@@ -114,6 +216,7 @@ export const hasDisbursementData = (value: {
   value.grossDisbursementAmount != null ||
   value.totalDisbursementFees != null ||
   value.totalDisbursementInsurance != null ||
+  value.totalScheduledInsurance != null ||
   value.netDisbursementAmount != null ||
   Boolean(value.disbursementJournalEntryNumber?.trim()) ||
   Boolean(value.disbursementJournalEntryId?.trim())

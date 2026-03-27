@@ -22,7 +22,7 @@ export type LoanCatalogKey =
   | 'fee-charge-timings'
   | 'insurance-types'
   | 'insurance-calculation-bases'
-  | 'insurance-coverage-periods'
+  | 'insurance-value-types'
   | 'insurance-charge-timings'
   | 'collateral-types'
 

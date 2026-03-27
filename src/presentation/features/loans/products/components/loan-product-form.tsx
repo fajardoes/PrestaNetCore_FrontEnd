@@ -31,7 +31,7 @@ interface LoanCatalogOptions {
   feeChargeTimings: LoanCatalogItemDto[]
   insuranceTypes: LoanCatalogItemDto[]
   insuranceCalculationBases: LoanCatalogItemDto[]
-  insuranceCoveragePeriods: LoanCatalogItemDto[]
+  insuranceValueTypes: LoanCatalogItemDto[]
   insuranceChargeTimings: LoanCatalogItemDto[]
   collateralTypes: LoanCatalogItemDto[]
 }
@@ -1010,7 +1010,7 @@ export const LoanProductForm = ({
           allowRemove={!isEdit}
           insuranceTypes={catalogs.insuranceTypes}
           insuranceCalculationBases={catalogs.insuranceCalculationBases}
-          insuranceCoveragePeriods={catalogs.insuranceCoveragePeriods}
+          insuranceValueTypes={catalogs.insuranceValueTypes}
           insuranceChargeTimings={catalogs.insuranceChargeTimings}
         />
       </section>

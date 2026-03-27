@@ -11,9 +11,11 @@ import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/lo
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
 import {
   formatInterestCalculationMethod,
+  getInstallmentComponentAmount,
   formatMoney,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
+import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface LoanApplicationSchedulePreviewCardProps {
   isLoading?: boolean
@@ -186,32 +188,38 @@ export const LoanApplicationSchedulePreviewCard = ({
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                  <th className="px-2 py-2">#</th>
-                  <th className="px-2 py-2">Vence</th>
-                  <th className="px-2 py-2">Ajustada</th>
-                  <th className="px-2 py-2">Capital</th>
-                  <th className="px-2 py-2">Interés</th>
-                  <th className="px-2 py-2">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preview.installments.map((row) => (
-                  <tr key={row.installmentNo} className="border-b border-slate-200/70 dark:border-slate-800">
-                    <td className="px-2 py-2">{row.installmentNo}</td>
-                    <td className="px-2 py-2">{row.dueDateOriginal}</td>
-                    <td className="px-2 py-2">{row.dueDateAdjusted}</td>
-                    <td className="px-2 py-2">{formatMoney(row.principal)}</td>
-                    <td className="px-2 py-2">{formatMoney(row.interest)}</td>
-                    <td className="px-2 py-2">{formatMoney(row.total)}</td>
+          <TableContainer mode="legacy-compact" variant="strong">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Vence</th>
+                    <th>Ajustada</th>
+                    <th className="text-right">Capital</th>
+                    <th className="text-right">Interés</th>
+                    <th className="text-right">Seguro</th>
+                    <th className="text-right">Total</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {preview.installments.map((row) => (
+                    <tr key={row.installmentNo}>
+                      <td className="px-2 py-2">{row.installmentNo}</td>
+                      <td className="px-2 py-2">{row.dueDateOriginal}</td>
+                      <td className="px-2 py-2">{row.dueDateAdjusted}</td>
+                      <td className="px-2 py-2 text-right">{formatMoney(row.principal)}</td>
+                      <td className="px-2 py-2 text-right">{formatMoney(row.interest)}</td>
+                      <td className="px-2 py-2 text-right">
+                        {formatMoney(getInstallmentComponentAmount(row.components, 'INSURANCE'))}
+                      </td>
+                      <td className="px-2 py-2 text-right">{formatMoney(row.total)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </TableContainer>
         </div>
       ) : null}
     </section>

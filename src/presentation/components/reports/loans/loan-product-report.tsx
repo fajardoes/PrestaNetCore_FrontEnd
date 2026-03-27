@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from '@react-pdf/renderer'
 import { ReportLayout } from '@/presentation/components/reports/report-layout'
 import type { LoanProductDetailDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-detail.dto'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
+import { formatInsuranceValue } from '@/core/helpers/insurance-value'
 
 export interface LoanProductReportData {
   product: LoanProductDetailDto
@@ -33,9 +34,11 @@ export interface LoanProductReportData {
   insurances: Array<{
     insuranceType: string
     calculationBase: string
-    coveragePeriod: string
-    rate: number
+    valueType: string
+    valueTypeCode?: string | null
+    value: number
     chargeTiming: string
+    isMandatory: boolean
     isActive: boolean
   }>
   collateralRules: Array<{
@@ -149,14 +152,14 @@ export const LoanProductReport = ({
 
       <CollectionSection
         title="Seguros"
-        headers={["Tipo", "Base calculo", "Cobertura", "Tasa", "Momento", "Estado"]}
+        headers={["Tipo", "Base calculo", "Tipo valor", "Valor", "Momento", "Estado"]}
         rows={data.insurances.map((item) => [
           item.insuranceType,
           item.calculationBase,
-          item.coveragePeriod,
-          formatAmount(item.rate),
+          item.valueType,
+          formatInsuranceValue(item.value, item.valueTypeCode),
           item.chargeTiming,
-          item.isActive ? 'Activo' : 'Inactivo',
+          `${item.isMandatory ? 'Obligatorio' : 'Opcional'} / ${item.isActive ? 'Activo' : 'Inactivo'}`,
         ])}
       />
 

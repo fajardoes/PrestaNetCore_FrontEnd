@@ -62,6 +62,19 @@ export const LoanProductFormPage = () => {
 
   const handleSubmit = async (values: LoanProductFormValues) => {
     clearError()
+    const normalizedInsurances = (values.hasInsurance ? values.insurances ?? [] : []).map(
+      (insurance) => ({
+        id: insurance.id ?? null,
+        insuranceTypeId: insurance.insuranceTypeId,
+        calculationBaseId: insurance.calculationBaseId,
+        valueTypeId: insurance.valueTypeId,
+        value: insurance.value,
+        chargeTimingId: insurance.chargeTimingId,
+        isMandatory: insurance.isMandatory,
+        isActive: insurance.isActive,
+      }),
+    )
+
     const payloadBase = {
       code: values.code,
       name: values.name,
@@ -97,7 +110,7 @@ export const LoanProductFormPage = () => {
       glDeferredFeeAccountId: values.glDeferredFeeAccountId ?? null,
       glInsurancePayableAccountId: values.glInsurancePayableAccountId ?? null,
       fees: values.fees ?? [],
-      insurances: values.hasInsurance ? values.insurances ?? [] : [],
+      insurances: normalizedInsurances,
       collateralRules: values.requiresCollateral ? values.collateralRules ?? [] : [],
     }
 
@@ -171,7 +184,7 @@ export const LoanProductFormPage = () => {
           feeChargeTimings: catalogsCache.feeChargeTimings,
           insuranceTypes: catalogsCache.insuranceTypes,
           insuranceCalculationBases: catalogsCache.insuranceCalculationBases,
-          insuranceCoveragePeriods: catalogsCache.insuranceCoveragePeriods,
+          insuranceValueTypes: catalogsCache.insuranceValueTypes,
           insuranceChargeTimings: catalogsCache.insuranceChargeTimings,
           collateralTypes: catalogsCache.collateralTypes,
         }}

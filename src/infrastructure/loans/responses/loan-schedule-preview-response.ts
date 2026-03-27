@@ -1,4 +1,5 @@
 import type { LoanDisbursementChargeResponse } from './loan-disbursement-charge-response'
+import type { LoanInsurancePreviewResponse } from './loan-insurance-response'
 
 export interface LoanSchedulePreviewInstallmentComponentResponse {
   componentCode: string
@@ -30,6 +31,7 @@ export interface LoanSchedulePreviewDisbursementResponse {
   netDisbursementAmount: number
   totalDisbursementFees: number
   totalDisbursementInsurance: number
+  totalScheduledInsurance?: number | null
   charges: LoanDisbursementChargeResponse[]
 }
 
@@ -37,4 +39,5 @@ export interface LoanSchedulePreviewResponse {
   installments: LoanSchedulePreviewInstallmentResponse[]
   metadata: LoanSchedulePreviewMetadataResponse
   disbursement?: LoanSchedulePreviewDisbursementResponse | null
+  insurance?: LoanInsurancePreviewResponse | null
 }

@@ -1,5 +1,6 @@
 export type LoanApplicationAllowedAction =
   | 'update_draft'
+  | 'edit_fees'
   | 'add_collateral'
   | 'remove_collateral'
   | 'submit'

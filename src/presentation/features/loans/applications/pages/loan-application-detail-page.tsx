@@ -5,9 +5,11 @@ import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-di
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { LoanApplicationAddCollateralModal } from '@/presentation/features/loans/applications/components/loan-application-add-collateral-modal'
 import { LoanApplicationCollateralsCard } from '@/presentation/features/loans/applications/components/loan-application-collaterals-card'
+import { LoanApplicationFeesCard } from '@/presentation/features/loans/applications/components/loan-application-fees-card'
 import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applications/components/loan-application-header-card'
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
 import { LoanApplicationRequestedDataCard } from '@/presentation/features/loans/applications/components/loan-application-requested-data-card'
+import { useLoanApplicationFees } from '@/presentation/features/loans/applications/hooks/use-loan-application-fees'
 import { DisburseLoanModal } from '@/presentation/features/loans/components/disburse-loan-modal'
 import { DisbursementSummaryCard } from '@/presentation/features/loans/components/disbursement-summary-card'
 import { useLoanApplication } from '@/presentation/features/loans/applications/hooks/use-loan-application'
@@ -17,8 +19,14 @@ import { useLoanApplicationOptions } from '@/presentation/features/loans/applica
 import { MessageModal } from '@/presentation/share/components/message-modal'
 import type { LoanApplicationAllowedAction } from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
+import type { LoanApplicationFeeResponse } from '@/infrastructure/loans/responses/loan-application-fee-response'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
+import type {
+  LoanApplicationFeeOverrideUpsertItemRequest,
+  LoanApplicationFeeOverridesUpsertRequest,
+} from '@/infrastructure/loans/requests/loan-application-fee-overrides-upsert-request'
 import type { LoanSchedulePreviewFormValues } from '@/infrastructure/validations/loans/loan-schedule-preview.schema'
+import type { LoanApplicationFeeOverrideFormValues } from '@/infrastructure/validations/loans/loan-application-fee-override.schema'
 import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
 
 type ConfirmAction =
@@ -55,9 +63,17 @@ export const LoanApplicationDetailPage = () => {
   const { report, isLoading: isReportLoading, loadReport, clearReport } =
     useLoanApplicationReport()
   const {
+    fees,
+    isLoading: isFeesLoading,
+    error: feesError,
+    loadByApplicationId: loadFeesByApplicationId,
+    setFees,
+  } = useLoanApplicationFees()
+  const {
     isWorkflowRunning,
     isCollateralSaving,
     isPreviewLoading,
+    isFeeSaving,
     submit,
     approve,
     disburse,
@@ -67,6 +83,7 @@ export const LoanApplicationDetailPage = () => {
     addCollateral,
     removeCollateral,
     previewSchedule,
+    saveFeeOverrides,
   } = useLoanApplicationMutations()
 
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
@@ -77,6 +94,7 @@ export const LoanApplicationDetailPage = () => {
   const [workflowInputError, setWorkflowInputError] = useState<string | null>(null)
   const workflowInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [preview, setPreview] = useState<LoanSchedulePreviewResponse | null>(null)
+  const [autoPreviewRequestedForId, setAutoPreviewRequestedForId] = useState<string | null>(null)
   const [paymentPlanOpen, setPaymentPlanOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
@@ -85,7 +103,51 @@ export const LoanApplicationDetailPage = () => {
   useEffect(() => {
     if (!id) return
     void loadById(id)
-  }, [id, loadById])
+    void loadFeesByApplicationId(id)
+    setPreview(null)
+    setAutoPreviewRequestedForId(null)
+  }, [id, loadById, loadFeesByApplicationId])
+
+  const hasAction = (action: LoanApplicationAllowedAction) => allowedActions.includes(action)
+  const canPreview = hasAction('preview_schedule')
+
+  const generatePaymentPlan = async (values?: LoanSchedulePreviewFormValues) => {
+    if (!canPreview) return
+    const result = await previewSchedule(id, {
+      paymentFrequencyIdOverride: values?.paymentFrequencyIdOverride || null,
+      firstDueDateOverride: values?.firstDueDateOverride || null,
+      principalOverride: values?.principalOverride ?? null,
+      termOverride: values?.termOverride ?? null,
+      nominalRateOverride:
+        values?.nominalRateOverride == null
+          ? null
+          : mapPercentInputToRate(values.nominalRateOverride),
+    })
+    if (result.success) {
+      setPreview(result.data)
+      return
+    }
+    setFeedback({
+      tone: 'error',
+      title: 'No se pudo generar el plan de pagos',
+      description: result.error,
+    })
+  }
+
+  useEffect(() => {
+    if (!id || !canPreview) return
+    if (preview || isPreviewLoading) return
+    if (autoPreviewRequestedForId === id) return
+
+    setAutoPreviewRequestedForId(id)
+    void generatePaymentPlan()
+  }, [
+    autoPreviewRequestedForId,
+    canPreview,
+    id,
+    isPreviewLoading,
+    preview,
+  ])
 
   if (isLoading) {
     return <p className="text-sm text-slate-600 dark:text-slate-300">Cargando solicitud...</p>
@@ -99,7 +161,6 @@ export const LoanApplicationDetailPage = () => {
     )
   }
 
-  const hasAction = (action: LoanApplicationAllowedAction) => allowedActions.includes(action)
   const canEdit = hasAction('update_draft')
   const canSubmit = hasAction('submit')
   const canApprove = hasAction('approve')
@@ -107,7 +168,7 @@ export const LoanApplicationDetailPage = () => {
   const canReject = hasAction('reject')
   const canCancel = hasAction('cancel')
   const canReturnToDraft = hasAction('return_to_draft')
-  const canPreview = hasAction('preview_schedule')
+  const canEditFees = hasAction('edit_fees')
   const canPrint = hasAction('print')
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
@@ -136,31 +197,58 @@ export const LoanApplicationDetailPage = () => {
     })
   }
 
-  const generatePaymentPlan = async (values?: LoanSchedulePreviewFormValues) => {
-    if (!canPreview) return
-    const result = await previewSchedule(id, {
-      paymentFrequencyIdOverride: values?.paymentFrequencyIdOverride || null,
-      firstDueDateOverride: values?.firstDueDateOverride || null,
-      principalOverride: values?.principalOverride ?? null,
-      termOverride: values?.termOverride ?? null,
-      nominalRateOverride:
-        values?.nominalRateOverride == null
-          ? null
-          : mapPercentInputToRate(values.nominalRateOverride),
-    })
-    if (result.success) {
-      setPreview(result.data)
-      return
-    }
-    setFeedback({
-      tone: 'error',
-      title: 'No se pudo generar el plan de pagos',
-      description: result.error,
-    })
+  const refreshApplicationState = async () => {
+    await Promise.all([loadById(id), loadFeesByApplicationId(id)])
   }
 
-  const refreshApplicationState = async () => {
-    await loadById(id)
+  const buildFeeOverridePayload = (
+    currentFees: LoanApplicationFeeResponse[],
+    targetFee: LoanApplicationFeeResponse,
+    values: LoanApplicationFeeOverrideFormValues,
+  ): LoanApplicationFeeOverridesUpsertRequest => {
+    const otherOverrides = currentFees.reduce<LoanApplicationFeeOverrideUpsertItemRequest[]>(
+      (acc, fee) => {
+        if (fee.loanProductFeeId === targetFee.loanProductFeeId) return acc
+        const normalizedMode = (fee.overrideMode ?? '').trim().toUpperCase()
+        if (fee.isRemoved || normalizedMode === 'REMOVED') {
+          acc.push({
+            loanProductFeeId: fee.loanProductFeeId,
+            overrideMode: 'REMOVED',
+            overrideValue: null,
+            overrideReason: fee.overrideReason?.trim() || 'Sin motivo registrado',
+          })
+          return acc
+        }
+        if (normalizedMode === 'MODIFIED') {
+          acc.push({
+            loanProductFeeId: fee.loanProductFeeId,
+            overrideMode: 'MODIFIED',
+            overrideValue: fee.overrideValue ?? fee.effectiveValue,
+            overrideReason: fee.overrideReason?.trim() || 'Sin motivo registrado',
+          })
+          return acc
+        }
+        return acc
+      },
+      [],
+    )
+
+    const normalizedReason = values.overrideReason?.trim() || ''
+    const currentOverride: LoanApplicationFeeOverrideUpsertItemRequest[] =
+      values.mode === 'INHERIT'
+        ? []
+        : [
+            {
+              loanProductFeeId: targetFee.loanProductFeeId,
+              overrideMode: values.mode === 'REMOVED' ? 'REMOVED' : 'MODIFIED',
+              overrideValue: values.mode === 'MODIFIED' ? values.overrideValue ?? null : null,
+              overrideReason: normalizedReason,
+            },
+          ]
+
+    return {
+      items: [...otherOverrides, ...currentOverride],
+    }
   }
 
   const openDisbursementModal = () => {
@@ -210,6 +298,40 @@ export const LoanApplicationDetailPage = () => {
       ) : null}
 
       <LoanApplicationRequestedDataCard application={application} />
+
+      <LoanApplicationFeesCard
+        fees={fees}
+        charges={preview?.disbursement?.charges ?? application.disbursementCharges}
+        canEdit={canEditFees}
+        isLoading={isFeesLoading}
+        isSaving={isFeeSaving}
+        error={feesError}
+        onRefresh={() => {
+          void loadFeesByApplicationId(id)
+        }}
+        onSaveOverride={async (fee, values) => {
+          const payload = buildFeeOverridePayload(fees, fee, values)
+          const result = await saveFeeOverrides(id, payload)
+          if (result.success) {
+            setFees(result.data)
+            setPreview(null)
+            await refreshApplicationState()
+            setFeedback({
+              tone: 'success',
+              title: 'Comisiones actualizadas',
+              description: 'Los cambios de comisiones se guardaron correctamente.',
+            })
+            return true
+          }
+
+          setFeedback({
+            tone: 'error',
+            title: 'No se pudieron guardar las comisiones',
+            description: result.error,
+          })
+          return false
+        }}
+      />
 
       {(canDisburse || application.disbursedOperationalDate) && (
         <DisbursementSummaryCard
@@ -360,6 +482,7 @@ export const LoanApplicationDetailPage = () => {
             await refreshApplicationState()
             if (
               appliedAction === 'submit' ||
+              appliedAction === 'approve' ||
               appliedAction === 'return_to_draft' ||
               appliedAction === 'cancel' ||
               appliedAction === 'reject'

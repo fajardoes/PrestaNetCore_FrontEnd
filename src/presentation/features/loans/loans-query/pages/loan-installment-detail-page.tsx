@@ -10,7 +10,9 @@ import {
 import { useLoanInstallment } from '@/presentation/features/loans/loans-query/hooks/use-loan-installment'
 import {
   formatDate,
+  formatFinancialComponentCode,
   formatMoney,
+  getInstallmentComponentAmount,
   statusBadgeClass,
   translateLoanApplicationStatus,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
@@ -134,6 +136,10 @@ export const LoanInstallmentDetailPage = () => {
               value={`L ${formatMoney(installment.interestProjected)}`}
             />
             <QueryDetailField
+              label="Seguro"
+              value={`L ${formatMoney(getInstallmentComponentAmount(installment.components, 'INSURANCE'))}`}
+            />
+            <QueryDetailField
               label="Total"
               value={`L ${formatMoney(installment.totalProjected)}`}
             />
@@ -218,7 +224,10 @@ export const LoanInstallmentDetailPage = () => {
                     <tr key={component.id}>
                       <td>
                         <div className="font-medium text-slate-800 dark:text-slate-100">
-                          {component.financialComponentName}
+                          {formatFinancialComponentCode(
+                            component.financialComponentCode,
+                            component.financialComponentName,
+                          )}
                         </div>
                         <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
                           {component.financialComponentCode}

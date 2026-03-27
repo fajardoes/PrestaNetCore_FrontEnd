@@ -1,4 +1,5 @@
 import type { LoanDisbursementChargeResponse } from './loan-disbursement-charge-response'
+import type { LoanInsuranceResponse } from './loan-insurance-response'
 
 export interface LoanResponse {
   id: string
@@ -28,6 +29,7 @@ export interface LoanResponse {
   netDisbursementAmount?: number | null
   totalDisbursementFees?: number | null
   totalDisbursementInsurance?: number | null
+  totalScheduledInsurance?: number | null
   disbursementJournalEntryId?: string | null
   disbursementJournalEntryNumber?: string | null
   isDisbursementReversed?: boolean | null
@@ -37,5 +39,6 @@ export interface LoanResponse {
   disbursementReversalJournalEntryNumber?: string | null
   interestRecognitionPolicyCode?: string | null
   feeRecognitionPolicyCode?: string | null
+  insurance?: LoanInsuranceResponse | null
   disbursementCharges?: LoanDisbursementChargeResponse[]
 }

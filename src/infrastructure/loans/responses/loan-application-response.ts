@@ -49,6 +49,7 @@ export interface LoanApplicationResponse {
   netDisbursementAmount?: number | null
   totalDisbursementFees?: number | null
   totalDisbursementInsurance?: number | null
+  totalScheduledInsurance?: number | null
   disbursementJournalEntryId?: string | null
   interestRecognitionPolicyCode?: string | null
   feeRecognitionPolicyCode?: string | null

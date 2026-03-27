@@ -19,7 +19,7 @@ export const LOAN_CATALOG_DEFINITIONS: LoanCatalogDefinition[] = [
   { key: 'fee-charge-timings', title: 'Momentos de cobro' },
   { key: 'insurance-types', title: 'Tipos de seguro' },
   { key: 'insurance-calculation-bases', title: 'Bases de cálculo de seguro' },
-  { key: 'insurance-coverage-periods', title: 'Períodos de cobertura' },
+  { key: 'insurance-value-types', title: 'Tipos de valor de seguro' },
   { key: 'insurance-charge-timings', title: 'Momentos de cobro de seguro' },
   { key: 'collateral-types', title: 'Tipos de garantía' },
 ]

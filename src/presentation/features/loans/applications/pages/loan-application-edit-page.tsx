@@ -49,12 +49,26 @@ export const LoanApplicationEditPage = () => {
   }
 
   const canUpdateDraft = allowedActions.includes('update_draft')
+  const canEditFees = allowedActions.includes('edit_fees')
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">Editar solicitud</h1>
         <div className="flex flex-wrap items-center gap-2">
+          {canEditFees ? (
+            <button
+              type="button"
+              className="btn-secondary px-4 py-2 text-sm"
+              onClick={() =>
+                navigate(`/loans/applications/${application.id}`, {
+                  state: { returnTo: `/loans/applications/${application.id}/edit` },
+                })
+              }
+            >
+              Comisiones
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn-secondary px-4 py-2 text-sm"
@@ -69,7 +83,8 @@ export const LoanApplicationEditPage = () => {
         </div>
       </div>
       <p className="text-sm text-slate-600 dark:text-slate-400">
-        La edición depende de la acción habilitada para actualizar borrador.
+        La edición depende de las acciones habilitadas para el borrador, incluyendo comisiones
+        cuando corresponda.
       </p>
 
       {!canUpdateDraft ? (

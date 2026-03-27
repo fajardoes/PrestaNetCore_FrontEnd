@@ -4,6 +4,7 @@ import type { LoanApplicationCancelRequest } from '@/infrastructure/loans/reques
 import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans/requests/loan-application-collateral-add-request'
 import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/requests/loan-application-create-request'
 import type { LoanApplicationDisburseRequest } from '@/infrastructure/loans/requests/loan-application-disburse-request'
+import type { LoanApplicationFeeOverridesUpsertRequest } from '@/infrastructure/loans/requests/loan-application-fee-overrides-upsert-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
 import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSearchRequest } from '@/infrastructure/loans/requests/loan-application-search-request'
@@ -13,6 +14,7 @@ import type { LoanSchedulePreviewRequest } from '@/infrastructure/loans/requests
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
 import type { LoanApplicationActionsResponse } from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationReportResponse } from '@/infrastructure/loans/responses/loan-application-report-response'
+import type { LoanApplicationFeeResponse } from '@/infrastructure/loans/responses/loan-application-fee-response'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
 import type { LoanApplicationSearchResponse } from '@/infrastructure/loans/responses/loan-application-search-response'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
@@ -171,6 +173,26 @@ export const getLoanApplicationReport = async (
 ): Promise<LoanApplicationReportResponse> => {
   const { data } = await httpClient.get<LoanApplicationReportResponse>(
     `${basePath}/${id}/report`,
+  )
+  return data
+}
+
+export const getLoanApplicationFees = async (
+  id: string,
+): Promise<LoanApplicationFeeResponse[]> => {
+  const { data } = await httpClient.get<LoanApplicationFeeResponse[]>(
+    `${basePath}/${id}/fees`,
+  )
+  return data
+}
+
+export const saveLoanApplicationFeeOverrides = async (
+  id: string,
+  dto: LoanApplicationFeeOverridesUpsertRequest,
+): Promise<LoanApplicationFeeResponse[]> => {
+  const { data } = await httpClient.put<LoanApplicationFeeResponse[]>(
+    `${basePath}/${id}/fees`,
+    dto,
   )
   return data
 }

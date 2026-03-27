@@ -30,27 +30,33 @@ export const feeSchema = yup.object({
 })
 
 export const insuranceSchema = yup.object({
+  id: yup.string().trim().nullable().optional(),
   insuranceTypeId: yup
     .string()
     .trim()
     .required('El tipo de seguro es requerido.'),
+  insuranceTypeName: yup.string().trim().nullable().optional(),
   calculationBaseId: yup
     .string()
     .trim()
     .required('La base de cálculo es requerida.'),
-  coveragePeriodId: yup
+  calculationBaseName: yup.string().trim().nullable().optional(),
+  valueTypeId: yup
     .string()
     .trim()
-    .required('El período de cobertura es requerido.'),
-  rate: yup
+    .required('El tipo de valor es requerido.'),
+  valueTypeName: yup.string().trim().nullable().optional(),
+  value: yup
     .number()
-    .typeError('La tasa del seguro es requerida.')
-    .min(0, 'La tasa debe ser mayor o igual a 0.')
-    .required('La tasa del seguro es requerida.'),
+    .typeError('El valor del seguro es requerido.')
+    .min(0, 'El valor debe ser mayor o igual a 0.')
+    .required('El valor del seguro es requerido.'),
   chargeTimingId: yup
     .string()
     .trim()
     .required('El momento de cobro es requerido.'),
+  chargeTimingName: yup.string().trim().nullable().optional(),
+  isMandatory: yup.boolean().required(),
   isActive: yup.boolean().required(),
 })
 

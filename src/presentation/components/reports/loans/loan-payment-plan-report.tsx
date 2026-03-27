@@ -2,7 +2,10 @@ import { StyleSheet, Text, View } from '@react-pdf/renderer'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
 import { ReportLayout } from '@/presentation/components/reports/report-layout'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
-import { formatInterestCalculationMethod } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import {
+  formatInterestCalculationMethod,
+  getInstallmentComponentAmount,
+} from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 
 export interface LoanPaymentPlanReportProps {
   preview: LoanSchedulePreviewResponse
@@ -67,6 +70,7 @@ export const LoanPaymentPlanReport = ({
           <Text style={[styles.cell, styles.headerCell]}>Ajustada</Text>
           <Text style={[styles.cell, styles.headerCell, styles.amountCell]}>Capital</Text>
           <Text style={[styles.cell, styles.headerCell, styles.amountCell]}>Interes</Text>
+          <Text style={[styles.cell, styles.headerCell, styles.amountCell]}>Seguro</Text>
           <Text style={[styles.cell, styles.headerCell, styles.amountCell]}>Total</Text>
         </View>
         {preview.installments.map((row) => (
@@ -76,6 +80,9 @@ export const LoanPaymentPlanReport = ({
             <Text style={styles.cell}>{row.dueDateAdjusted}</Text>
             <Text style={[styles.cell, styles.amountCell]}>{formatMoney(row.principal)}</Text>
             <Text style={[styles.cell, styles.amountCell]}>{formatMoney(row.interest)}</Text>
+            <Text style={[styles.cell, styles.amountCell]}>
+              {formatMoney(getInstallmentComponentAmount(row.components, 'INSURANCE'))}
+            </Text>
             <Text style={[styles.cell, styles.amountCell]}>{formatMoney(row.total)}</Text>
           </View>
         ))}

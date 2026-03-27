@@ -19,7 +19,7 @@ interface LoanCatalogsCacheState {
   feeChargeTimings: LoanCatalogItemDto[]
   insuranceTypes: LoanCatalogItemDto[]
   insuranceCalculationBases: LoanCatalogItemDto[]
-  insuranceCoveragePeriods: LoanCatalogItemDto[]
+  insuranceValueTypes: LoanCatalogItemDto[]
   insuranceChargeTimings: LoanCatalogItemDto[]
   collateralTypes: LoanCatalogItemDto[]
 }
@@ -40,7 +40,7 @@ const emptyState: LoanCatalogsCacheState = {
   feeChargeTimings: [],
   insuranceTypes: [],
   insuranceCalculationBases: [],
-  insuranceCoveragePeriods: [],
+  insuranceValueTypes: [],
   insuranceChargeTimings: [],
   collateralTypes: [],
 }
@@ -95,7 +95,7 @@ export const useLoanCatalogsCache = () => {
         feeChargeTimings,
         insuranceTypes,
         insuranceCalculationBases,
-        insuranceCoveragePeriods,
+        insuranceValueTypes,
         insuranceChargeTimings,
         collateralTypes,
       ] = await Promise.all([
@@ -114,7 +114,7 @@ export const useLoanCatalogsCache = () => {
         loadCatalog('fee-charge-timings'),
         loadCatalog('insurance-types'),
         loadCatalog('insurance-calculation-bases'),
-        loadCatalog('insurance-coverage-periods'),
+        loadCatalog('insurance-value-types'),
         loadCatalog('insurance-charge-timings'),
         loadCollateralTypes(),
       ])
@@ -135,7 +135,7 @@ export const useLoanCatalogsCache = () => {
         feeChargeTimings,
         insuranceTypes,
         insuranceCalculationBases,
-        insuranceCoveragePeriods,
+        insuranceValueTypes,
         insuranceChargeTimings,
         collateralTypes,
       })

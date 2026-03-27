@@ -54,10 +54,6 @@ export const DisburseLoanModal = ({
           data={previewDisbursement ?? application}
         />
 
-        <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-800 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100">
-          El sistema resolverá automáticamente la cuenta contable de salida de fondos.
-        </div>
-
         {isPreviewLoading ? (
           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
             Generando vista previa del desembolso...

@@ -8,6 +8,10 @@ import {
   type LoanProductReportData,
 } from '@/presentation/components/reports/loans/loan-product-report'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
+import {
+  formatInsuranceValue,
+  getCatalogItemCodeById,
+} from '@/core/helpers/insurance-value'
 
 interface LoanProductDetailModalProps {
   open: boolean
@@ -27,7 +31,7 @@ interface LoanProductDetailModalProps {
     feeChargeTimings: LoanCatalogItemDto[]
     insuranceTypes: LoanCatalogItemDto[]
     insuranceCalculationBases: LoanCatalogItemDto[]
-    insuranceCoveragePeriods: LoanCatalogItemDto[]
+    insuranceValueTypes: LoanCatalogItemDto[]
     insuranceChargeTimings: LoanCatalogItemDto[]
     collateralTypes: LoanCatalogItemDto[]
   }
@@ -155,15 +159,18 @@ export const LoanProductDetailModal = ({
           catalogs.insuranceCalculationBases,
           insurance.calculationBaseId,
         ),
-        coveragePeriod: buildCatalogLabel(
-          catalogs.insuranceCoveragePeriods,
-          insurance.coveragePeriodId,
+        valueType: buildCatalogLabel(
+          catalogs.insuranceValueTypes,
+          insurance.valueTypeId,
         ),
-        rate: insurance.rate,
+        valueTypeCode:
+          getCatalogItemCodeById(catalogs.insuranceValueTypes, insurance.valueTypeId),
+        value: insurance.value,
         chargeTiming: buildCatalogLabel(
           catalogs.insuranceChargeTimings,
           insurance.chargeTimingId,
         ),
+        isMandatory: insurance.isMandatory,
         isActive: insurance.isActive,
       })),
       collateralRules: (product.collateralRules ?? []).map((rule) => ({
@@ -425,17 +432,25 @@ export const LoanProductDetailModal = ({
                           catalogs.insuranceCalculationBases,
                           insurance.calculationBaseId,
                         )}
-                        {' | '}Cobertura:{' '}
+                        {' | '}Tipo valor:{' '}
                         {buildCatalogLabel(
-                          catalogs.insuranceCoveragePeriods,
-                          insurance.coveragePeriodId,
+                          catalogs.insuranceValueTypes,
+                          insurance.valueTypeId,
                         )}
-                        {' | '}Tasa: {formatAmount(insurance.rate)}
+                        {' | '}Valor:{' '}
+                        {formatInsuranceValue(
+                          insurance.value,
+                          getCatalogItemCodeById(
+                            catalogs.insuranceValueTypes,
+                            insurance.valueTypeId,
+                          ),
+                        )}
                         {' | '}Momento:{' '}
                         {buildCatalogLabel(
                           catalogs.insuranceChargeTimings,
                           insurance.chargeTimingId,
                         )}
+                        {' | '}Requerido: {insurance.isMandatory ? 'Si' : 'No'}
                         {' | '}Estado: {insurance.isActive ? 'Activo' : 'Inactivo'}
                       </p>
                     </li>

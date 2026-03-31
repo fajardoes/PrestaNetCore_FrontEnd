@@ -12,6 +12,8 @@ import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/reques
 import type { LoanApplicationUpdateRequest } from '@/infrastructure/loans/requests/loan-application-update-request'
 import type { LoanSchedulePreviewRequest } from '@/infrastructure/loans/requests/loan-schedule-preview-request'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
+import type { LoanApplicationCreditScoreHistoryItemResponse } from '@/infrastructure/loans/responses/loan-application-credit-score-history-item.response'
+import type { LoanApplicationCreditScoreResponse } from '@/infrastructure/loans/responses/loan-application-credit-score.response'
 import type { LoanApplicationActionsResponse } from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationReportResponse } from '@/infrastructure/loans/responses/loan-application-report-response'
 import type { LoanApplicationFeeResponse } from '@/infrastructure/loans/responses/loan-application-fee-response'
@@ -193,6 +195,43 @@ export const saveLoanApplicationFeeOverrides = async (
   const { data } = await httpClient.put<LoanApplicationFeeResponse[]>(
     `${basePath}/${id}/fees`,
     dto,
+  )
+  return data
+}
+
+export const getLoanApplicationScoring = async (
+  id: string,
+): Promise<LoanApplicationCreditScoreResponse> => {
+  const { data } = await httpClient.get<LoanApplicationCreditScoreResponse>(
+    `${basePath}/${id}/scoring`,
+  )
+  return data
+}
+
+export const generateLoanApplicationScoring = async (
+  id: string,
+): Promise<LoanApplicationCreditScoreResponse> => {
+  const { data } = await httpClient.post<LoanApplicationCreditScoreResponse>(
+    `${basePath}/${id}/scoring/generate`,
+  )
+  return data
+}
+
+export const getLoanApplicationScoringHistory = async (
+  id: string,
+): Promise<LoanApplicationCreditScoreHistoryItemResponse[]> => {
+  const { data } = await httpClient.get<LoanApplicationCreditScoreHistoryItemResponse[]>(
+    `${basePath}/${id}/scoring/history`,
+  )
+  return data
+}
+
+export const getLoanApplicationScoringById = async (
+  id: string,
+  scoreId: string,
+): Promise<LoanApplicationCreditScoreResponse> => {
+  const { data } = await httpClient.get<LoanApplicationCreditScoreResponse>(
+    `${basePath}/${id}/scoring/${scoreId}`,
   )
   return data
 }

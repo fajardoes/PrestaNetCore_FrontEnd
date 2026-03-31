@@ -82,6 +82,17 @@ export const formatChargeTimingCode = (value?: string | null) => {
   return value?.trim() || '—'
 }
 
+export const formatChargeCollectionLabel = (
+  chargeTimingCode?: string | null,
+  includedInNetDisbursement?: boolean | null,
+) => {
+  const timingLabel = formatChargeTimingCode(chargeTimingCode)
+  if (includedInNetDisbursement == null) return timingLabel
+  return includedInNetDisbursement
+    ? `${timingLabel} · rebajado del neto`
+    : `${timingLabel} · no rebajado del neto`
+}
+
 export const formatFinancialComponentCode = (
   value?: string | null,
   fallbackName?: string | null,

@@ -6,7 +6,7 @@ import type { LoanApplicationFeeOverrideFormValues } from '@/infrastructure/vali
 import { LoanApplicationFeeOverrideModal } from '@/presentation/features/loans/applications/components/loan-application-fee-override-modal'
 import {
   feeOverrideBadgeClass,
-  formatChargeTimingCode,
+  formatChargeCollectionLabel,
   formatChargeRateOrValue,
   formatChargeTypeCode,
   formatCurrency,
@@ -40,6 +40,17 @@ export const LoanApplicationFeesCard = ({
 }: LoanApplicationFeesCardProps) => {
   const [selectedFee, setSelectedFee] = useState<LoanApplicationFeeResponse | null>(null)
   const chargeRows = charges ?? []
+  const feesByLoanProductFeeId = useMemo(
+    () => new Map(fees.map((fee) => [fee.loanProductFeeId, fee])),
+    [fees],
+  )
+  const sortedChargeRows = useMemo(() => {
+    return [...chargeRows].sort((left, right) => {
+      const leftTypeName = formatChargeTypeCode(left.chargeTypeCode)
+      const rightTypeName = formatChargeTypeCode(right.chargeTypeCode)
+      return leftTypeName.localeCompare(rightTypeName, 'es-HN', { sensitivity: 'base' })
+    })
+  }, [chargeRows])
 
   const summary = useMemo(() => {
     return fees.reduce(
@@ -131,85 +142,7 @@ export const LoanApplicationFeesCard = ({
         <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
           Cargando comisiones...
         </p>
-      ) : fees.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-          Esta solicitud no tiene comisiones activas al desembolso.
-        </p>
-      ) : (
-        <div className="mt-4">
-          <div className="mb-3">
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Comisiones
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Comisiones calculadas
-            </p>
-          </div>
-          <TableContainer mode="legacy-compact" variant="strong">
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr>
-                    <th>Comisión</th>
-                    <th>Cálculo</th>
-                    <th>Valor base</th>
-                    <th>Valor usado</th>
-                    <th>Monto a cobrar</th>
-                    <th>Estado</th>
-                    <th>Motivo</th>
-                    {canEdit ? <th className="text-right">Acción</th> : null}
-                  </tr>
-                </thead>
-                <tbody>
-                  {fees.map((fee) => (
-                    <tr key={fee.loanProductFeeId}>
-                      <td className="font-medium text-slate-800 dark:text-slate-100">
-                        {fee.feeTypeName}
-                      </td>
-                      <td>
-                        {fee.chargeBaseName} / {fee.valueTypeName}
-                      </td>
-                      <td>{formatChargeRateOrValue(fee.productValue, fee.valueTypeCode)}</td>
-                      <td>
-                        {fee.isRemoved
-                          ? 'No aplica'
-                          : formatChargeRateOrValue(fee.effectiveValue, fee.valueTypeCode)}
-                      </td>
-                      <td>{fee.isRemoved ? 'L 0.00' : formatCurrency(fee.effectiveCalculatedAmount)}</td>
-                      <td>
-                        <span
-                          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${feeOverrideBadgeClass(
-                            fee.overrideMode,
-                            fee.isRemoved,
-                          )}`}
-                        >
-                          {formatFeeOverrideMode(fee.overrideMode, fee.isRemoved)}
-                        </span>
-                      </td>
-                      <td className="max-w-56 truncate" title={fee.overrideReason || ''}>
-                        {fee.overrideReason?.trim() || '—'}
-                      </td>
-                      {canEdit ? (
-                        <td className="text-right">
-                          <button
-                            type="button"
-                            className="btn-table-action w-7 px-0"
-                            onClick={() => setSelectedFee(fee)}
-                            disabled={isSaving}
-                            title="Ajustar comisión"
-                          >
-                            <PencilLine className="mx-auto h-4 w-4" />
-                          </button>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </TableContainer>
-        </div>
-      )}
+      ) : null}
 
       <div className="mt-4">
         <div className="mb-3">
@@ -230,21 +163,31 @@ export const LoanApplicationFeesCard = ({
                   <th>Se cobra</th>
                   <th>Calculado sobre</th>
                   <th>Valor</th>
+                  <th>Estado</th>
+                  <th>Motivo</th>
                   <th>Monto</th>
+                  {canEdit ? <th className="text-right">Acción</th> : null}
                 </tr>
               </thead>
               <tbody>
-                {!chargeRows.length ? (
+                {!sortedChargeRows.length ? (
                   <tr>
-                    <td colSpan={6} className="px-2 py-5 text-center text-slate-500 dark:text-slate-400">
+                    <td
+                      colSpan={canEdit ? 9 : 8}
+                      className="px-2 py-5 text-center text-slate-500 dark:text-slate-400"
+                    >
                       Aún no hay descuentos calculados para esta solicitud.
                     </td>
                   </tr>
                 ) : (
-                  chargeRows.map((charge, index) => {
+                  sortedChargeRows.map((charge, index) => {
                     const isInsurance =
                       (charge.chargeTypeCode ?? '').trim().toUpperCase() === 'INSURANCE' ||
                       (charge.sourceType ?? '').trim().toLowerCase() === 'loan_product_insurance'
+                    const relatedFee =
+                      (charge.sourceType ?? '').trim().toLowerCase() === 'loan_product_fee'
+                        ? feesByLoanProductFeeId.get(charge.sourceRefId ?? '')
+                        : undefined
 
                     return (
                       <tr key={charge.id ?? `${charge.chargeTypeCode}-${charge.sourceRefId ?? index}`}>
@@ -263,14 +206,48 @@ export const LoanApplicationFeesCard = ({
                           {charge.chargeName?.trim() || formatChargeTypeCode(charge.chargeTypeCode)}
                         </td>
                         <td>
-                          {formatChargeTimingCode(charge.chargeTimingCode)}
-                          {charge.includedInNetDisbursement}
+                          {formatChargeCollectionLabel(
+                            charge.chargeTimingCode,
+                            charge.includedInNetDisbursement,
+                          )}
                         </td>
-                        <td >{formatCurrency(charge.baseAmount)}</td>
+                        <td>{formatCurrency(charge.baseAmount)}</td>
                         <td>
                           {formatChargeRateOrValue(charge.rateOrValue, charge.valueTypeCode)}
                         </td>
+                        <td>
+                          {relatedFee ? (
+                            <span
+                              className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${feeOverrideBadgeClass(
+                                relatedFee.overrideMode,
+                                relatedFee.isRemoved,
+                              )}`}
+                            >
+                              {formatFeeOverrideMode(relatedFee.overrideMode, relatedFee.isRemoved)}
+                            </span>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
+                        <td className="max-w-56 truncate" title={relatedFee?.overrideReason || ''}>
+                          {relatedFee?.overrideReason?.trim() || '—'}
+                        </td>
                         <td>{formatCurrency(charge.calculatedAmount)}</td>
+                        {canEdit ? (
+                          <td className="text-right">
+                            {relatedFee ? (
+                              <button
+                                type="button"
+                                className="btn-table-action w-7 px-0"
+                                onClick={() => setSelectedFee(relatedFee)}
+                                disabled={isSaving}
+                                title="Ajustar comisión"
+                              >
+                                <PencilLine className="mx-auto h-4 w-4" />
+                              </button>
+                            ) : null}
+                          </td>
+                        ) : null}
                       </tr>
                     )
                   })

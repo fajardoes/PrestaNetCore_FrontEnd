@@ -1,6 +1,7 @@
 import {
   ArrowLeftCircle,
   Banknote,
+  ChartColumn,
   CheckCircle2,
   Eye,
   FileSpreadsheet,
@@ -28,11 +29,13 @@ interface LoanApplicationHeaderCardProps {
   canReturnToDraft: boolean
   canPreview: boolean
   canPrint: boolean
+  canGenerateScoring?: boolean
   isProcessingWorkflow?: boolean
   isPrinting?: boolean
   onOpenFinancialProfile: () => void
   onOpenPaymentPlan: () => void
   onPrint: () => void
+  onGenerateScoring: () => void
   onSubmit: () => void
   onApprove: () => void
   onDisburse: () => void
@@ -52,11 +55,13 @@ export const LoanApplicationHeaderCard = ({
   canReturnToDraft,
   canPreview,
   canPrint,
+  canGenerateScoring = false,
   isProcessingWorkflow = false,
   isPrinting = false,
   onOpenFinancialProfile,
   onOpenPaymentPlan,
   onPrint,
+  onGenerateScoring,
   onSubmit,
   onApprove,
   onDisburse,
@@ -150,6 +155,17 @@ export const LoanApplicationHeaderCard = ({
                 >
                   <Printer className="h-4 w-4" />
                   {isPrinting ? 'Generando...' : 'Imprimir'}
+                </button>
+              ) : null}
+              {canGenerateScoring ? (
+                <button
+                  type="button"
+                  className={secondaryActionClassName}
+                  onClick={onGenerateScoring}
+                  disabled={isProcessingWorkflow}
+                >
+                  <ChartColumn className="h-4 w-4" />
+                  Generar scoring crediticio
                 </button>
               ) : null}
               {canSubmit ? (

@@ -5,15 +5,23 @@ import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-di
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { LoanApplicationAddCollateralModal } from '@/presentation/features/loans/applications/components/loan-application-add-collateral-modal'
 import { LoanApplicationCollateralsCard } from '@/presentation/features/loans/applications/components/loan-application-collaterals-card'
+import { LoanApplicationScoringEmptyState } from '@/presentation/features/loans/applications/components/loan-application-scoring-empty-state'
+import { LoanApplicationScoringHistoryTable } from '@/presentation/features/loans/applications/components/loan-application-scoring-history-table'
+import { LoanApplicationScoringLoading } from '@/presentation/features/loans/applications/components/loan-application-scoring-loading'
+import { LoanApplicationScoringPanel } from '@/presentation/features/loans/applications/components/loan-application-scoring-panel'
 import { LoanApplicationFeesCard } from '@/presentation/features/loans/applications/components/loan-application-fees-card'
 import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applications/components/loan-application-header-card'
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
 import { LoanApplicationRequestedDataCard } from '@/presentation/features/loans/applications/components/loan-application-requested-data-card'
+import { useGenerateLoanApplicationScoring } from '@/presentation/features/loans/applications/hooks/use-generate-loan-application-scoring'
 import { useLoanApplicationFees } from '@/presentation/features/loans/applications/hooks/use-loan-application-fees'
 import { DisburseLoanModal } from '@/presentation/features/loans/components/disburse-loan-modal'
 import { DisbursementSummaryCard } from '@/presentation/features/loans/components/disbursement-summary-card'
 import { useLoanApplication } from '@/presentation/features/loans/applications/hooks/use-loan-application'
+import { useLoanApplicationApprovedLoan } from '@/presentation/features/loans/applications/hooks/use-loan-application-approved-loan'
 import { useLoanApplicationReport } from '@/presentation/features/loans/applications/hooks/use-loan-application-report'
+import { useLoanApplicationScoring } from '@/presentation/features/loans/applications/hooks/use-loan-application-scoring'
+import { useLoanApplicationScoringHistory } from '@/presentation/features/loans/applications/hooks/use-loan-application-scoring-history'
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { MessageModal } from '@/presentation/share/components/message-modal'
@@ -30,6 +38,7 @@ import type { LoanApplicationFeeOverrideFormValues } from '@/infrastructure/vali
 import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
 
 type ConfirmAction =
+  | 'generate_scoring'
   | 'submit'
   | 'approve'
   | 'disburse'
@@ -37,6 +46,8 @@ type ConfirmAction =
   | 'cancel'
   | 'return_to_draft'
   | null
+
+type ScoringTab = 'current' | 'history'
 
 interface FeedbackState {
   tone: 'success' | 'error' | 'info' | 'warning'
@@ -60,8 +71,28 @@ export const LoanApplicationDetailPage = () => {
     setApplication,
     setCollaterals,
   } = useLoanApplication()
+  const {
+    loanDetail,
+    loadApprovedLoan,
+  } = useLoanApplicationApprovedLoan()
   const { report, isLoading: isReportLoading, loadReport, clearReport } =
     useLoanApplicationReport()
+  const {
+    scoring,
+    isLoading: isScoringLoading,
+    error: scoringError,
+    load: loadScoring,
+    clear: clearScoring,
+  } = useLoanApplicationScoring()
+  const {
+    history: scoringHistory,
+    isLoading: isScoringHistoryLoading,
+    error: scoringHistoryError,
+    load: loadScoringHistory,
+    clear: clearScoringHistory,
+  } = useLoanApplicationScoringHistory()
+  const { isGenerating: isScoringGenerating, generate: generateScoring } =
+    useGenerateLoanApplicationScoring()
   const {
     fees,
     isLoading: isFeesLoading,
@@ -97,6 +128,8 @@ export const LoanApplicationDetailPage = () => {
   const [autoPreviewRequestedForId, setAutoPreviewRequestedForId] = useState<string | null>(null)
   const [paymentPlanOpen, setPaymentPlanOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [scoringTab, setScoringTab] = useState<ScoringTab>('current')
+  const [scoringHistoryLoadedForId, setScoringHistoryLoadedForId] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [disburseModalOpen, setDisburseModalOpen] = useState(false)
 
@@ -106,10 +139,58 @@ export const LoanApplicationDetailPage = () => {
     void loadFeesByApplicationId(id)
     setPreview(null)
     setAutoPreviewRequestedForId(null)
-  }, [id, loadById, loadFeesByApplicationId])
+    setScoringTab('current')
+    setScoringHistoryLoadedForId(null)
+    clearScoring()
+    clearScoringHistory()
+  }, [clearScoring, clearScoringHistory, id, loadById, loadFeesByApplicationId])
+
+  useEffect(() => {
+    void loadApprovedLoan(application?.approvedLoanId ?? null)
+  }, [application?.approvedLoanId, loadApprovedLoan])
 
   const hasAction = (action: LoanApplicationAllowedAction) => allowedActions.includes(action)
   const canPreview = hasAction('preview_schedule')
+  const canGenerateScoring = hasAction('generate_scoring')
+  const canViewScoring = hasAction('view_scoring')
+  const canViewScoringHistory = hasAction('view_scoring_history')
+
+  useEffect(() => {
+    if (!id) return
+    if (!canViewScoring) {
+      clearScoring()
+      return
+    }
+    void loadScoring(id)
+  }, [canViewScoring, clearScoring, id, loadScoring])
+
+  useEffect(() => {
+    if (!id) return
+    if (canViewScoring) return
+    if (canViewScoringHistory) {
+      setScoringTab('history')
+      return
+    }
+    setScoringTab('current')
+  }, [canViewScoring, canViewScoringHistory, id])
+
+  useEffect(() => {
+    if (!id || !canViewScoringHistory) {
+      clearScoringHistory()
+      return
+    }
+    if (scoringTab !== 'history') return
+    if (scoringHistoryLoadedForId === id) return
+    setScoringHistoryLoadedForId(id)
+    void loadScoringHistory(id)
+  }, [
+    canViewScoringHistory,
+    clearScoringHistory,
+    id,
+    loadScoringHistory,
+    scoringHistoryLoadedForId,
+    scoringTab,
+  ])
 
   const generatePaymentPlan = async (values?: LoanSchedulePreviewFormValues) => {
     if (!canPreview) return
@@ -172,6 +253,22 @@ export const LoanApplicationDetailPage = () => {
   const canPrint = hasAction('print')
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
+  const totalDisbursementInsurance =
+    loanDetail?.totalDisbursementInsurance ?? application.totalDisbursementInsurance ?? 0
+  const disbursementDetail = {
+    grossDisbursementAmount:
+      loanDetail?.grossDisbursementAmount ?? application.grossDisbursementAmount ?? null,
+    totalDisbursementFees:
+      loanDetail?.totalDisbursementFees ?? application.totalDisbursementFees ?? null,
+    totalDisbursementInsurance,
+    totalScheduledInsurance:
+      loanDetail?.totalScheduledInsurance ?? application.totalScheduledInsurance ?? null,
+    netDisbursementAmount:
+      loanDetail?.netDisbursementAmount ?? application.netDisbursementAmount ?? null,
+    disbursementJournalEntryId:
+      loanDetail?.disbursementJournalEntryId ?? application.disbursementJournalEntryId ?? null,
+    disbursementJournalEntryNumber: loanDetail?.disbursementJournalEntryNumber ?? null,
+  }
   const reasonRequiredActions: ConfirmAction[] = ['reject', 'cancel', 'return_to_draft']
   const openConfirmModal = (action: Exclude<ConfirmAction, null>) => {
     setConfirmAction(action)
@@ -269,6 +366,7 @@ export const LoanApplicationDetailPage = () => {
         canReturnToDraft={canReturnToDraft}
         canPreview={canPreview}
         canPrint={canPrint}
+        canGenerateScoring={canGenerateScoring}
         isProcessingWorkflow={isWorkflowRunning}
         isPrinting={isReportLoading}
         onOpenFinancialProfile={() =>
@@ -283,6 +381,7 @@ export const LoanApplicationDetailPage = () => {
         onPrint={() => {
           void openPrintPreview()
         }}
+        onGenerateScoring={() => openConfirmModal('generate_scoring')}
         onSubmit={() => openConfirmModal('submit')}
         onApprove={() => openConfirmModal('approve')}
         onDisburse={openDisbursementModal}
@@ -299,9 +398,76 @@ export const LoanApplicationDetailPage = () => {
 
       <LoanApplicationRequestedDataCard application={application} />
 
+      {(canViewScoring || canViewScoringHistory) ? (
+        <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                Scoring crediticio
+              </h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Evaluación y trazabilidad del análisis crediticio de la solicitud.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {canViewScoring ? (
+                <button
+                  type="button"
+                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                    scoringTab === 'current'
+                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950'
+                      : 'border border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                  }`}
+                  onClick={() => setScoringTab('current')}
+                >
+                  Scoring vigente
+                </button>
+              ) : null}
+              {canViewScoringHistory ? (
+                <button
+                  type="button"
+                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+                    scoringTab === 'history'
+                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950'
+                      : 'border border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
+                  }`}
+                  onClick={() => setScoringTab('history')}
+                >
+                  Historial
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {scoringTab === 'current' && canViewScoring ? (
+            isScoringLoading ? (
+              <LoanApplicationScoringLoading />
+            ) : scoring ? (
+              <LoanApplicationScoringPanel scoring={scoring} />
+            ) : (
+              <LoanApplicationScoringEmptyState
+                message={scoringError || 'La solicitud no tiene scoring vigente.'}
+              />
+            )
+          ) : null}
+
+          {scoringTab === 'history' && canViewScoringHistory ? (
+            <LoanApplicationScoringHistoryTable
+              items={scoringHistory}
+              isLoading={isScoringHistoryLoading}
+              error={scoringHistoryError}
+            />
+          ) : null}
+        </section>
+      ) : null}
+
       <LoanApplicationFeesCard
         fees={fees}
-        charges={preview?.disbursement?.charges ?? application.disbursementCharges}
+        charges={
+          preview?.disbursement?.charges ??
+          loanDetail?.disbursementCharges ??
+          application.disbursementCharges
+        }
         canEdit={canEditFees}
         isLoading={isFeesLoading}
         isSaving={isFeeSaving}
@@ -316,6 +482,9 @@ export const LoanApplicationDetailPage = () => {
             setFees(result.data)
             setPreview(null)
             await refreshApplicationState()
+            if (canPreview) {
+              await generatePaymentPlan()
+            }
             setFeedback({
               tone: 'success',
               title: 'Comisiones actualizadas',
@@ -337,7 +506,7 @@ export const LoanApplicationDetailPage = () => {
         <DisbursementSummaryCard
           title="Resumen de desembolso"
           emptyMessage="Aún no hay datos detallados del desembolso para esta solicitud."
-          data={preview?.disbursement ?? application}
+          data={preview?.disbursement ?? disbursementDetail}
         />
       )}
 
@@ -422,7 +591,9 @@ export const LoanApplicationDetailPage = () => {
       <ConfirmModal
         open={Boolean(confirmAction) && confirmAction !== 'disburse'}
         title={
-          confirmAction === 'submit'
+          confirmAction === 'generate_scoring'
+            ? 'Generar scoring crediticio'
+            : confirmAction === 'submit'
             ? 'Enviar solicitud'
             : confirmAction === 'approve'
               ? 'Aprobar solicitud'
@@ -433,17 +604,45 @@ export const LoanApplicationDetailPage = () => {
                 : 'Cancelar solicitud'
         }
         description={
-          confirmAction === 'return_to_draft'
+          confirmAction === 'generate_scoring'
+            ? 'Se generará una nueva evaluación crediticia y quedará registrada en el historial de la solicitud'
+            : confirmAction === 'return_to_draft'
             ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
             : confirmAction === 'reject' || confirmAction === 'cancel'
               ? 'Esta acción cambiará el estado de la solicitud y requiere motivo.'
               : 'Esta acción cambiará el estado de la solicitud. Puedes registrar una nota.'
         }
-        confirmLabel="Confirmar"
-        isProcessing={isWorkflowRunning}
+        confirmLabel={confirmAction === 'generate_scoring' ? 'Generar' : 'Confirmar'}
+        isProcessing={confirmAction === 'generate_scoring' ? isScoringGenerating : isWorkflowRunning}
         onCancel={closeConfirmModal}
         onConfirm={async () => {
           if (!confirmAction) return
+          if (confirmAction === 'generate_scoring') {
+            const result = await generateScoring(id)
+            if (result.success) {
+              setConfirmAction(null)
+              await Promise.all([
+                loadById(id),
+                canViewScoring ? loadScoring(id) : Promise.resolve(),
+                canViewScoringHistory ? loadScoringHistory(id) : Promise.resolve(),
+              ])
+              setScoringHistoryLoadedForId(canViewScoringHistory ? id : null)
+              setScoringTab(canViewScoring ? 'current' : 'history')
+              setFeedback({
+                tone: 'success',
+                title: 'Scoring generado',
+                description: 'La evaluación crediticia se generó correctamente.',
+              })
+              return
+            }
+
+            setFeedback({
+              tone: 'error',
+              title: 'No se pudo generar el scoring crediticio',
+              description: result.error,
+            })
+            return
+          }
           const note = workflowInput.trim()
           const requiresReason = reasonRequiredActions.includes(confirmAction)
           if (requiresReason && !note) {
@@ -512,7 +711,7 @@ export const LoanApplicationDetailPage = () => {
           })
         }}
       >
-        {confirmAction ? (
+        {confirmAction && confirmAction !== 'generate_scoring' ? (
           <div className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               {reasonRequiredActions.includes(confirmAction)

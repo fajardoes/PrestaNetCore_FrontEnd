@@ -1,25 +1,24 @@
-﻿import AsyncSelect from 'react-select/async'
+import Select from 'react-select'
 import type { OnChangeValue } from 'react-select'
 import { reactSelectClassNames, reactSelectMenuPortalStyles } from './react-select-styles'
 
-export interface AsyncSelectOption<TMeta = unknown> {
+export interface SelectOption<TMeta = unknown> {
   value: string
   label: string
   meta?: TMeta
 }
 
-type AsyncSelectValue<TMeta, TIsMulti extends boolean> = TIsMulti extends true
-  ? AsyncSelectOption<TMeta>[]
-  : AsyncSelectOption<TMeta> | null
+type SelectValue<TMeta, TIsMulti extends boolean> = TIsMulti extends true
+  ? SelectOption<TMeta>[]
+  : SelectOption<TMeta> | null
 
-interface AsyncSelectFieldProps<TMeta = unknown, TIsMulti extends boolean = false> {
-  value: AsyncSelectValue<TMeta, TIsMulti>
-  onChange: (option: AsyncSelectValue<TMeta, TIsMulti>) => void
-  loadOptions: (inputValue: string) => Promise<AsyncSelectOption<TMeta>[]>
+interface SelectFieldProps<TMeta = unknown, TIsMulti extends boolean = false> {
+  value: SelectValue<TMeta, TIsMulti>
+  onChange: (option: SelectValue<TMeta, TIsMulti>) => void
+  options: SelectOption<TMeta>[]
   placeholder?: string
   inputId?: string
   instanceId?: string
-  defaultOptions?: boolean | AsyncSelectOption<TMeta>[]
   isClearable?: boolean
   isDisabled?: boolean
   isLoading?: boolean
@@ -31,14 +30,13 @@ interface AsyncSelectFieldProps<TMeta = unknown, TIsMulti extends boolean = fals
 
 const defaultNoOptions = () => 'Sin resultados'
 
-const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
+const SelectField = <TMeta, TIsMulti extends boolean = false>({
   value,
   onChange,
-  loadOptions,
+  options,
   placeholder,
   inputId,
   instanceId,
-  defaultOptions,
   isClearable,
   isDisabled,
   isLoading,
@@ -46,19 +44,17 @@ const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
   menuPortalTarget,
   menuPosition,
   isMulti,
-}: AsyncSelectFieldProps<TMeta, TIsMulti>) => {
+}: SelectFieldProps<TMeta, TIsMulti>) => {
   return (
-    <AsyncSelect
+    <Select
       unstyled
-      cacheOptions
-      defaultOptions={defaultOptions ?? false}
+      options={options}
       inputId={inputId}
       instanceId={instanceId}
       value={value}
-      onChange={(option: OnChangeValue<AsyncSelectOption<TMeta>, TIsMulti>) =>
-        onChange((option ?? null) as AsyncSelectValue<TMeta, TIsMulti>)
+      onChange={(option: OnChangeValue<SelectOption<TMeta>, TIsMulti>) =>
+        onChange((option ?? null) as SelectValue<TMeta, TIsMulti>)
       }
-      loadOptions={loadOptions}
       placeholder={placeholder}
       isClearable={isClearable}
       isDisabled={isDisabled}
@@ -73,4 +69,4 @@ const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
   )
 }
 
-export default AsyncSelectField
+export default SelectField

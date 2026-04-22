@@ -6,50 +6,19 @@ import { useMyMenus } from '@/presentation/features/security/menus/hooks/use-my-
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
 import logoLight from '@/assets/logo_light.svg'
 import logoDark from '@/assets/logo_dark.svg'
+import {
+  collectActiveGroups,
+  isItemActive,
+  isRouteExact,
+  sortMenuTree,
+} from './menu-tree'
 
 interface SidebarProps {
   collapsed: boolean
-}
-
-const isRouteActive = (route: string | null, pathname: string) => {
-  if (!route) return false
-  if (route === '/') return pathname === '/'
-  return pathname === route || pathname.startsWith(`${route}/`)
-}
-
-const isRouteExact = (route: string | null, pathname: string) => {
-  if (!route) return false
-  if (route === '/') return pathname === '/'
-  return pathname === route
-}
-
-const isItemActive = (item: MenuItemTreeDto, pathname: string): boolean => {
-  if (isRouteActive(item.route, pathname)) return true
-  return item.children.some((child) => isItemActive(child, pathname))
-}
-
-const sortMenuTree = (items: MenuItemTreeDto[]): MenuItemTreeDto[] => {
-  return items
-    .slice()
-    .sort((a, b) => a.order - b.order)
-    .map((item) => ({
-      ...item,
-      children: sortMenuTree(item.children ?? []),
-    }))
-}
-
-const collectActiveGroups = (
-  item: MenuItemTreeDto,
-  pathname: string,
-  activeGroups: Set<string>,
-): boolean => {
-  const childActive = item.children.some((child) =>
-    collectActiveGroups(child, pathname, activeGroups),
-  )
-  if (childActive) {
-    activeGroups.add(item.id)
-  }
-  return isRouteActive(item.route, pathname) || childActive
+  menus?: MenuItemTreeDto[]
+  isLoadingMenus?: boolean
+  menusError?: string | null
+  onRetryMenus?: () => void
 }
 
 const getIndentClasses = (depth: number, collapsed: boolean) => {
@@ -70,14 +39,25 @@ const getSubmenuClasses = (isExpanded: boolean) => {
   ].join(' ')
 }
 
-export const Sidebar = ({ collapsed }: SidebarProps) => {
+export const Sidebar = ({
+  collapsed,
+  menus: providedMenus,
+  isLoadingMenus,
+  menusError,
+  onRetryMenus,
+}: SidebarProps) => {
   const { isAuthenticated } = useAuth()
-  const { menus, isLoading, error, refetch } = useMyMenus({
+  const fallbackMenus = useMyMenus({
     enabled: isAuthenticated,
   })
   const location = useLocation()
   const sidebarWidth = collapsed ? 'w-20' : 'w-64'
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+
+  const menus = providedMenus ?? fallbackMenus.menus
+  const isLoading = isLoadingMenus ?? fallbackMenus.isLoading
+  const error = menusError ?? fallbackMenus.error
+  const refetch = onRetryMenus ?? fallbackMenus.refetch
 
   const sortedMenus = useMemo(() => sortMenuTree(menus), [menus])
 

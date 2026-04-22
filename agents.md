@@ -20,6 +20,7 @@
 ## Componentes compartidos de selects
 
 - `src/presentation/share/components/async-select.tsx`: wrapper de `react-select/async` con estilos Tailwind (claro/oscuro). Usar este componente para selects asíncronos con búsqueda remota. No usar `react-select` directamente en componentes de features.
+- `src/presentation/share/components/select.tsx`: wrapper de `react-select` para selects síncronos/locales con opciones ya cargadas en memoria. Usarlo para catálogos, filtros y combos no remotos. No reutilizar `async-select` para listas locales solo para simular un select normal.
 
 ## Componentes compartidos de fecha
 

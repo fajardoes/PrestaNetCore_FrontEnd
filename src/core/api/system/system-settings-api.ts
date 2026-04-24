@@ -1,5 +1,7 @@
 import { httpClient } from '@/infrastructure/api/httpClient'
+import type { CollectionTransitAccountSettingDto } from '@/infrastructure/interfaces/system/collection-transit-account-setting.dto'
 import type { LoanDisbursementAccountSettingDto } from '@/infrastructure/interfaces/system/loan-disbursement-account-setting.dto'
+import type { UpdateCollectionTransitAccountRequestDto } from '@/infrastructure/interfaces/system/update-collection-transit-account-request.dto'
 import type { UpdateLoanDisbursementAccountRequestDto } from '@/infrastructure/interfaces/system/update-loan-disbursement-account-request.dto'
 
 const basePath = '/system/settings'
@@ -17,6 +19,24 @@ export const updateLoanDisbursementAccountSetting = async (
 ): Promise<LoanDisbursementAccountSettingDto> => {
   const { data } = await httpClient.put<LoanDisbursementAccountSettingDto>(
     `${basePath}/loan-disbursement-account`,
+    payload,
+  )
+  return data
+}
+
+export const getCollectionTransitAccountSetting =
+  async (): Promise<CollectionTransitAccountSettingDto> => {
+    const { data } = await httpClient.get<CollectionTransitAccountSettingDto>(
+      `${basePath}/collection-transit-account`,
+    )
+    return data
+  }
+
+export const updateCollectionTransitAccountSetting = async (
+  payload: UpdateCollectionTransitAccountRequestDto,
+): Promise<CollectionTransitAccountSettingDto> => {
+  const { data } = await httpClient.put<CollectionTransitAccountSettingDto>(
+    `${basePath}/collection-transit-account`,
     payload,
   )
   return data

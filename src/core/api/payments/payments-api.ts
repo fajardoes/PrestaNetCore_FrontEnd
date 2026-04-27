@@ -6,6 +6,7 @@ import type { ReorderPaymentComponentPrioritiesRequest } from '@/infrastructure/
 import type { UpdatePaymentComponentPriorityRequest } from '@/infrastructure/payments/requests/update-payment-component-priority-request'
 import type { PaymentComponentPriorityResponse } from '@/infrastructure/payments/responses/payment-component-priority-response'
 import type { PaymentListResponse } from '@/infrastructure/payments/responses/payment-list-response'
+import type { PaymentLookupResponse } from '@/infrastructure/payments/responses/payment-lookup-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 
 const basePath = '/payments'
@@ -73,5 +74,15 @@ export const listPayments = async (
 
 export const getPayment = async (id: string): Promise<PaymentResponse> => {
   const { data } = await httpClient.get<PaymentResponse>(`${basePath}/${id}`)
+  return data
+}
+
+export const lookupPayments = async (params: {
+  clientIdentityNo?: string
+  loanNo?: string
+}): Promise<PaymentLookupResponse> => {
+  const { data } = await httpClient.get<PaymentLookupResponse>(`${basePath}/lookup`, {
+    params,
+  })
   return data
 }

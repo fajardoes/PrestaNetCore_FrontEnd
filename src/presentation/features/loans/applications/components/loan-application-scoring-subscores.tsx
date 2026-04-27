@@ -32,16 +32,16 @@ export const LoanApplicationScoringSubscores = ({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+    <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-5">
       {items.map((item) => (
         <article
           key={item.key}
-          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950"
+          className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950"
         >
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             {item.label}
           </p>
-          <p className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-50">
+          <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-50">
             {formatLoanApplicationScore(values[item.key])}
           </p>
         </article>

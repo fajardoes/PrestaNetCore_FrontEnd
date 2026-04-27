@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type {
   LoanInsuranceDefinitionResponse,
   LoanInsuranceResponse,
@@ -11,7 +12,6 @@ import {
   formatMoney,
   insuranceStatusBadgeClass,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
-import { QueryDetailField, QueryMetricCard } from '@/presentation/features/loans/loans-query/components/loan-query-ui'
 import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface LoanInsuranceSummaryContentProps {
@@ -58,42 +58,36 @@ export const LoanInsuranceSummaryContent = ({
   }
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-        <QueryMetricCard
+    <div className="space-y-4">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <InsuranceMetric
           label="Cobrado al desembolso"
           value={formatCurrency(totalDisbursementInsurance)}
-          hint="Seguro descontado al desembolso"
           accent="blue"
         />
-        <QueryMetricCard
+        <InsuranceMetric
           label="Año 1 cobrado"
           value={formatCurrency(insuranceSummary.firstYearInsuranceAmount)}
-          hint="Seguro aplicado al primer año"
           accent="blue"
         />
-        <QueryMetricCard
+        <InsuranceMetric
           label="Futuro programado"
           value={formatCurrency(insuranceSummary.futureScheduledInsuranceAmount)}
-          hint="Cargos prospectivos desde el segundo año"
           accent="amber"
         />
-        <QueryMetricCard
+        <InsuranceMetric
           label="Cobrado"
           value={formatCurrency(insuranceSummary.collectedInsuranceAmount)}
-          hint="Seguro ya recuperado en cuotas"
           accent="emerald"
         />
-        <QueryMetricCard
+        <InsuranceMetric
           label="Pendiente"
           value={formatCurrency(insuranceSummary.pendingInsuranceAmount)}
-          hint="Seguro aún no cobrado"
           accent="slate"
         />
-        <QueryMetricCard
+        <InsuranceMetric
           label="Cancelado"
           value={formatCurrency(insuranceSummary.cancelledInsuranceAmount)}
-          hint="Seguro futuro dado de baja"
           accent="slate"
         />
       </div>
@@ -103,7 +97,7 @@ export const LoanInsuranceSummaryContent = ({
           No hay definiciones de seguro registradas para este préstamo.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {definitions.map((definition, index) => (
             <LoanInsuranceDefinitionCard
               key={definition.loanProductInsuranceId || `${definition.insuranceTypeCode}-${index}`}
@@ -116,34 +110,65 @@ export const LoanInsuranceSummaryContent = ({
   )
 }
 
+type InsuranceMetricAccent = 'slate' | 'emerald' | 'amber' | 'blue'
+
+const insuranceMetricAccentClasses: Record<InsuranceMetricAccent, string> = {
+  slate:
+    'border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100',
+  emerald:
+    'border-emerald-200 bg-emerald-50/80 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-50',
+  amber:
+    'border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-50',
+  blue: 'border-blue-200 bg-blue-50/80 text-blue-950 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-50',
+}
+
+const InsuranceMetric = ({
+  label,
+  value,
+  accent = 'slate',
+}: {
+  label: string
+  value: string
+  accent?: InsuranceMetricAccent
+}) => (
+  <div className={`min-w-0 rounded-xl border px-3 py-2.5 ${insuranceMetricAccentClasses[accent]}`}>
+    <p className="min-h-7 text-[10px] font-semibold uppercase leading-3.5 text-slate-500 dark:text-slate-400">
+      {label}
+    </p>
+    <p className="mt-1 break-words text-[13px] font-semibold leading-4 sm:text-sm" title={value}>
+      {value}
+    </p>
+  </div>
+)
+
 const LoanInsuranceDefinitionCard = ({
   definition,
 }: {
   definition: LoanInsuranceDefinitionResponse
 }) => (
-  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/60">
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-      <QueryDetailField
+  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 dark:border-slate-800 dark:bg-slate-900/60">
+    <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+      <InsuranceDetailField
         label="Tipo de seguro"
         value={definition.insuranceTypeName?.trim() || definition.insuranceTypeCode?.trim() || '—'}
       />
-      <QueryDetailField
+      <InsuranceDetailField
         label="Valor configurado"
         value={formatInsuranceValueTypeCode(definition.valueTypeCode, definition.configuredValue)}
       />
-      <QueryDetailField
+      <InsuranceDetailField
         label="Base de cálculo"
         value={formatInsuranceCalculationBaseCode(definition.calculationBaseCode)}
       />
-      <QueryDetailField
+      <InsuranceDetailField
         label="Seguro año 1 / futuro"
         value={`${formatCurrency(definition.firstYearInsuranceAmount)} / ${formatCurrency(definition.futureScheduledInsuranceAmount)}`}
       />
     </div>
 
-    <div className="mt-4 space-y-4">
+    <div className="mt-3 space-y-3">
       <div>
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
           Bloques anuales
         </h3>
         <TableContainer mode="legacy-compact" variant="strong">
@@ -189,7 +214,7 @@ const LoanInsuranceDefinitionCard = ({
       </div>
 
       <div>
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <h3 className="mb-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
           Programación por cuota
         </h3>
         <TableContainer mode="legacy-compact" variant="strong">
@@ -247,5 +272,20 @@ const LoanInsuranceDefinitionCard = ({
         </TableContainer>
       </div>
     </div>
+  </div>
+)
+
+const InsuranceDetailField = ({
+  label,
+  value,
+}: {
+  label: string
+  value: ReactNode
+}) => (
+  <div className="rounded-xl border border-slate-200 bg-white px-3 py-2 dark:border-slate-800 dark:bg-slate-950/70">
+    <p className="text-[11px] font-semibold uppercase text-slate-500 dark:text-slate-400">
+      {label}
+    </p>
+    <div className="mt-0.5 text-sm font-medium text-slate-900 dark:text-slate-100">{value}</div>
   </div>
 )

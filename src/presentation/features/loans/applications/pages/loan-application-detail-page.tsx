@@ -5,10 +5,7 @@ import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-di
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { LoanApplicationAddCollateralModal } from '@/presentation/features/loans/applications/components/loan-application-add-collateral-modal'
 import { LoanApplicationCollateralsCard } from '@/presentation/features/loans/applications/components/loan-application-collaterals-card'
-import { LoanApplicationScoringEmptyState } from '@/presentation/features/loans/applications/components/loan-application-scoring-empty-state'
-import { LoanApplicationScoringHistoryTable } from '@/presentation/features/loans/applications/components/loan-application-scoring-history-table'
-import { LoanApplicationScoringLoading } from '@/presentation/features/loans/applications/components/loan-application-scoring-loading'
-import { LoanApplicationScoringPanel } from '@/presentation/features/loans/applications/components/loan-application-scoring-panel'
+import { LoanApplicationScoringModal } from '@/presentation/features/loans/applications/components/loan-application-scoring-modal'
 import { LoanApplicationFeesCard } from '@/presentation/features/loans/applications/components/loan-application-fees-card'
 import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applications/components/loan-application-header-card'
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
@@ -36,6 +33,12 @@ import type {
 import type { LoanSchedulePreviewFormValues } from '@/infrastructure/validations/loans/loan-schedule-preview.schema'
 import type { LoanApplicationFeeOverrideFormValues } from '@/infrastructure/validations/loans/loan-application-fee-override.schema'
 import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
+import {
+  formatLoanApplicationScore,
+  formatLoanApplicationScoringDateTime,
+  resolveLoanApplicationScoringLabel,
+  resolveLoanApplicationScoringVariantClasses,
+} from '@/core/helpers/loan-application-scoring-ui'
 
 type ConfirmAction =
   | 'generate_scoring'
@@ -128,8 +131,10 @@ export const LoanApplicationDetailPage = () => {
   const [autoPreviewRequestedForId, setAutoPreviewRequestedForId] = useState<string | null>(null)
   const [paymentPlanOpen, setPaymentPlanOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
+  const [scoringModalOpen, setScoringModalOpen] = useState(false)
   const [scoringTab, setScoringTab] = useState<ScoringTab>('current')
-  const [scoringHistoryLoadedForId, setScoringHistoryLoadedForId] = useState<string | null>(null)
+  const [scoringHistoryLoadedForKey, setScoringHistoryLoadedForKey] =
+    useState<string | null>(null)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [disburseModalOpen, setDisburseModalOpen] = useState(false)
 
@@ -140,7 +145,7 @@ export const LoanApplicationDetailPage = () => {
     setPreview(null)
     setAutoPreviewRequestedForId(null)
     setScoringTab('current')
-    setScoringHistoryLoadedForId(null)
+    setScoringHistoryLoadedForKey(null)
     clearScoring()
     clearScoringHistory()
   }, [clearScoring, clearScoringHistory, id, loadById, loadFeesByApplicationId])
@@ -150,10 +155,18 @@ export const LoanApplicationDetailPage = () => {
   }, [application?.approvedLoanId, loadApprovedLoan])
 
   const hasAction = (action: LoanApplicationAllowedAction) => allowedActions.includes(action)
+  const applicationStatusCode = (application?.statusCode ?? '').trim().toUpperCase()
+  const isDraftApplication = applicationStatusCode === 'DRAFT'
+  const scoringRefreshKey = [
+    id,
+    applicationStatusCode,
+    application?.submittedOperationalDate ?? '',
+    application?.returnedToDraftOperationalDate ?? '',
+  ].join(':')
   const canPreview = hasAction('preview_schedule')
-  const canGenerateScoring = hasAction('generate_scoring')
-  const canViewScoring = hasAction('view_scoring')
-  const canViewScoringHistory = hasAction('view_scoring_history')
+  const canGenerateScoring = !isDraftApplication && hasAction('generate_scoring')
+  const canViewScoring = !isDraftApplication && hasAction('view_scoring')
+  const canViewScoringHistory = !isDraftApplication && hasAction('view_scoring_history')
 
   useEffect(() => {
     if (!id) return
@@ -161,8 +174,12 @@ export const LoanApplicationDetailPage = () => {
       clearScoring()
       return
     }
-    void loadScoring(id)
-  }, [canViewScoring, clearScoring, id, loadScoring])
+    void loadScoring(id).then((result) => {
+      if (!result.success && result.status === 404) {
+        clearScoringHistory()
+      }
+    })
+  }, [canViewScoring, clearScoring, clearScoringHistory, id, loadScoring, scoringRefreshKey])
 
   useEffect(() => {
     if (!id) return
@@ -180,15 +197,21 @@ export const LoanApplicationDetailPage = () => {
       return
     }
     if (scoringTab !== 'history') return
-    if (scoringHistoryLoadedForId === id) return
-    setScoringHistoryLoadedForId(id)
-    void loadScoringHistory(id)
+    if (scoringHistoryLoadedForKey === scoringRefreshKey) return
+    setScoringHistoryLoadedForKey(scoringRefreshKey)
+    void loadScoringHistory(id).then((result) => {
+      if (result.success && result.data.length === 0) {
+        clearScoring()
+      }
+    })
   }, [
     canViewScoringHistory,
+    clearScoring,
     clearScoringHistory,
     id,
     loadScoringHistory,
-    scoringHistoryLoadedForId,
+    scoringHistoryLoadedForKey,
+    scoringRefreshKey,
     scoringTab,
   ])
 
@@ -278,6 +301,10 @@ export const LoanApplicationDetailPage = () => {
   const closeConfirmModal = () => {
     setConfirmAction(null)
     setWorkflowInputError(null)
+  }
+  const openScoringModal = (tab: ScoringTab) => {
+    setScoringTab(tab)
+    setScoringModalOpen(true)
   }
 
   const openPrintPreview = async () => {
@@ -399,65 +426,57 @@ export const LoanApplicationDetailPage = () => {
       <LoanApplicationRequestedDataCard application={application} />
 
       {(canViewScoring || canViewScoringHistory) ? (
-        <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-                Scoring crediticio
-              </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Evaluación y trazabilidad del análisis crediticio de la solicitud.
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                  Scoring crediticio
+                </h2>
+                {scoring ? (
+                  <span
+                    className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-semibold ${resolveLoanApplicationScoringVariantClasses(
+                      scoring.uiVariant,
+                    )}`}
+                  >
+                    {resolveLoanApplicationScoringLabel(
+                      scoring.riskLevelDisplayName,
+                      scoring.riskLevelName,
+                    )}
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                {isScoringLoading
+                  ? 'Consultando scoring vigente...'
+                  : scoring
+                    ? `Score ${formatLoanApplicationScore(scoring.scoreValue)} · ${
+                        scoring.recommendationDisplayName || scoring.recommendationName
+                      } · ${formatLoanApplicationScoringDateTime(scoring.generatedAt)}`
+                    : scoringError || 'Disponible para consulta en ventana modal.'}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               {canViewScoring ? (
                 <button
                   type="button"
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    scoringTab === 'current'
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950'
-                      : 'border border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
-                  }`}
-                  onClick={() => setScoringTab('current')}
+                  className="btn-secondary px-3 py-2 text-sm"
+                  onClick={() => openScoringModal('current')}
                 >
-                  Scoring vigente
+                  Ver scoring
                 </button>
               ) : null}
               {canViewScoringHistory ? (
                 <button
                   type="button"
-                  className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                    scoringTab === 'history'
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950'
-                      : 'border border-slate-300 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200'
-                  }`}
-                  onClick={() => setScoringTab('history')}
+                  className="btn-secondary px-3 py-2 text-sm"
+                  onClick={() => openScoringModal('history')}
                 >
-                  Historial
+                  Ver historial
                 </button>
               ) : null}
             </div>
           </div>
-
-          {scoringTab === 'current' && canViewScoring ? (
-            isScoringLoading ? (
-              <LoanApplicationScoringLoading />
-            ) : scoring ? (
-              <LoanApplicationScoringPanel scoring={scoring} />
-            ) : (
-              <LoanApplicationScoringEmptyState
-                message={scoringError || 'La solicitud no tiene scoring vigente.'}
-              />
-            )
-          ) : null}
-
-          {scoringTab === 'history' && canViewScoringHistory ? (
-            <LoanApplicationScoringHistoryTable
-              items={scoringHistory}
-              isLoading={isScoringHistoryLoading}
-              error={scoringHistoryError}
-            />
-          ) : null}
         </section>
       ) : null}
 
@@ -588,6 +607,21 @@ export const LoanApplicationDetailPage = () => {
         onClose={() => setPaymentPlanOpen(false)}
       />
 
+      <LoanApplicationScoringModal
+        open={scoringModalOpen}
+        tab={scoringTab}
+        canViewScoring={canViewScoring}
+        canViewScoringHistory={canViewScoringHistory}
+        scoring={scoring}
+        scoringHistory={scoringHistory}
+        isScoringLoading={isScoringLoading}
+        isScoringHistoryLoading={isScoringHistoryLoading}
+        scoringError={scoringError}
+        scoringHistoryError={scoringHistoryError}
+        onTabChange={setScoringTab}
+        onClose={() => setScoringModalOpen(false)}
+      />
+
       <ConfirmModal
         open={Boolean(confirmAction) && confirmAction !== 'disburse'}
         title={
@@ -626,7 +660,7 @@ export const LoanApplicationDetailPage = () => {
                 canViewScoring ? loadScoring(id) : Promise.resolve(),
                 canViewScoringHistory ? loadScoringHistory(id) : Promise.resolve(),
               ])
-              setScoringHistoryLoadedForId(canViewScoringHistory ? id : null)
+              setScoringHistoryLoadedForKey(null)
               setScoringTab(canViewScoring ? 'current' : 'history')
               setFeedback({
                 tone: 'success',

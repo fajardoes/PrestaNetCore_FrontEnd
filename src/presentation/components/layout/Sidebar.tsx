@@ -35,7 +35,9 @@ const getIndentClasses = (depth: number, collapsed: boolean) => {
 const getSubmenuClasses = (isExpanded: boolean) => {
   return [
     'space-y-1 overflow-hidden transition-[max-height,opacity,transform] duration-200 ease-out',
-    isExpanded ? 'max-h-96 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-1 pointer-events-none',
+    isExpanded
+      ? 'max-h-[80rem] opacity-100 translate-y-0'
+      : 'max-h-0 opacity-0 -translate-y-1 pointer-events-none',
   ].join(' ')
 }
 
@@ -172,11 +174,11 @@ export const Sidebar = ({
 
   return (
     <aside
-      className={`fixed inset-y-0 hidden transform border-r border-slate-300 bg-white text-slate-900 transition-[width] duration-200 dark:border-slate-800 dark:bg-sidebar dark:text-slate-100 lg:flex lg:flex-col ${sidebarWidth}`}
+      className={`fixed inset-y-0 hidden transform overflow-hidden border-r border-slate-300 bg-white text-slate-900 transition-[width] duration-200 dark:border-slate-800 dark:bg-sidebar dark:text-slate-100 lg:flex lg:flex-col ${sidebarWidth}`}
     >
       <NavLink
         to="/"
-        className={`flex flex-col items-center justify-center px-3 transition-opacity hover:opacity-90 ${collapsed ? 'py-5' : 'py-6'}`}
+        className={`flex shrink-0 flex-col items-center justify-center px-3 transition-opacity hover:opacity-90 ${collapsed ? 'py-5' : 'py-6'}`}
         aria-label="Ir al inicio"
       >
         <img
@@ -197,7 +199,7 @@ export const Sidebar = ({
           PRESTANET
         </span>
       </NavLink>
-      <nav className="flex-1 space-y-2 px-3">
+      <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-4">
         {!isAuthenticated ? null : isLoading ? (
           <SidebarSkeleton collapsed={collapsed} />
         ) : error ? (

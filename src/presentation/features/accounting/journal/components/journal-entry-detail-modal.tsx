@@ -172,21 +172,21 @@ export const JournalEntryDetailModal = ({
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {entry.lines.map((line, index) => (
                       <tr key={`${line.accountId}-${index}`}>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
                           {line.accountCode
                             ? `${line.accountCode} - ${line.accountName ?? ''}`
                             : line.accountId}
                         </td>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
                           {line.description || '—'}
                         </td>
-                        <td className="px-3 py-2 text-right text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-right text-xs text-slate-700 dark:text-slate-200">
                           {formatAmount(line.debit)}
                         </td>
-                        <td className="px-3 py-2 text-right text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-right text-xs text-slate-700 dark:text-slate-200">
                           {formatAmount(line.credit)}
                         </td>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
                           {line.reference || '—'}
                         </td>
                       </tr>

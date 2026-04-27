@@ -1,4 +1,5 @@
-import { Eye } from 'lucide-react'
+import { CheckCircle2, Eye, RotateCcw } from 'lucide-react'
+import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
@@ -6,7 +7,6 @@ import {
   formatCurrency,
   formatDate,
   getPaymentStatusBadgeClass,
-  translatePaymentApplicationStatus,
   translatePaymentStatus,
   translatePaymentType,
 } from './payment-ui'
@@ -17,8 +17,11 @@ interface PaymentsTableProps {
   error: string | null
   page: number
   totalPages: number
+  actionsByPaymentId?: Record<string, PaymentActionsResponse>
   onPageChange: (page: number) => void
   onView: (payment: PaymentResponse) => void
+  onEffectivize?: (payment: PaymentResponse) => void
+  onReverse?: (payment: PaymentResponse) => void
 }
 
 export const PaymentsTable = ({
@@ -27,8 +30,11 @@ export const PaymentsTable = ({
   error,
   page,
   totalPages,
+  actionsByPaymentId,
   onPageChange,
   onView,
+  onEffectivize,
+  onReverse,
 }: PaymentsTableProps) => (
   <TableContainer mode="legacy-compact" variant="strong">
     <div className="overflow-x-auto">
@@ -40,11 +46,13 @@ export const PaymentsTable = ({
               'Préstamo',
               'Cliente',
               'Canal',
+              'Usuario registrador',
               'Fecha',
               'Tipo',
-              'Monto',
               'Estado',
-              'Aplicación',
+              'Monto',
+              'Asiento registro',
+              'Asiento efectivización',
             ].map((label) => (
               <th
                 key={label}
@@ -61,19 +69,19 @@ export const PaymentsTable = ({
         <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
           {isLoading ? (
             <tr>
-              <td colSpan={10} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+              <td colSpan={12} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                 Cargando pagos...
               </td>
             </tr>
           ) : error ? (
             <tr>
-              <td colSpan={10} className="px-4 py-8 text-center text-sm text-red-600 dark:text-red-300">
+              <td colSpan={12} className="px-4 py-8 text-center text-sm text-red-600 dark:text-red-300">
                 {error}
               </td>
             </tr>
           ) : !items.length ? (
             <tr>
-              <td colSpan={10} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+              <td colSpan={12} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                 No hay pagos para los filtros seleccionados.
               </td>
             </tr>
@@ -93,13 +101,13 @@ export const PaymentsTable = ({
                   {item.collectionChannelName?.trim() || '—'}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
+                  {item.registeredByUserName?.trim() || item.registeredByUserId?.trim() || '—'}
+                </td>
+                <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
                   {formatDate(item.paymentDate)}
                 </td>
                 <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
                   {translatePaymentType(item.paymentTypeCode, item.paymentTypeName)}
-                </td>
-                <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-100">
-                  {formatCurrency(item.amount)}
                 </td>
                 <td className="px-4 py-3 text-sm">
                   <span
@@ -108,8 +116,14 @@ export const PaymentsTable = ({
                     {translatePaymentStatus(item.statusCode, item.statusName)}
                   </span>
                 </td>
+                <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                  {formatCurrency(item.amount)}
+                </td>
                 <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                  {translatePaymentApplicationStatus(item.applicationStatusCode)}
+                  {item.journalEntryNumber?.trim() || '—'}
+                </td>
+                <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
+                  {item.effectivizationJournalEntryNumber?.trim() || '—'}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-1">
@@ -120,6 +134,24 @@ export const PaymentsTable = ({
                       onClick={() => onView(item)}
                     >
                       <Eye className="mx-auto h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-table-action w-7 px-0 disabled:cursor-not-allowed disabled:opacity-50"
+                      title={getActionTitle(actionsByPaymentId?.[item.id], 'effectivize')}
+                      disabled={!isActionEnabled(actionsByPaymentId?.[item.id], 'effectivize')}
+                      onClick={() => onEffectivize?.(item)}
+                    >
+                      <CheckCircle2 className="mx-auto h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-table-action w-7 px-0 disabled:cursor-not-allowed disabled:opacity-50"
+                      title={getActionTitle(actionsByPaymentId?.[item.id], 'reverse')}
+                      disabled={!isActionEnabled(actionsByPaymentId?.[item.id], 'reverse')}
+                      onClick={() => onReverse?.(item)}
+                    >
+                      <RotateCcw className="mx-auto h-3.5 w-3.5" />
                     </button>
                   </div>
                 </td>
@@ -132,3 +164,18 @@ export const PaymentsTable = ({
     <TablePagination page={page} totalPages={totalPages} onPageChange={onPageChange} />
   </TableContainer>
 )
+
+const isActionEnabled = (
+  actions: PaymentActionsResponse | undefined,
+  code: 'effectivize' | 'reverse',
+) => actions?.allowedActions.find((action) => action.code === code)?.enabled ?? false
+
+const getActionTitle = (
+  actions: PaymentActionsResponse | undefined,
+  code: 'effectivize' | 'reverse',
+) => {
+  const action = actions?.allowedActions.find((item) => item.code === code)
+  if (!action) return code === 'effectivize' ? 'Efectivizar no disponible' : 'Reversar no disponible'
+  if (!action.enabled) return action.reason || `${action.label} no disponible`
+  return action.label
+}

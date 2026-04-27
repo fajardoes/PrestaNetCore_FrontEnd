@@ -1,13 +1,17 @@
 import { httpClient } from '@/infrastructure/api/httpClient'
 import type { CreatePaymentComponentPriorityRequest } from '@/infrastructure/payments/requests/create-payment-component-priority-request'
+import type { EffectivizePaymentRequest } from '@/infrastructure/payments/requests/effectivize-payment-request'
 import type { ListPaymentsRequest } from '@/infrastructure/payments/requests/list-payments-request'
 import type { RegisterPaymentRequest } from '@/infrastructure/payments/requests/register-payment-request'
 import type { ReorderPaymentComponentPrioritiesRequest } from '@/infrastructure/payments/requests/reorder-payment-component-priorities-request'
+import type { ReversePaymentRequest } from '@/infrastructure/payments/requests/reverse-payment-request'
 import type { UpdatePaymentComponentPriorityRequest } from '@/infrastructure/payments/requests/update-payment-component-priority-request'
+import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
 import type { PaymentComponentPriorityResponse } from '@/infrastructure/payments/responses/payment-component-priority-response'
 import type { PaymentListResponse } from '@/infrastructure/payments/responses/payment-list-response'
 import type { PaymentLookupResponse } from '@/infrastructure/payments/responses/payment-lookup-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
+import type { PaymentReversalResponse } from '@/infrastructure/payments/responses/payment-reversal-response'
 
 const basePath = '/payments'
 
@@ -74,6 +78,46 @@ export const listPayments = async (
 
 export const getPayment = async (id: string): Promise<PaymentResponse> => {
   const { data } = await httpClient.get<PaymentResponse>(`${basePath}/${id}`)
+  return data
+}
+
+export const getPaymentActions = async (
+  id: string,
+): Promise<PaymentActionsResponse> => {
+  const { data } = await httpClient.get<PaymentActionsResponse>(
+    `${basePath}/${id}/actions`,
+  )
+  return data
+}
+
+export const effectivizePayment = async (
+  id: string,
+  payload: EffectivizePaymentRequest,
+): Promise<PaymentResponse> => {
+  const { data } = await httpClient.post<PaymentResponse>(
+    `${basePath}/${id}/effectivize`,
+    payload,
+  )
+  return data
+}
+
+export const reversePayment = async (
+  id: string,
+  payload: ReversePaymentRequest,
+): Promise<PaymentReversalResponse> => {
+  const { data } = await httpClient.post<PaymentReversalResponse>(
+    `${basePath}/${id}/reverse`,
+    payload,
+  )
+  return data
+}
+
+export const getPaymentReversal = async (
+  id: string,
+): Promise<PaymentReversalResponse> => {
+  const { data } = await httpClient.get<PaymentReversalResponse>(
+    `${basePath}/${id}/reversal`,
+  )
   return data
 }
 

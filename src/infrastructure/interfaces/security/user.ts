@@ -8,6 +8,7 @@ export interface SecurityUser {
   lockoutEnd: string | null
   isDeleted: boolean
   roles: string[]
+  permissions?: string[]
   mustChangePassword?: boolean
   agencyId?: string | null
   agencyName?: string | null

@@ -14,8 +14,12 @@ interface UsePaymentsListState {
 
 const DEFAULT_PAGE_SIZE = 25
 
-export const usePaymentsList = (enabled = true) => {
+export const usePaymentsList = (
+  enabled = true,
+  initialFilters?: Omit<ListPaymentsRequest, 'page' | 'pageSize'>,
+) => {
   const [filters, setFilters] = useState<ListPaymentsRequest>({
+    ...initialFilters,
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
   })

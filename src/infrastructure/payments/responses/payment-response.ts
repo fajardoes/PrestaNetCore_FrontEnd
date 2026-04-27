@@ -9,6 +9,7 @@ export interface PaymentResponse {
   collectionChannelId: string
   collectionChannelName: string
   registeredByUserId: string
+  registeredByUserName?: string | null
   paymentDate: string
   businessDate: string
   paymentTypeCode: string
@@ -24,7 +25,17 @@ export interface PaymentResponse {
   journalEntryId?: string | null
   journalEntryNumber?: string | null
   effectivizationJournalEntryId?: string | null
+  effectivizationJournalEntryNumber?: string | null
+  effectivizedByUserId?: string | null
   reversalJournalEntryId?: string | null
+  effectivizationDate?: string | null
+  effectivizationBusinessDate?: string | null
+  bankGlAccountId?: string | null
+  bankGlAccountCode?: string | null
+  bankGlAccountName?: string | null
+  bankReferenceNumber?: string | null
+  bankDepositDate?: string | null
+  effectivizationNotes?: string | null
   notes?: string | null
   allocations: PaymentAllocationResponse[]
 }

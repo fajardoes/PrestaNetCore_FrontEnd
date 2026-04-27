@@ -18,7 +18,9 @@ export const PAYMENT_TYPE_OPTIONS = [
 
 export const PAYMENT_STATUS_OPTIONS = [
   { value: 'REGISTERED', label: 'Registrado' },
-  { value: 'REVERSED', label: 'Revertido' },
+  { value: 'EFFECTIVIZED', label: 'Efectivizado' },
+  { value: 'REVERSED', label: 'Reversado' },
+  { value: 'CANCELLED', label: 'Cancelado' },
 ] as const
 
 export const translatePaymentType = (value?: string | null, fallback?: string | null) => {
@@ -33,7 +35,9 @@ export const translatePaymentStatus = (
 ) => {
   const normalized = (value ?? '').trim().toUpperCase()
   if (normalized === 'REGISTERED') return 'Registrado'
-  if (normalized === 'REVERSED') return 'Revertido'
+  if (normalized === 'EFFECTIVIZED') return 'Efectivizado'
+  if (normalized === 'REVERSED') return 'Reversado'
+  if (normalized === 'CANCELLED') return 'Cancelado'
   return fallback?.trim() ?? value?.trim() ?? '—'
 }
 
@@ -49,8 +53,14 @@ export const getPaymentStatusBadgeClass = (value?: string | null) => {
   if (normalized === 'REGISTERED') {
     return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-100'
   }
+  if (normalized === 'EFFECTIVIZED') {
+    return 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100'
+  }
   if (normalized === 'REVERSED') {
     return 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-100'
+  }
+  if (normalized === 'CANCELLED') {
+    return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-100'
   }
   return 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200'
 }

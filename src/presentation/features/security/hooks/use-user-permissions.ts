@@ -26,9 +26,33 @@ export const useUserPermissions = () => {
     [user?.roles],
   )
 
+  const userPermissionsKey = useMemo(
+    () =>
+      (user?.permissions ?? [])
+        .map((permission) => permission.trim())
+        .filter((permission) => permission.length > 0)
+        .sort((a, b) => a.localeCompare(b))
+        .join('|'),
+    [user?.permissions],
+  )
+
+  const hasUserPermissionsPayload = Array.isArray(user?.permissions)
+
   useEffect(() => {
     if (!isAuthenticated) {
       setState({ permissions: [], isLoading: false, error: null })
+      return
+    }
+
+    const userPermissions = userPermissionsKey
+      ? userPermissionsKey.split('|').filter(Boolean)
+      : []
+    if (userPermissions.length > 0 || hasUserPermissionsPayload) {
+      setState({
+        permissions: userPermissions,
+        isLoading: false,
+        error: null,
+      })
       return
     }
 
@@ -80,7 +104,7 @@ export const useUserPermissions = () => {
     return () => {
       isCancelled = true
     }
-  }, [isAuthenticated, rolesKey])
+  }, [hasUserPermissionsPayload, isAuthenticated, rolesKey, userPermissionsKey])
 
   const permissionsSet = useMemo(() => new Set(state.permissions), [state.permissions])
 

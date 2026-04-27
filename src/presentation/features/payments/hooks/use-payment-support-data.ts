@@ -1,10 +1,12 @@
 import { useCallback, useState } from 'react'
 import { listCollectionChannelsAction } from '@/core/actions/collection-channels/list-collection-channels.action'
 import { listClientsAction } from '@/core/actions/clients/list-clients.action'
+import { listUsersAction } from '@/core/actions/security/list-users.action'
 import { getLoanByCodeAction } from '@/core/actions/loans/get-loan-by-code.action'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { CollectionChannelResponse } from '@/infrastructure/collection-channels/responses/collection-channel-response'
 import type { LoanResponse } from '@/infrastructure/loans/responses/loan-response'
+import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
 
 const CHANNELS_PAGE_SIZE = 100
 const CLIENTS_PAGE_SIZE = 20
@@ -13,6 +15,7 @@ export const usePaymentSupportData = () => {
   const [channels, setChannels] = useState<CollectionChannelResponse[]>([])
   const [isLoadingChannels, setIsLoadingChannels] = useState(false)
   const [isLoadingClients, setIsLoadingClients] = useState(false)
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false)
   const [isLoadingLoan, setIsLoadingLoan] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -58,6 +61,30 @@ export const usePaymentSupportData = () => {
     return result.data.items
   }, [])
 
+  const searchUsers = useCallback(async (term: string) => {
+    setIsLoadingUsers(true)
+    setError(null)
+    const result = await listUsersAction()
+    setIsLoadingUsers(false)
+
+    if (!result.success) {
+      setError(result.error)
+      return [] as SecurityUser[]
+    }
+
+    const normalized = term.trim().toLowerCase()
+    return result.data
+      .filter((user) => !user.isDeleted)
+      .filter((user) => {
+        if (!normalized) return true
+        return (
+          user.email.toLowerCase().includes(normalized) ||
+          user.roles.some((role) => role.toLowerCase().includes(normalized))
+        )
+      })
+      .slice(0, 20)
+  }, [])
+
   const findLoanByCode = useCallback(async (loanCode: string) => {
     setIsLoadingLoan(true)
     setError(null)
@@ -76,11 +103,13 @@ export const usePaymentSupportData = () => {
     channels,
     isLoadingChannels,
     isLoadingClients,
+    isLoadingUsers,
     isLoadingLoan,
     error,
     setError,
     loadChannels,
     searchClients,
+    searchUsers,
     findLoanByCode,
   }
 }

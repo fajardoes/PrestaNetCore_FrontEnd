@@ -45,6 +45,7 @@ export const PaymentsRegisterPage = () => {
   const { notify } = useNotifications()
   const { hasPermission, isLoading: isLoadingPermissions } = useUserPermissions()
   const canRegister = hasPermission('payments.register')
+  const canOperateCollectionChannels = hasPermission('collection_channels.operate')
 
   const { state: businessDateState, isLoading: isLoadingBusinessDate, error: businessDateError } =
     useBusinessDate()
@@ -97,7 +98,9 @@ export const PaymentsRegisterPage = () => {
     !selectedLoan ||
     !isLoanEligible ||
     !isDayOpen ||
+    !canOperateCollectionChannels ||
     paymentRegistration.isSubmitting ||
+    isLoadingPermissions ||
     isLoadingBusinessDate ||
     isLoadingTransit ||
     transitBlockingState
@@ -144,6 +147,13 @@ export const PaymentsRegisterPage = () => {
   }
 
   const onSubmit = handleSubmit(async (values) => {
+    if (!canOperateCollectionChannels) {
+      paymentRegistration.setError(
+        'Debes contar con permisos de operación de canales de recaudo para guardar pagos.',
+      )
+      return
+    }
+
     if (!selectedLoan) {
       paymentRegistration.setError('Debes resolver un préstamo antes de registrar el pago.')
       return
@@ -269,6 +279,12 @@ export const PaymentsRegisterPage = () => {
         {!isDayOpen && !isLoadingBusinessDate ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
             El día operativo está cerrado. No se puede registrar pagos mientras la fecha operativa no esté abierta.
+          </div>
+        ) : null}
+
+        {!isLoadingPermissions && !canOperateCollectionChannels ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+            Debes contar con permisos de operación de canales de recaudo para guardar pagos.
           </div>
         ) : null}
       </section>

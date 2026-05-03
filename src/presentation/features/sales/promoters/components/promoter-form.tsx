@@ -9,10 +9,9 @@ import {
 import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
-import AsyncSelect, {
-  type AsyncSelectOption,
-} from '@/presentation/share/components/async-select'
-import { useEmployeeClientsSelect } from '@/presentation/features/sales/promoters/hooks/use-employee-clients-select'
+import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
+import { PromoterEmployeePickerModal } from '@/presentation/features/sales/promoters/components/promoter-employee-picker-modal'
+import { useEmployeeClientsSearch } from '@/presentation/features/sales/promoters/hooks/use-employee-clients-search'
 
 interface PromoterFormProps {
   initialValues?: PromoterFormValues
@@ -39,11 +38,26 @@ export const PromoterForm = ({
   onSubmit,
   onCancel,
 }: PromoterFormProps) => {
+  const [employeePickerOpen, setEmployeePickerOpen] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<ClientListItem | null>(null)
+  const {
+    employees,
+    search: employeeSearch,
+    page: employeePage,
+    totalPages: employeeTotalPages,
+    isLoading: employeesLoading,
+    error: employeesError,
+    setSearch: setEmployeeSearch,
+    setPage: setEmployeePage,
+    clear: clearEmployeeSearch,
+  } = useEmployeeClientsSearch({ enabled: employeePickerOpen && !isEdit })
   const {
     register,
     handleSubmit,
     reset,
+    setError,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<PromoterFormValues>({
     resolver: zodResolver(promoterFormSchema),
@@ -62,32 +76,40 @@ export const PromoterForm = ({
     }
   }, [initialValues, reset])
 
-  const { loadOptions } = useEmployeeClientsSelect()
-  const [selectedClient, setSelectedClient] = useState<
-    AsyncSelectOption<ClientListItem> | null
-  >(null)
+  const selectedClientId = watch('clientId')
 
   const sortedAgencies = useMemo(
-    () => [...agencies].sort((a, b) => a.name.localeCompare(b.name, 'es')),
-    [agencies],
+    () =>
+      agencies
+        .filter((agency) => isEdit || agency.canCreateLoanApplications)
+        .sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [agencies, isEdit],
   )
 
   useEffect(() => {
     if (promoter?.clientId) {
-      const label = `${promoter.clientFullName ?? 'Sin nombre'}${
-        promoter.clientIdentityNo
-          ? ` - ${formatHnIdentity(promoter.clientIdentityNo)}`
-          : ''
-      }`.trim()
       setSelectedClient({
-        value: promoter.clientId,
-        label,
+        id: promoter.clientId,
+        nombreCompleto: promoter.clientFullName ?? 'Sin nombre',
+        identidad: promoter.clientIdentityNo ?? '',
+        activo: true,
+        esEmpleado: true,
       })
       setValue('clientId', promoter.clientId, { shouldValidate: true })
     }
   }, [promoter, setValue])
 
   const submitHandler = handleSubmit(async (values) => {
+    if (
+      !isEdit &&
+      !sortedAgencies.some((agency) => agency.id === values.agencyId)
+    ) {
+      setError('agencyId', {
+        type: 'validate',
+        message: 'Selecciona una agencia habilitada para solicitudes de crédito.',
+      })
+      return
+    }
     await onSubmit(values)
   })
 
@@ -115,37 +137,71 @@ export const PromoterForm = ({
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <label
-            htmlFor="clientSearch"
+            htmlFor="clientId"
             className="block text-sm font-medium text-slate-700 dark:text-slate-200"
           >
             Cliente empleado
           </label>
-          <AsyncSelect<ClientListItem>
-            value={selectedClient}
-            onChange={(option) => {
-              setSelectedClient(option)
-              setValue('clientId', option?.value ?? '', { shouldValidate: true })
-            }}
-            loadOptions={loadOptions}
-            placeholder="Buscar por nombre o identidad..."
-            inputId="clientSearch"
-            instanceId="promoter-client-select"
-            isDisabled={isSaving || isEdit}
-            noOptionsMessage="Sin coincidencias"
-          />
+          <div
+            id="clientId"
+            className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm dark:border-slate-800 dark:bg-slate-900/60"
+          >
+            {selectedClient ? (
+              <div className="space-y-1">
+                <p className="font-medium text-slate-800 dark:text-slate-100">
+                  {selectedClient.nombreCompleto}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Identidad: <HnIdentityText value={selectedClient.identidad} />
+                </p>
+                {selectedClient.municipioNombre ? (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Municipio: {selectedClient.municipioNombre}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                No has seleccionado un empleado.
+              </p>
+            )}
+          </div>
+          {!isEdit ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn-secondary px-3 py-2 text-sm"
+                onClick={() => {
+                  clearEmployeeSearch()
+                  setEmployeePickerOpen(true)
+                }}
+                disabled={isSaving}
+              >
+                {selectedClient ? 'Cambiar empleado' : 'Seleccionar empleado'}
+              </button>
+              {selectedClient ? (
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                  onClick={() => {
+                    setSelectedClient(null)
+                    setValue('clientId', '', { shouldValidate: true })
+                  }}
+                  disabled={isSaving}
+                >
+                  Quitar
+                </button>
+              ) : null}
+            </div>
+          ) : null}
           <input type="hidden" {...register('clientId')} />
           {!isEdit ? (
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Escribe al menos 2 caracteres para buscar clientes empleados activos.
+              Selecciona un cliente marcado como empleado activo.
             </p>
           ) : null}
           {errors.clientId ? (
             <p className="text-xs text-red-500">{errors.clientId.message}</p>
-          ) : null}
-          {!isEdit && selectedClient ? (
-            <p className="text-xs text-emerald-600 dark:text-emerald-300">
-              Seleccionado: {selectedClient.label}
-            </p>
           ) : null}
         </div>
 
@@ -263,6 +319,27 @@ export const PromoterForm = ({
           {isSaving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Crear'}
         </button>
       </div>
+
+      <PromoterEmployeePickerModal
+        open={employeePickerOpen}
+        employees={employees}
+        search={employeeSearch}
+        page={employeePage}
+        totalPages={employeeTotalPages}
+        isLoading={employeesLoading}
+        error={employeesError}
+        selectedClientId={selectedClientId}
+        onSearchChange={setEmployeeSearch}
+        onPageChange={(nextPage) =>
+          setEmployeePage(Math.min(Math.max(1, nextPage), Math.max(1, employeeTotalPages)))
+        }
+        onSelect={(employee) => {
+          setSelectedClient(employee)
+          setValue('clientId', employee.id, { shouldValidate: true })
+          setEmployeePickerOpen(false)
+        }}
+        onClose={() => setEmployeePickerOpen(false)}
+      />
     </form>
   )
 }

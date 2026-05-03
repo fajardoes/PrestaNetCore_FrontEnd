@@ -97,7 +97,7 @@ export const Sidebar = ({
       const hasChildren = item.children.length > 0
       const isGroup = item.route === null
       const isActive = isItemActive(item, location.pathname)
-      const isExpanded = Boolean(expanded[item.id]) || isActive
+      const isExpanded = Boolean(expanded[item.id])
       const indentClasses = getIndentClasses(depth, collapsed)
       const collapsedClasses = collapsed ? 'flex-col gap-2 px-2 py-3 text-xs' : ''
       const isExactActive = isRouteExact(item.route, location.pathname)

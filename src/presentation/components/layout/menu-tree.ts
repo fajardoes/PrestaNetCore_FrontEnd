@@ -35,10 +35,11 @@ export const collectActiveGroups = (
   const childActive = item.children.some((child) =>
     collectActiveGroups(child, pathname, activeGroups),
   )
-  if (childActive) {
+  const selfActive = isRouteActive(item.route, pathname)
+  if (item.children.length > 0 && (selfActive || childActive)) {
     activeGroups.add(item.id)
   }
-  return isRouteActive(item.route, pathname) || childActive
+  return selfActive || childActive
 }
 
 export const findActiveRootMenu = (

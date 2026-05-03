@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import type { MenuItemTreeDto } from '@/infrastructure/interfaces/security/menu'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
@@ -35,7 +36,15 @@ export const HorizontalModuleMenu = ({
   useEffect(() => {
     if (!openGroupId) return
     const handleMouseDown = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      const target = event.target
+      const isDropdownClick =
+        target instanceof Element &&
+        target.closest('[data-horizontal-module-menu-dropdown="true"]')
+      if (
+        !isDropdownClick &&
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setOpenGroupId(null)
       }
     }
@@ -154,10 +163,48 @@ const HorizontalGroupItem = ({
   onClose: () => void
 }) => {
   const isActive = isItemActive(item, pathname)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number
+    left: number
+    minWidth: number
+  } | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDropdownPosition(null)
+      return
+    }
+
+    const updatePosition = () => {
+      const button = buttonRef.current
+      if (!button) return
+
+      const rect = button.getBoundingClientRect()
+      const viewportPadding = 16
+      const estimatedDropdownWidth = 240
+      const availableLeft = window.innerWidth - estimatedDropdownWidth - viewportPadding
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        left: Math.max(viewportPadding, Math.min(rect.left, availableLeft)),
+        minWidth: Math.max(rect.width, estimatedDropdownWidth),
+      })
+    }
+
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [isOpen])
 
   return (
     <div className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={onToggle}
         className={[
@@ -173,58 +220,69 @@ const HorizontalGroupItem = ({
         <ChevronDownIcon className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {isOpen ? (
-        <div className="absolute left-0 top-full z-50 mt-2 min-w-60 rounded-xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950">
-          {item.children.map((child) =>
-            child.children.length > 0 ? (
-              <div key={child.id} className="py-1">
-                <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  {child.title}
-                </div>
-                <div className="space-y-1">
-                  {child.children.map((grandchild) => (
-                    <NavLink
-                      key={grandchild.id}
-                      to={grandchild.route ?? '/'}
-                      end={grandchild.route === '/'}
-                      onClick={onClose}
-                      className={({ isActive: isCurrent }) =>
-                        [
-                          'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
-                          isCurrent
-                            ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100'
-                            : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
-                        ].join(' ')
-                      }
-                    >
-                      <MenuIcon iconName={grandchild.icon} className="h-4 w-4" />
-                      <span>{grandchild.title}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <NavLink
-                key={child.id}
-                to={child.route ?? '/'}
-                end={child.route === '/'}
-                onClick={onClose}
-                className={({ isActive: isCurrent }) =>
-                  [
-                    'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
-                    isCurrent
-                      ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100'
-                      : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
-                  ].join(' ')
-                }
-              >
-                <MenuIcon iconName={child.icon} className="h-4 w-4" />
-                <span>{child.title}</span>
-              </NavLink>
-            ),
-          )}
-        </div>
-      ) : null}
+      {isOpen && dropdownPosition
+        ? createPortal(
+            <div
+              data-horizontal-module-menu-dropdown="true"
+              className="fixed z-50 max-h-[min(28rem,calc(100vh-6rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950"
+              style={{
+                top: dropdownPosition.top,
+                left: dropdownPosition.left,
+                minWidth: dropdownPosition.minWidth,
+              }}
+            >
+              {item.children.map((child) =>
+                child.children.length > 0 ? (
+                  <div key={child.id} className="py-1">
+                    <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {child.title}
+                    </div>
+                    <div className="space-y-1">
+                      {child.children.map((grandchild) => (
+                        <NavLink
+                          key={grandchild.id}
+                          to={grandchild.route ?? '/'}
+                          end={grandchild.route === '/'}
+                          onClick={onClose}
+                          className={({ isActive: isCurrent }) =>
+                            [
+                              'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
+                              isCurrent
+                                ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100'
+                                : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
+                            ].join(' ')
+                          }
+                        >
+                          <MenuIcon iconName={grandchild.icon} className="h-4 w-4" />
+                          <span>{grandchild.title}</span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <NavLink
+                    key={child.id}
+                    to={child.route ?? '/'}
+                    end={child.route === '/'}
+                    onClick={onClose}
+                    className={({ isActive: isCurrent }) =>
+                      [
+                        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
+                        isCurrent
+                          ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100'
+                          : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
+                      ].join(' ')
+                    }
+                  >
+                    <MenuIcon iconName={child.icon} className="h-4 w-4" />
+                    <span>{child.title}</span>
+                  </NavLink>
+                ),
+              )}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }

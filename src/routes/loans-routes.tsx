@@ -13,6 +13,9 @@ import { LoanApplicationCreatePage } from '@/presentation/features/loans/applica
 import { LoanApplicationDetailPage } from '@/presentation/features/loans/applications/pages/loan-application-detail-page'
 import { LoanApplicationEditPage } from '@/presentation/features/loans/applications/pages/loan-application-edit-page'
 import { LoanApplicationFinancialProfilePage } from '@/presentation/features/loans/applications/pages/loan-application-financial-profile-page'
+import { DailyClosingDashboardPage } from '@/presentation/features/loans/daily-closing/pages/daily-closing-dashboard-page'
+import { DailyClosingRunDetailPage } from '@/presentation/features/loans/daily-closing/pages/daily-closing-run-detail-page'
+import { DailyClosingRunsPage } from '@/presentation/features/loans/daily-closing/pages/daily-closing-runs-page'
 import { LoanDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-detail-page'
 import { LoanInstallmentDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-installment-detail-page'
 import { LoansHomePage } from '@/presentation/features/loans/loans-query/pages/loans-home-page'
@@ -57,6 +60,12 @@ export const LoansRoutes = () => (
     <Route
       path="/loans/applications/:id/edit"
       element={<LoanApplicationEditPage />}
+    />
+    <Route path="/loans/daily-closing" element={<DailyClosingDashboardPage />} />
+    <Route path="/loans/daily-closing/runs" element={<DailyClosingRunsPage />} />
+    <Route
+      path="/loans/daily-closing/runs/:id"
+      element={<DailyClosingRunDetailPage />}
     />
     <Route path="/loans" element={<LoansHomePage />} />
     <Route path="/loans/:id" element={<LoanDetailPage />} />

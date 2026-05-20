@@ -3,6 +3,7 @@ import {
   formatLoanApplicationScoringDateTime,
   resolveLoanApplicationScoringLabel,
 } from '@/core/helpers/loan-application-scoring-ui'
+import type { ReactNode } from 'react'
 import type { LoanApplicationCreditScoreResponse } from '@/infrastructure/loans/responses/loan-application-credit-score.response'
 import { LoanApplicationScoringFactorList } from '@/presentation/features/loans/applications/components/loan-application-scoring-factor-list'
 import { LoanApplicationScoringMetrics } from '@/presentation/features/loans/applications/components/loan-application-scoring-metrics'
@@ -94,7 +95,7 @@ const Info = ({
   children,
 }: {
   label: string
-  children: string
+  children: ReactNode
 }) => (
   <div className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
     <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">

@@ -16,8 +16,8 @@ import type { CreateDelinquencyPolicyRequestDto } from '@/infrastructure/intrane
 import type { UpdateDelinquencyPolicyRequestDto } from '@/infrastructure/intranet/requests/loans/update-delinquency-policy.request'
 
 const calculationBaseOptions = [
-  { value: 'PRINCIPAL', label: 'Principal' },
-  { value: 'PRINCIPAL_INTEREST', label: 'Principal + Interés' },
+  { value: 'PRINCIPAL', label: 'Capital' },
+  { value: 'PRINCIPAL_INTEREST', label: 'Capital + Interés' },
   { value: 'OUTSTANDING_BALANCE', label: 'Saldo vencido' },
 ]
 

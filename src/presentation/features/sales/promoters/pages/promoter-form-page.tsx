@@ -19,7 +19,7 @@ export const PromoterFormPage = () => {
   const { create, update, isSaving, error: saveError, clearError } =
     useSavePromoter()
   const { agencies, isLoading: agenciesLoading, error: agenciesError } =
-    useAgencies()
+    useAgencies({ onlyLoanApplicationEnabled: !isEdit })
 
   useEffect(() => {
     if (id) {

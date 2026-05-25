@@ -3,6 +3,11 @@ import type { JournalEntryDetail } from '@/infrastructure/interfaces/accounting/
 import { JournalEntryStateBadge } from './journal-entry-state-badge'
 import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
 import { JournalEntryVoucherReport } from '@/presentation/components/reports/accounting/journal-entry-voucher-report'
+import {
+  formatAccountingDate,
+  getJournalAccountingDate,
+  getPostingModeLabel,
+} from '@/presentation/features/accounting/accounting-ui'
 
 interface JournalEntryDetailModalProps {
   open: boolean
@@ -89,7 +94,7 @@ export const JournalEntryDetailModal = ({
                   Fecha
                 </span>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {entry.date}
+                  {formatAccountingDate(getJournalAccountingDate(entry))}
                 </p>
               </div>
               <div>
@@ -99,6 +104,38 @@ export const JournalEntryDetailModal = ({
                 <div className="mt-1">
                   <JournalEntryStateBadge state={entry.state} />
                 </div>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Tipo de posteo
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {getPostingModeLabel(entry.postingMode)}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Fecha del evento
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {formatAccountingDate(entry.eventDate)}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Fecha de negocio
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {formatAccountingDate(entry.businessDateSnapshot)}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Periodo de posteo
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {entry.postingPeriodName || entry.periodName || '—'}
+                </p>
               </div>
               <div className="md:col-span-3">
                 <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
@@ -135,21 +172,21 @@ export const JournalEntryDetailModal = ({
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {entry.lines.map((line, index) => (
                       <tr key={`${line.accountId}-${index}`}>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
                           {line.accountCode
                             ? `${line.accountCode} - ${line.accountName ?? ''}`
                             : line.accountId}
                         </td>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
                           {line.description || '—'}
                         </td>
-                        <td className="px-3 py-2 text-right text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-right text-xs text-slate-700 dark:text-slate-200">
                           {formatAmount(line.debit)}
                         </td>
-                        <td className="px-3 py-2 text-right text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-right text-xs text-slate-700 dark:text-slate-200">
                           {formatAmount(line.credit)}
                         </td>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+                        <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
                           {line.reference || '—'}
                         </td>
                       </tr>

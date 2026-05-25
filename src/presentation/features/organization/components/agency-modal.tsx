@@ -36,6 +36,7 @@ export const AgencyModal = ({
       slug: '',
       code: '',
       isActive: true,
+      canCreateLoanApplications: false,
     },
   })
 
@@ -46,6 +47,7 @@ export const AgencyModal = ({
         slug: agency.slug,
         code: agency.code,
         isActive: agency.isActive,
+        canCreateLoanApplications: agency.canCreateLoanApplications,
       })
     } else if (open) {
       reset({
@@ -53,6 +55,7 @@ export const AgencyModal = ({
         slug: '',
         code: '',
         isActive: true,
+        canCreateLoanApplications: false,
       })
     }
   }, [agency, open, reset])
@@ -148,9 +151,9 @@ export const AgencyModal = ({
               <p className="font-medium text-slate-800 dark:text-slate-100">
                 Agencia activa
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Controla si la agencia puede asignarse a usuarios.
-              </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Controla si la agencia puede asignarse a usuarios.
+            </p>
             </div>
             <label className="inline-flex items-center gap-2">
               <input
@@ -161,6 +164,28 @@ export const AgencyModal = ({
               />
               <span className="text-sm text-slate-700 dark:text-slate-200">
                 Activa
+              </span>
+            </label>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-800 dark:bg-slate-900">
+            <div>
+              <p className="font-medium text-slate-800 dark:text-slate-100">
+                Habilitada para originación
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Permite que la agencia aparezca en solicitudes de crédito.
+              </p>
+            </div>
+            <label className="inline-flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/50 dark:border-slate-600 dark:bg-slate-900 dark:focus:ring-primary/60"
+                {...register('canCreateLoanApplications')}
+                disabled={isSaving}
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-200">
+                Habilitada
               </span>
             </label>
           </div>

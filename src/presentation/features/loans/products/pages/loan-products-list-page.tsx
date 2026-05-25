@@ -137,7 +137,7 @@ export const LoanProductsListPage = () => {
           feeChargeTimings: catalogsCache.feeChargeTimings,
           insuranceTypes: catalogsCache.insuranceTypes,
           insuranceCalculationBases: catalogsCache.insuranceCalculationBases,
-          insuranceCoveragePeriods: catalogsCache.insuranceCoveragePeriods,
+          insuranceValueTypes: catalogsCache.insuranceValueTypes,
           insuranceChargeTimings: catalogsCache.insuranceChargeTimings,
           collateralTypes: catalogsCache.collateralTypes,
         }}

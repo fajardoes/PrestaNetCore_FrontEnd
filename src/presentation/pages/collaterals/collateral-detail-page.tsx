@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { formatHnIdentity } from '@/core/helpers/hn-identity'
 import { useCollateralDetail } from '@/presentation/features/collaterals/hooks/use-collateral-detail'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import { CollateralDocumentsPanel } from '@/presentation/pages/collaterals/components/collateral-documents-panel'
 
 type DetailTab = 'data' | 'documents'
+const PERSONAL_GUARANTOR_TYPE_CODE = 'PERSONAL_GUARANTOR'
 
 const formatDate = (value?: string | null) => {
   if (!value) return '—'
@@ -21,23 +23,57 @@ const formatMoney = (value?: number | null) => {
   }).format(value)
 }
 
+const isPersonalGuarantorType = (typeCode?: string | null) =>
+  (typeCode ?? '').trim().toUpperCase() === PERSONAL_GUARANTOR_TYPE_CODE
+
 export const CollateralDetailPage = () => {
   const navigate = useNavigate()
   const { id } = useParams()
   const [tab, setTab] = useState<DetailTab>('data')
+  const {
+    hasPermission,
+    isLoading: isLoadingPermissions,
+  } = useUserPermissions()
+  const canReadCollaterals = hasPermission('collaterals.read')
+  const canUpdateCollaterals = hasPermission('collaterals.update')
+  const canReadDocuments = hasPermission('collaterals.documents.read')
   const { collateral, isLoading, error, loadById } = useCollateralDetail()
 
   useEffect(() => {
-    if (!id) return
+    if (!id || !canReadCollaterals) return
     void loadById(id)
-  }, [id, loadById])
+  }, [canReadCollaterals, id, loadById])
+
+  useEffect(() => {
+    if (canReadDocuments) return
+    setTab('data')
+  }, [canReadDocuments])
 
   const statusBadgeClass = useMemo(() => {
     if (!collateral?.isActive) {
       return 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
     }
-    return 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-100 dark:ring-emerald-500/40'
+    return 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-100 dark:ring-sky-500/40'
   }, [collateral?.isActive])
+
+  if (isLoadingPermissions) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        Cargando permisos...
+      </div>
+    )
+  }
+
+  if (!canReadCollaterals) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">No autorizado</p>
+        <p className="text-sm">
+          Tu usuario no tiene permiso para consultar garantías.
+        </p>
+      </div>
+    )
+  }
 
   if (isLoading && !collateral) {
     return (
@@ -98,13 +134,15 @@ export const CollateralDetailPage = () => {
             >
               Volver
             </button>
-            <button
-              type="button"
-              className="btn-primary px-4 py-2 text-sm"
-              onClick={() => navigate(`/clients/collaterals/${collateral.id}/edit`)}
-            >
-              Editar
-            </button>
+            {canUpdateCollaterals ? (
+              <button
+                type="button"
+                className="btn-primary px-4 py-2 text-sm"
+                onClick={() => navigate(`/clients/collaterals/${collateral.id}/edit`)}
+              >
+                Editar
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
@@ -122,17 +160,19 @@ export const CollateralDetailPage = () => {
           >
             Datos
           </button>
-          <button
-            type="button"
-            className={`rounded-md px-4 py-2 text-sm font-medium transition ${
-              tab === 'documents'
-                ? 'bg-primary text-white'
-                : 'text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800'
-            }`}
-            onClick={() => setTab('documents')}
-          >
-            Documentos
-          </button>
+          {canReadDocuments ? (
+            <button
+              type="button"
+              className={`rounded-md px-4 py-2 text-sm font-medium transition ${
+                tab === 'documents'
+                  ? 'bg-primary text-white'
+                  : 'text-slate-700 hover:bg-white dark:text-slate-200 dark:hover:bg-slate-800'
+              }`}
+              onClick={() => setTab('documents')}
+            >
+              Documentos
+            </button>
+          ) : null}
         </div>
 
         {tab === 'data' ? (
@@ -152,6 +192,18 @@ export const CollateralDetailPage = () => {
                 ) || '—'
               }
             />
+            {isPersonalGuarantorType(collateral.collateralTypeCode) ? (
+              <>
+                <DetailItem
+                  label="Cliente aval"
+                  value={collateral.guarantorClientFullName ?? '—'}
+                />
+                <DetailItem
+                  label="Identidad aval"
+                  value={formatHnIdentity(collateral.guarantorClientIdentityNo) || '—'}
+                />
+              </>
+            ) : null}
             <DetailItem label="Valor avalúo" value={formatMoney(collateral.appraisedValue)} />
             <DetailItem label="Fecha avalúo" value={formatDate(collateral.appraisedDate)} />
             <DetailItem label="Creada" value={formatDate(collateral.createdAt)} />

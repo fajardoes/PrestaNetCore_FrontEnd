@@ -491,12 +491,14 @@ export const DatePicker = ({
                   onClick={() => handleSelectDay(day)}
                   disabled={disabledDay}
                   className={`h-9 w-9 rounded-full text-sm transition ${
-                    selected
+                    disabledDay
+                      ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-500 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-600'
+                      : selected
                       ? 'bg-primary text-primary-foreground shadow'
                       : todayMatch
                         ? 'border border-primary/50 text-primary'
                         : 'text-slate-700 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-800'
-                  } ${disabledDay ? 'cursor-not-allowed text-slate-300 hover:bg-transparent dark:text-slate-600' : ''}`}
+                  }`}
                 >
                   {day}
                 </button>

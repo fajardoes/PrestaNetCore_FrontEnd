@@ -3,10 +3,11 @@ import type { StatusFilterValue } from '@/presentation/share/components/list-fil
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import { useNotifications } from '@/providers/NotificationProvider'
 import { useCollateralCatalogAdmin } from '@/presentation/features/collaterals/hooks/use-collateral-catalog-admin'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import type { CollateralCatalogItemDto } from '@/infrastructure/intranet/responses/collaterals/collateral-catalog-item-dto'
 import type { CollateralCatalogItemFormValues } from '@/infrastructure/validations/collaterals/collateral-catalog-item.schema'
 import { CollateralCatalogEditorModal } from '@/presentation/pages/catalogs/collaterals/components/collateral-catalog-editor-modal'
-import { useAuth } from '@/hooks/useAuth'
+import { TableTabular } from '@/presentation/share/components/table-tabular'
 
 interface CollateralCatalogPageContentProps {
   kind: 'types' | 'statuses'
@@ -20,9 +21,12 @@ export const CollateralCatalogPageContent = ({
   description,
 }: CollateralCatalogPageContentProps) => {
   const { notify } = useNotifications()
-  const { user } = useAuth()
-  const isAdmin =
-    user?.roles.some((role) => role.toLowerCase() === 'admin') ?? false
+  const {
+    hasPermission,
+    isLoading: isLoadingPermissions,
+  } = useUserPermissions()
+  const canReadCatalogs = hasPermission('collaterals.catalogs.read')
+  const canManageCatalogs = hasPermission('collaterals.catalogs.manage')
 
   const { items, isLoading, isSaving, error, load, create, update, toggleStatus } =
     useCollateralCatalogAdmin(kind)
@@ -35,11 +39,11 @@ export const CollateralCatalogPageContent = ({
   )
 
   useEffect(() => {
-    if (!isAdmin) return
+    if (!canReadCatalogs) return
     const active =
       status === 'all' ? undefined : status === 'active' ? true : false
     void load(active)
-  }, [isAdmin, load, status])
+  }, [canReadCatalogs, load, status])
 
   const filteredItems = useMemo(() => {
     const term = search.trim().toLowerCase()
@@ -52,13 +56,20 @@ export const CollateralCatalogPageContent = ({
     })
   }, [items, search])
 
-  if (!isAdmin) {
+  if (isLoadingPermissions) {
+    return (
+      <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        Cargando permisos...
+      </div>
+    )
+  }
+
+  if (!canReadCatalogs) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
-        <p className="font-semibold">Acceso restringido</p>
+        <p className="font-semibold">No autorizado</p>
         <p className="text-sm">
-          Solo los usuarios con rol <span className="font-semibold">Admin</span>{' '}
-          pueden administrar catálogos de garantías.
+          Tu usuario no tiene permiso para consultar catálogos de garantías.
         </p>
       </div>
     )
@@ -91,6 +102,126 @@ export const CollateralCatalogPageContent = ({
     }
   }
 
+  const columns = [
+    {
+      key: 'code',
+      header: 'Código',
+      className: 'min-w-[125px]',
+      render: (item: CollateralCatalogItemDto) => (
+        <span className="font-semibold text-slate-800 dark:text-slate-100">
+          {item.code}
+        </span>
+      ),
+      getTitle: (item: CollateralCatalogItemDto) => item.code,
+    },
+    {
+      key: 'name',
+      header: 'Nombre',
+      className: 'w-[270px] min-w-[270px]',
+      render: (item: CollateralCatalogItemDto) => (
+        <span className="block w-[250px] whitespace-normal break-words">
+          {item.name}
+        </span>
+      ),
+      getTitle: (item: CollateralCatalogItemDto) => item.name,
+    },
+    {
+      key: 'sortOrder',
+      header: 'Orden',
+      className: 'min-w-[90px]',
+      render: (item: CollateralCatalogItemDto) => item.sortOrder,
+      getTitle: (item: CollateralCatalogItemDto) => String(item.sortOrder),
+    },
+    {
+      key: 'active',
+      header: 'Estado',
+      className: 'min-w-[105px]',
+      render: (item: CollateralCatalogItemDto) => (
+        <span
+          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+            item.isActive
+              ? 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-100 dark:ring-sky-500/40'
+              : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
+          }`}
+        >
+          {item.isActive ? 'Activo' : 'Inactivo'}
+        </span>
+      ),
+      getTitle: (item: CollateralCatalogItemDto) =>
+        item.isActive ? 'Activo' : 'Inactivo',
+    },
+    {
+      key: 'system',
+      header: 'Sistema',
+      className: 'min-w-[90px]',
+      render: (item: CollateralCatalogItemDto) => item.isSystem ? 'Sí' : 'No',
+      getTitle: (item: CollateralCatalogItemDto) => item.isSystem ? 'Sí' : 'No',
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      className: 'w-px whitespace-nowrap',
+      render: (item: CollateralCatalogItemDto) => (
+        <span className="inline-flex items-center gap-2">
+          {canManageCatalogs ? (
+            <>
+              <button
+                type="button"
+                className="btn-table-action"
+                onClick={() => {
+                  setEditingItem(item)
+                  setIsModalOpen(true)
+                }}
+              >
+                Editar
+              </button>
+              <button
+                type="button"
+                className="btn-table-action"
+                disabled={isSaving}
+                onClick={async () => {
+                  if (
+                    item.isSystem &&
+                    item.isActive &&
+                    !window.confirm(
+                      'Este registro es de sistema. ¿Confirmas desactivarlo?',
+                    )
+                  ) {
+                    return
+                  }
+
+                  if (
+                    !window.confirm(
+                      item.isActive
+                        ? '¿Desactivar este registro?'
+                        : '¿Activar este registro?',
+                    )
+                  ) {
+                    return
+                  }
+
+                  const result = await toggleStatus(item.id, !item.isActive)
+                  if (result.success) {
+                    notify('Estado actualizado correctamente.', 'success')
+                    await load(
+                      status === 'all'
+                        ? undefined
+                        : status === 'active'
+                          ? true
+                          : false,
+                    )
+                  }
+                }}
+              >
+                {item.isActive ? 'Desactivar' : 'Activar'}
+              </button>
+            </>
+          ) : null}
+        </span>
+      ),
+    },
+  ]
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
@@ -107,150 +238,37 @@ export const CollateralCatalogPageContent = ({
         status={status}
         onStatusChange={setStatus}
         actions={
-          <button
-            type="button"
-            className="btn-primary px-4 py-2 text-sm"
-            onClick={() => {
-              setEditingItem(null)
-              setIsModalOpen(true)
-            }}
-          >
-            Nuevo
-          </button>
+          canManageCatalogs ? (
+            <button
+              type="button"
+              className="btn-primary px-4 py-2 text-sm"
+              onClick={() => {
+                setEditingItem(null)
+                setIsModalOpen(true)
+              }}
+            >
+              Nuevo
+            </button>
+          ) : null
         }
       />
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead className="bg-slate-50 dark:bg-slate-900">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Code
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Name
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  SortOrder
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Activa
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Sistema
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
-                    Cargando catálogo...
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300">
-                    {error}
-                  </td>
-                </tr>
-              ) : !filteredItems.length ? (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
-                    No hay registros para los filtros seleccionados.
-                  </td>
-                </tr>
-              ) : (
-                filteredItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-900">
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                      {item.code}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      {item.name}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      {item.sortOrder}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                          item.isActive
-                            ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-100 dark:ring-emerald-500/40'
-                            : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
-                        }`}
-                      >
-                        {item.isActive ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      {item.isSystem ? 'Sí' : 'No'}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          className="btn-icon-label text-xs"
-                          onClick={() => {
-                            setEditingItem(item)
-                            setIsModalOpen(true)
-                          }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-icon-label text-xs"
-                          disabled={isSaving}
-                          onClick={async () => {
-                            if (
-                              item.isSystem &&
-                              item.isActive &&
-                              !window.confirm(
-                                'Este registro es de sistema. ¿Confirmas desactivarlo?',
-                              )
-                            ) {
-                              return
-                            }
-
-                            if (
-                              !window.confirm(
-                                item.isActive
-                                  ? '¿Desactivar este registro?'
-                                  : '¿Activar este registro?',
-                              )
-                            ) {
-                              return
-                            }
-
-                            const result = await toggleStatus(item.id, !item.isActive)
-                            if (result.success) {
-                              notify('Estado actualizado correctamente.', 'success')
-                              await load(
-                                status === 'all'
-                                  ? undefined
-                                  : status === 'active'
-                                    ? true
-                                    : false,
-                              )
-                            }
-                          }}
-                        >
-                          {item.isActive ? 'Desactivar' : 'Activar'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+          {error}
         </div>
-      </div>
+      ) : null}
+
+      <TableTabular
+        title={kind === 'types' ? 'Tipos de garantía' : 'Estados de garantía'}
+        columns={columns}
+        rows={filteredItems}
+        rowKey={(item) => item.id}
+        isLoading={isLoading}
+        loadingMessage="Cargando catálogo..."
+        emptyMessage={error ? 'No fue posible cargar el catálogo.' : 'No hay registros para los filtros seleccionados.'}
+        maxHeightClassName="max-h-[640px]"
+      />
 
       <CollateralCatalogEditorModal
         open={isModalOpen}

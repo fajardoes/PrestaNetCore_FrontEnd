@@ -24,10 +24,15 @@ export interface LoanProductCreateDto {
   minCollateralRatio?: number | null
   hasInsurance: boolean
   portfolioTypeId: string
+  dayRuleId: string
+  roundingModeId: string
+  holidayAdjustmentRuleId: string
   glLoanPortfolioAccountId: string
   glInterestIncomeAccountId: string
+  glInterestReceivableAccountId: string
   glInterestSuspenseAccountId?: string | null
   glFeeIncomeAccountId?: string | null
+  glDeferredFeeAccountId?: string | null
   glInsurancePayableAccountId?: string | null
   fees: LoanProductFeeDto[]
   insurances: LoanProductInsuranceDto[]

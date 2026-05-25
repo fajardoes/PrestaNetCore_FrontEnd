@@ -7,6 +7,11 @@ import {
   LoanProductReport,
   type LoanProductReportData,
 } from '@/presentation/components/reports/loans/loan-product-report'
+import { formatRateAsPercent } from '@/core/helpers/rate-percent'
+import {
+  formatInsuranceValue,
+  getCatalogItemCodeById,
+} from '@/core/helpers/insurance-value'
 
 interface LoanProductDetailModalProps {
   open: boolean
@@ -26,7 +31,7 @@ interface LoanProductDetailModalProps {
     feeChargeTimings: LoanCatalogItemDto[]
     insuranceTypes: LoanCatalogItemDto[]
     insuranceCalculationBases: LoanCatalogItemDto[]
-    insuranceCoveragePeriods: LoanCatalogItemDto[]
+    insuranceValueTypes: LoanCatalogItemDto[]
     insuranceChargeTimings: LoanCatalogItemDto[]
     collateralTypes: LoanCatalogItemDto[]
   }
@@ -59,8 +64,10 @@ export const LoanProductDetailModal = ({
     const accountIds = [
       product.glLoanPortfolioAccountId,
       product.glInterestIncomeAccountId,
+      product.glInterestReceivableAccountId,
       product.glInterestSuspenseAccountId,
       product.glFeeIncomeAccountId,
+      product.glDeferredFeeAccountId,
       product.glInsurancePayableAccountId,
     ].filter((value): value is string => Boolean(value))
 
@@ -114,12 +121,18 @@ export const LoanProductDetailModal = ({
         interestIncome:
           glAccounts[product.glInterestIncomeAccountId] ||
           product.glInterestIncomeAccountId,
+        interestReceivable:
+          glAccounts[product.glInterestReceivableAccountId] ||
+          product.glInterestReceivableAccountId,
         interestSuspense: product.glInterestSuspenseAccountId
           ? glAccounts[product.glInterestSuspenseAccountId] ||
             product.glInterestSuspenseAccountId
           : null,
         feeIncome: product.glFeeIncomeAccountId
           ? glAccounts[product.glFeeIncomeAccountId] || product.glFeeIncomeAccountId
+          : null,
+        deferredFee: product.glDeferredFeeAccountId
+          ? glAccounts[product.glDeferredFeeAccountId] || product.glDeferredFeeAccountId
           : null,
         insurancePayable: product.glInsurancePayableAccountId
           ? glAccounts[product.glInsurancePayableAccountId] ||
@@ -146,15 +159,18 @@ export const LoanProductDetailModal = ({
           catalogs.insuranceCalculationBases,
           insurance.calculationBaseId,
         ),
-        coveragePeriod: buildCatalogLabel(
-          catalogs.insuranceCoveragePeriods,
-          insurance.coveragePeriodId,
+        valueType: buildCatalogLabel(
+          catalogs.insuranceValueTypes,
+          insurance.valueTypeId,
         ),
-        rate: insurance.rate,
+        valueTypeCode:
+          getCatalogItemCodeById(catalogs.insuranceValueTypes, insurance.valueTypeId),
+        value: insurance.value,
         chargeTiming: buildCatalogLabel(
           catalogs.insuranceChargeTimings,
           insurance.chargeTimingId,
         ),
+        isMandatory: insurance.isMandatory,
         isActive: insurance.isActive,
       })),
       collateralRules: (product.collateralRules ?? []).map((rule) => ({
@@ -250,7 +266,7 @@ export const LoanProductDetailModal = ({
                   product.interestRateTypeId,
                 )}
               />
-              <DetailItem label="Tasa nominal" value={`${product.nominalRate}%`} />
+              <DetailItem label="Tasa nominal" value={formatRateAsPercent(product.nominalRate)} />
               <DetailItem
                 label="Base de tasa"
                 value={buildCatalogLabel(catalogs.rateBases, product.rateBaseId)}
@@ -324,6 +340,13 @@ export const LoanProductDetailModal = ({
                 }
               />
               <DetailItem
+                label="Interés por cobrar"
+                value={
+                  glAccounts[product.glInterestReceivableAccountId] ||
+                  product.glInterestReceivableAccountId
+                }
+              />
+              <DetailItem
                 label="Intereses suspendidos"
                 value={
                   product.glInterestSuspenseAccountId
@@ -338,6 +361,15 @@ export const LoanProductDetailModal = ({
                   product.glFeeIncomeAccountId
                     ? glAccounts[product.glFeeIncomeAccountId] ||
                       product.glFeeIncomeAccountId
+                    : '—'
+                }
+              />
+              <DetailItem
+                label="Comisión diferida"
+                value={
+                  product.glDeferredFeeAccountId
+                    ? glAccounts[product.glDeferredFeeAccountId] ||
+                      product.glDeferredFeeAccountId
                     : '—'
                 }
               />
@@ -400,17 +432,25 @@ export const LoanProductDetailModal = ({
                           catalogs.insuranceCalculationBases,
                           insurance.calculationBaseId,
                         )}
-                        {' | '}Cobertura:{' '}
+                        {' | '}Tipo valor:{' '}
                         {buildCatalogLabel(
-                          catalogs.insuranceCoveragePeriods,
-                          insurance.coveragePeriodId,
+                          catalogs.insuranceValueTypes,
+                          insurance.valueTypeId,
                         )}
-                        {' | '}Tasa: {formatAmount(insurance.rate)}
+                        {' | '}Valor:{' '}
+                        {formatInsuranceValue(
+                          insurance.value,
+                          getCatalogItemCodeById(
+                            catalogs.insuranceValueTypes,
+                            insurance.valueTypeId,
+                          ),
+                        )}
                         {' | '}Momento:{' '}
                         {buildCatalogLabel(
                           catalogs.insuranceChargeTimings,
                           insurance.chargeTimingId,
                         )}
+                        {' | '}Requerido: {insurance.isMandatory ? 'Si' : 'No'}
                         {' | '}Estado: {insurance.isActive ? 'Activo' : 'Inactivo'}
                       </p>
                     </li>

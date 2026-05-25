@@ -12,10 +12,13 @@ import type { JournalEntryDetail } from '@/infrastructure/interfaces/accounting/
 import type { JournalEntryLineRequest } from '@/infrastructure/interfaces/accounting/requests/create-journal-entry.request'
 import type { CreateJournalEntryRequest } from '@/infrastructure/interfaces/accounting/requests/create-journal-entry.request'
 import type { UpdateJournalEntryRequest } from '@/infrastructure/interfaces/accounting/requests/update-journal-entry.request'
+import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
+import { doesDateBelongToPeriod, getJournalAccountingDate } from '@/presentation/features/accounting/accounting-ui'
 
 interface UseJournalEntryFormOptions {
   entryId?: string | null
   onCompleted?: (entry: JournalEntryDetail) => void
+  adjustmentPeriods?: AccountingPeriodDto[]
 }
 
 const normalizeAmount = (value: number): number => {
@@ -42,6 +45,9 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
   const defaultValues = useMemo<JournalEntryFormValues>(
     () => ({
       date: '',
+      eventDate: '',
+      postingMode: 'MANUAL_REGULAR',
+      requestedPostingPeriodId: '',
       description: '',
       costCenterId: '',
       lines: [
@@ -70,7 +76,12 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
 
       if (result.success) {
         form.reset({
-          date: result.data.date,
+          date: getJournalAccountingDate(result.data),
+          eventDate: result.data.eventDate ?? '',
+          postingMode: result.data.postingMode === 'MANUAL_ADJUSTMENT'
+            ? 'MANUAL_ADJUSTMENT'
+            : 'MANUAL_REGULAR',
+          requestedPostingPeriodId: result.data.postingPeriodId ?? result.data.periodId ?? '',
           description: result.data.description ?? '',
           costCenterId: result.data.costCenterId ?? '',
           lines: result.data.lines.map((line) => ({
@@ -104,8 +115,29 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
     setIsSaving(true)
     setError(null)
 
+    if (values.postingMode === 'MANUAL_ADJUSTMENT') {
+      const selectedPeriod =
+        options?.adjustmentPeriods?.find((period) => period.id === values.requestedPostingPeriodId) ??
+        null
+
+      if (!selectedPeriod || !doesDateBelongToPeriod(values.date, selectedPeriod)) {
+        form.setError('date', {
+          type: 'manual',
+          message: 'La fecha contable debe pertenecer al periodo de ajuste seleccionado.',
+        })
+        setIsSaving(false)
+        return
+      }
+    }
+
     const payloadBase: CreateJournalEntryRequest = {
       date: values.date,
+      eventDate: values.eventDate?.trim() ? values.eventDate : null,
+      postingMode: values.postingMode,
+      requestedPostingPeriodId:
+        values.postingMode === 'MANUAL_ADJUSTMENT'
+          ? values.requestedPostingPeriodId || null
+          : null,
       description: values.description.trim(),
       costCenterId: values.costCenterId ? values.costCenterId : null,
       lines: buildLinesPayload(values.lines),

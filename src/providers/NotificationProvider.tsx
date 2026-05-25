@@ -54,7 +54,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
         {notifications.map((notification) => {
           const color =
             notification.type === 'success'
-              ? 'border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-500/60 dark:bg-emerald-700 dark:text-emerald-50'
+              ? 'border-sky-300 bg-sky-50 text-sky-900 dark:border-sky-500/60 dark:bg-sky-700 dark:text-sky-50'
               : notification.type === 'warning'
                 ? 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/60 dark:bg-amber-700 dark:text-amber-50'
                 : notification.type === 'error'

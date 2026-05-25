@@ -37,6 +37,25 @@ const formatState = (state: JournalEntryDetail['state']) => {
 const formatSource = (source: JournalEntryDetail['source']) =>
   source === 'system' ? 'Sistema' : 'Manual'
 
+const formatPostingMode = (mode?: JournalEntryDetail['postingMode']) => {
+  switch (mode) {
+    case 'AUTOMATIC_OPERATION':
+      return 'Operacion automatica'
+    case 'MANUAL_REGULAR':
+      return 'Asiento manual regular'
+    case 'MANUAL_ADJUSTMENT':
+      return 'Ajuste manual'
+    case 'SYSTEM_ACCRUAL':
+      return 'Devengo automatico'
+    case 'SYSTEM_RECLASS':
+      return 'Reclasificacion automatica'
+    case 'SYSTEM_REVERSAL':
+      return 'Reversa del sistema'
+    default:
+      return '-'
+  }
+}
+
 const formatIdentifier = (value?: string | null) => {
   if (!value) return '-'
   const isUuid =
@@ -68,13 +87,21 @@ export const JournalEntryVoucherReport = ({
             <Text style={styles.infoValue}>{entry.number || '-'}</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Fecha</Text>
-            <Text style={styles.infoValue}>{formatDate(entry.date)}</Text>
+            <Text style={styles.infoLabel}>Fecha contable</Text>
+            <Text style={styles.infoValue}>{formatDate(entry.accountingDate ?? entry.date)}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Fecha evento</Text>
+            <Text style={styles.infoValue}>{formatDate(entry.eventDate)}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Fecha negocio</Text>
+            <Text style={styles.infoValue}>{formatDate(entry.businessDateSnapshot)}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Periodo</Text>
             <Text style={styles.infoValue}>
-              {entry.periodName ? entry.periodName : formatIdentifier(entry.periodId)}
+              {entry.postingPeriodName || entry.periodName || formatIdentifier(entry.postingPeriodId ?? entry.periodId)}
             </Text>
           </View>
           <View style={styles.infoRow}>
@@ -84,6 +111,10 @@ export const JournalEntryVoucherReport = ({
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Origen</Text>
             <Text style={styles.infoValue}>{formatSource(entry.source)}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Modo posteo</Text>
+            <Text style={styles.infoValue}>{formatPostingMode(entry.postingMode)}</Text>
           </View>
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>Centro de costo</Text>

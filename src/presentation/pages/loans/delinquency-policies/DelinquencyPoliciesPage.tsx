@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AccountingStatusBadge } from '@/presentation/features/accounting/components/accounting-status-badge'
 import { ListFiltersBar, type StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { useDelinquencyPoliciesList } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policies-list'
 import { useDelinquencyPolicyMutations } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policy-mutations'
@@ -93,7 +94,7 @@ export const DelinquencyPoliciesPage = () => {
         }
       />
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <TableContainer mode="legacy-compact">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900">
@@ -177,7 +178,7 @@ export const DelinquencyPoliciesPage = () => {
                       <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
                         <button
                           type="button"
-                          className="btn-icon-label"
+                          className="btn-table-action"
                           onClick={() =>
                             navigate(`/loans/delinquency-policies/${item.id}`)
                           }
@@ -186,7 +187,7 @@ export const DelinquencyPoliciesPage = () => {
                         </button>
                         <button
                           type="button"
-                          className="btn-icon-label"
+                          className="btn-table-action"
                           onClick={() => setPendingToggle(item)}
                           disabled={isToggling}
                         >
@@ -200,7 +201,7 @@ export const DelinquencyPoliciesPage = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </TableContainer>
 
       <ConfirmModal
         open={Boolean(pendingToggle)}

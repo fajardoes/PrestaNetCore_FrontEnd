@@ -2,6 +2,6 @@ export interface HolidayCreateDto {
   date: string
   name: string
   description?: string | null
-  type: number
+  holidayTypeId: string | number
   isActive: boolean
 }

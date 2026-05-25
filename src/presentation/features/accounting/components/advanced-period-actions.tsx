@@ -44,7 +44,7 @@ export const AdvancedPeriodActions = ({ onOpenPeriod }: AdvancedPeriodActionsPro
             }}
             role="menuitem"
           >
-            Abrir período (manual)
+            Abrir mes contable
           </button>
         </div>
       ) : null}

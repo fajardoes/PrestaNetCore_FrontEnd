@@ -6,6 +6,8 @@ import type { RefreshResponse } from '@/types/auth'
 declare module 'axios' {
   interface AxiosRequestConfig {
     _retry?: boolean
+    skipGlobalLoading?: boolean
+    _countedInGlobalLoading?: boolean
   }
 }
 
@@ -83,7 +85,12 @@ const refreshAccessToken = async (): Promise<string | null> => {
 }
 
 httpClient.interceptors.request.use((config) => {
-  httpActivityTracker.increment()
+  if (!config.skipGlobalLoading) {
+    httpActivityTracker.increment()
+    config._countedInGlobalLoading = true
+  } else {
+    config._countedInGlobalLoading = false
+  }
   const accessToken = tokenStorage.getAccessToken()
   if (accessToken) {
     config.headers = config.headers ?? {}
@@ -94,11 +101,15 @@ httpClient.interceptors.request.use((config) => {
 
 httpClient.interceptors.response.use(
   (response) => {
-    httpActivityTracker.decrement()
+    if (response.config?._countedInGlobalLoading) {
+      httpActivityTracker.decrement()
+    }
     return response
   },
   async (error: AxiosError) => {
-    httpActivityTracker.decrement()
+    if (error.config?._countedInGlobalLoading) {
+      httpActivityTracker.decrement()
+    }
     const { response, config } = error
     if (!response || !config) {
       return Promise.reject(error)

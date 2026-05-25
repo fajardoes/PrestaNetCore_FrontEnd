@@ -8,7 +8,8 @@ import type { CollateralActionErrorData } from '@/core/actions/collaterals/colla
 
 const mapErrorMessage = (result: ApiResult<unknown, CollateralActionErrorData>) => {
   if (result.success) return null
-  if (result.status === 404) return 'No encontrado.'
+  if (result.data?.detail) return result.data.detail
+  if (result.status === 404) return result.error || 'No encontrado.'
   if (result.status === 409) return result.error || 'Conflicto al guardar.'
   if (result.status === 422) return result.error || 'Datos inválidos. Revisa el formulario.'
   return result.error

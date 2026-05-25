@@ -7,6 +7,7 @@ import { useResolveDelinquencyPolicy } from '@/presentation/features/loans/delin
 import AsyncSelect, {
   type AsyncSelectOption,
 } from '@/presentation/share/components/async-select'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import {
   delinquencyPolicyResolveSchema,
   type DelinquencyPolicyResolveFormValues,
@@ -202,7 +203,7 @@ export const ResolveDelinquencyPolicyPage = () => {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <TableContainer mode="legacy-compact">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                 <thead className="bg-slate-50 dark:bg-slate-900">
@@ -267,7 +268,7 @@ export const ResolveDelinquencyPolicyPage = () => {
                 </tbody>
               </table>
             </div>
-          </div>
+          </TableContainer>
         </div>
       ) : null}
     </div>

@@ -8,7 +8,9 @@ import { SecurityRoutes } from './security-routes'
 import { OrganizationRoutes } from './organization-routes'
 import { ClientsRoutes } from './clients-routes'
 import { AccountingRoutes } from './accounting-routes'
+import { CollectionChannelsRoutes } from './collection-channels-routes'
 import { LoansRoutes } from './loans-routes'
+import { PaymentsRoutes } from './payments-routes'
 import { SystemRoutes } from './system-routes'
 import { SalesRoutes } from './sales-routes'
 import { ProtectedRoute } from './ProtectedRoute'
@@ -30,7 +32,9 @@ export const AppRouter = () => {
             {OrganizationRoutes()}
             {ClientsRoutes()}
             {AccountingRoutes()}
+            {CollectionChannelsRoutes()}
             {LoansRoutes()}
+            {PaymentsRoutes()}
             {SalesRoutes()}
             {SystemRoutes()}
           </Route>

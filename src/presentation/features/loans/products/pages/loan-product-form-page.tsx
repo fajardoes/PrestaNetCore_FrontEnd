@@ -8,6 +8,7 @@ import { useLoanCatalogsCache } from '@/presentation/features/loans/catalogs/hoo
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
 import type { LoanProductCreateDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-create.dto'
 import type { LoanProductUpdateDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-update.dto'
+import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
 
 export const LoanProductFormPage = () => {
   const navigate = useNavigate()
@@ -43,11 +44,16 @@ export const LoanProductFormPage = () => {
     return {
       ...data,
       currencyCode: 'HNL',
+      nominalRate: mapRateToPercentValue(data.nominalRate),
       description: data.description ?? '',
       minCollateralRatio: data.minCollateralRatio ?? undefined,
+      glInterestReceivableAccountId: data.glInterestReceivableAccountId,
       glInterestSuspenseAccountId: data.glInterestSuspenseAccountId ?? null,
       glFeeIncomeAccountId: data.glFeeIncomeAccountId ?? null,
+      glDeferredFeeAccountId: data.glDeferredFeeAccountId ?? null,
       glInsurancePayableAccountId: data.glInsurancePayableAccountId ?? null,
+      hasActiveDisbursementFees: false,
+      hasActiveDisbursementInsurances: false,
       fees: data.fees ?? [],
       insurances: data.insurances ?? [],
       collateralRules: data.collateralRules ?? [],
@@ -56,18 +62,55 @@ export const LoanProductFormPage = () => {
 
   const handleSubmit = async (values: LoanProductFormValues) => {
     clearError()
+    const normalizedInsurances = (values.hasInsurance ? values.insurances ?? [] : []).map(
+      (insurance) => ({
+        id: insurance.id ?? null,
+        insuranceTypeId: insurance.insuranceTypeId,
+        calculationBaseId: insurance.calculationBaseId,
+        valueTypeId: insurance.valueTypeId,
+        value: insurance.value,
+        chargeTimingId: insurance.chargeTimingId,
+        isMandatory: insurance.isMandatory,
+        isActive: insurance.isActive,
+      }),
+    )
+
     const payloadBase = {
-      ...values,
-      currencyCode: 'HNL',
+      code: values.code,
+      name: values.name,
       description: values.description ?? null,
+      isActive: values.isActive,
+      currencyCode: 'HNL',
+      minAmount: values.minAmount,
+      maxAmount: values.maxAmount,
+      minTerm: values.minTerm,
+      maxTerm: values.maxTerm,
+      termUnitId: values.termUnitId,
+      interestRateTypeId: values.interestRateTypeId,
+      nominalRate: mapPercentInputToRate(values.nominalRate),
+      rateBaseId: values.rateBaseId,
+      amortizationMethodId: values.amortizationMethodId,
+      paymentFrequencyId: values.paymentFrequencyId,
+      gracePrincipal: values.gracePrincipal,
+      graceInterest: values.graceInterest,
+      requiresCollateral: values.requiresCollateral,
       minCollateralRatio: values.requiresCollateral
         ? values.minCollateralRatio ?? null
         : null,
+      hasInsurance: values.hasInsurance,
+      portfolioTypeId: values.portfolioTypeId,
+      dayRuleId: values.dayRuleId,
+      roundingModeId: values.roundingModeId,
+      holidayAdjustmentRuleId: values.holidayAdjustmentRuleId,
+      glLoanPortfolioAccountId: values.glLoanPortfolioAccountId,
+      glInterestIncomeAccountId: values.glInterestIncomeAccountId,
+      glInterestReceivableAccountId: values.glInterestReceivableAccountId,
       glInterestSuspenseAccountId: values.glInterestSuspenseAccountId ?? null,
       glFeeIncomeAccountId: values.glFeeIncomeAccountId ?? null,
+      glDeferredFeeAccountId: values.glDeferredFeeAccountId ?? null,
       glInsurancePayableAccountId: values.glInsurancePayableAccountId ?? null,
       fees: values.fees ?? [],
-      insurances: values.hasInsurance ? values.insurances ?? [] : [],
+      insurances: normalizedInsurances,
       collateralRules: values.requiresCollateral ? values.collateralRules ?? [] : [],
     }
 
@@ -132,13 +175,16 @@ export const LoanProductFormPage = () => {
           amortizationMethods: catalogsCache.amortizationMethods,
           paymentFrequencies: catalogsCache.paymentFrequencies,
           portfolioTypes: catalogsCache.portfolioTypes,
+          dayRules: catalogsCache.dayRules,
+          roundingModes: catalogsCache.roundingModes,
+          holidayAdjustmentRules: catalogsCache.holidayAdjustmentRules,
           feeTypes: catalogsCache.feeTypes,
           feeChargeBases: catalogsCache.feeChargeBases,
           feeValueTypes: catalogsCache.feeValueTypes,
           feeChargeTimings: catalogsCache.feeChargeTimings,
           insuranceTypes: catalogsCache.insuranceTypes,
           insuranceCalculationBases: catalogsCache.insuranceCalculationBases,
-          insuranceCoveragePeriods: catalogsCache.insuranceCoveragePeriods,
+          insuranceValueTypes: catalogsCache.insuranceValueTypes,
           insuranceChargeTimings: catalogsCache.insuranceChargeTimings,
           collateralTypes: catalogsCache.collateralTypes,
         }}

@@ -24,11 +24,23 @@ const initialState: CollateralCatalogsCacheState = {
   error: null,
 }
 
-export const useCollateralCatalogsCache = () => {
+interface UseCollateralCatalogsCacheOptions {
+  enabled?: boolean
+}
+
+export const useCollateralCatalogsCache = (
+  options?: UseCollateralCatalogsCacheOptions,
+) => {
+  const enabled = options?.enabled ?? true
   const cacheRef = useRef<{ types: CollateralCatalogItemDto[]; statuses: CollateralCatalogItemDto[] } | null>(null)
   const [state, setState] = useState<CollateralCatalogsCacheState>(initialState)
 
   const load = useCallback(async (force = false) => {
+    if (!enabled) {
+      setState(initialState)
+      return
+    }
+
     if (!force && cacheRef.current) {
       setState({
         types: cacheRef.current.types,
@@ -67,11 +79,15 @@ export const useCollateralCatalogsCache = () => {
       isLoading: false,
       error: nextError,
     }))
-  }, [])
+  }, [enabled])
 
   useEffect(() => {
+    if (!enabled) {
+      setState(initialState)
+      return
+    }
     void load()
-  }, [load])
+  }, [enabled, load])
 
   return {
     ...state,

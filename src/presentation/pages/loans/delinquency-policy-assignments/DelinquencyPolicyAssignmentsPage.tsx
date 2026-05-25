@@ -11,6 +11,7 @@ import { useDelinquencyPolicyAssignmentMutations } from '@/presentation/features
 import { useActiveDelinquencyPolicies } from '@/presentation/features/loans/delinquency/hooks/use-active-delinquency-policies'
 import { useAgencies } from '@/presentation/features/catalog/hooks/use-agencies'
 import { useLoanCatalogsCache } from '@/presentation/features/loans/catalogs/hooks/use-loan-catalogs-cache'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import type { DelinquencyPolicyAssignmentListItemDto } from '@/infrastructure/intranet/responses/loans/delinquency-policy-assignment-list-item.response'
 import type { DelinquencyPolicyAssignmentFormValues } from '@/infrastructure/validations/loans/delinquency-policy-assignment.schema'
 
@@ -215,7 +216,7 @@ export const DelinquencyPolicyAssignmentsPage = () => {
         </div>
       </ListFiltersBar>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <TableContainer mode="legacy-compact">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900">
@@ -293,7 +294,7 @@ export const DelinquencyPolicyAssignmentsPage = () => {
                       <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
                         <button
                           type="button"
-                          className="btn-icon-label"
+                          className="btn-table-action"
                           onClick={() => {
                             setEditingAssignment(item)
                             setIsModalOpen(true)
@@ -303,7 +304,7 @@ export const DelinquencyPolicyAssignmentsPage = () => {
                         </button>
                         <button
                           type="button"
-                          className="btn-icon-label"
+                          className="btn-table-action"
                           onClick={() => setPendingToggle(item)}
                           disabled={isSaving}
                         >
@@ -317,7 +318,7 @@ export const DelinquencyPolicyAssignmentsPage = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </TableContainer>
 
       <DelinquencyPolicyAssignmentModal
         open={isModalOpen}

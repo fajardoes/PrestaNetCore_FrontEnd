@@ -1,4 +1,5 @@
 import * as yup from 'yup'
+import { BUSINESS_DAY_ADJUSTMENT_RULES } from '@/infrastructure/interfaces/organization/holidays/business-day-adjustment-rule'
 
 const emptyToUndefined = <T>(value: T, originalValue: T) =>
   originalValue === '' ? undefined : value
@@ -31,10 +32,12 @@ export const adjustDateSchema = yup.object({
       const parsed = new Date(value)
       return !Number.isNaN(parsed.getTime())
     }),
-  rule: yup
-    .number()
-    .oneOf([1, 2])
-    .typeError('La regla es requerida.')
+  holidayAdjustmentRuleCode: yup
+    .string()
+    .oneOf([
+      BUSINESS_DAY_ADJUSTMENT_RULES.NEXT_BUSINESS_DAY,
+      BUSINESS_DAY_ADJUSTMENT_RULES.PREVIOUS_BUSINESS_DAY,
+    ])
     .required('La regla es requerida.'),
   agencyId: yup.string().transform(emptyToUndefined).optional(),
   portfolioTypeId: yup.string().transform(emptyToUndefined).optional(),

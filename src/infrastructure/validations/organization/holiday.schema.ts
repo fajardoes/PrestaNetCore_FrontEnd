@@ -15,9 +15,13 @@ export const holidaySchema = yup.object({
     .trim()
     .required('El nombre del feriado es requerido.'),
   description: yup.string().trim().nullable().optional(),
-  type: yup
-    .number()
-    .typeError('El tipo de feriado es requerido.')
+  holidayTypeId: yup
+    .mixed<string | number>()
+    .test(
+      'required-holiday-type',
+      'El tipo de feriado es requerido.',
+      (value) => value !== undefined && value !== null && String(value).trim() !== '',
+    )
     .required('El tipo de feriado es requerido.'),
   isActive: yup.boolean().required(),
 })

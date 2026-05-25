@@ -10,13 +10,16 @@ interface LoanCatalogsCacheState {
   amortizationMethods: LoanCatalogItemDto[]
   paymentFrequencies: LoanCatalogItemDto[]
   portfolioTypes: LoanCatalogItemDto[]
+  dayRules: LoanCatalogItemDto[]
+  roundingModes: LoanCatalogItemDto[]
+  holidayAdjustmentRules: LoanCatalogItemDto[]
   feeTypes: LoanCatalogItemDto[]
   feeChargeBases: LoanCatalogItemDto[]
   feeValueTypes: LoanCatalogItemDto[]
   feeChargeTimings: LoanCatalogItemDto[]
   insuranceTypes: LoanCatalogItemDto[]
   insuranceCalculationBases: LoanCatalogItemDto[]
-  insuranceCoveragePeriods: LoanCatalogItemDto[]
+  insuranceValueTypes: LoanCatalogItemDto[]
   insuranceChargeTimings: LoanCatalogItemDto[]
   collateralTypes: LoanCatalogItemDto[]
 }
@@ -28,13 +31,16 @@ const emptyState: LoanCatalogsCacheState = {
   amortizationMethods: [],
   paymentFrequencies: [],
   portfolioTypes: [],
+  dayRules: [],
+  roundingModes: [],
+  holidayAdjustmentRules: [],
   feeTypes: [],
   feeChargeBases: [],
   feeValueTypes: [],
   feeChargeTimings: [],
   insuranceTypes: [],
   insuranceCalculationBases: [],
-  insuranceCoveragePeriods: [],
+  insuranceValueTypes: [],
   insuranceChargeTimings: [],
   collateralTypes: [],
 }
@@ -80,13 +86,16 @@ export const useLoanCatalogsCache = () => {
         amortizationMethods,
         paymentFrequencies,
         portfolioTypes,
+        dayRules,
+        roundingModes,
+        holidayAdjustmentRules,
         feeTypes,
         feeChargeBases,
         feeValueTypes,
         feeChargeTimings,
         insuranceTypes,
         insuranceCalculationBases,
-        insuranceCoveragePeriods,
+        insuranceValueTypes,
         insuranceChargeTimings,
         collateralTypes,
       ] = await Promise.all([
@@ -96,13 +105,16 @@ export const useLoanCatalogsCache = () => {
         loadCatalog('amortization-methods'),
         loadCatalog('payment-frequencies'),
         loadCatalog('portfolio-types'),
+        loadCatalog('day-rules'),
+        loadCatalog('rounding-modes'),
+        loadCatalog('holiday-adjustment-rules'),
         loadCatalog('fee-types'),
         loadCatalog('fee-charge-bases'),
         loadCatalog('fee-value-types'),
         loadCatalog('fee-charge-timings'),
         loadCatalog('insurance-types'),
         loadCatalog('insurance-calculation-bases'),
-        loadCatalog('insurance-coverage-periods'),
+        loadCatalog('insurance-value-types'),
         loadCatalog('insurance-charge-timings'),
         loadCollateralTypes(),
       ])
@@ -114,13 +126,16 @@ export const useLoanCatalogsCache = () => {
         amortizationMethods,
         paymentFrequencies,
         portfolioTypes,
+        dayRules,
+        roundingModes,
+        holidayAdjustmentRules,
         feeTypes,
         feeChargeBases,
         feeValueTypes,
         feeChargeTimings,
         insuranceTypes,
         insuranceCalculationBases,
-        insuranceCoveragePeriods,
+        insuranceValueTypes,
         insuranceChargeTimings,
         collateralTypes,
       })

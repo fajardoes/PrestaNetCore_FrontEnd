@@ -3,6 +3,7 @@ import { listClientsAction } from '@/core/actions/clients/list-clients.action'
 import { formatHnIdentity } from '@/core/helpers/hn-identity'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { AsyncSelectOption } from '@/presentation/share/components/async-select'
+import type { PagedResult } from '@/types/pagination'
 
 const resolveClientId = (client: ClientListItem): string => {
   const rawClient = client as ClientListItem & {
@@ -24,6 +25,49 @@ const toOption = (
 })
 
 export const useCollateralClientSearch = () => {
+  const listClients = useCallback(
+    async ({
+      pageNumber = 1,
+      pageSize = 10,
+      search,
+      active = true,
+    }: {
+      pageNumber?: number
+      pageSize?: number
+      search?: string
+      active?: boolean
+    }): Promise<PagedResult<ClientListItem>> => {
+      const result = await listClientsAction(
+        {
+          pageNumber,
+          pageSize,
+          search: search?.trim() || undefined,
+          activo: active,
+          esEmpleado: false,
+        },
+        { silent: true },
+      )
+
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+
+      const fallbackTotalPages =
+        typeof result.data.totalCount === 'number' && result.data.totalCount > 0
+          ? Math.ceil(result.data.totalCount / pageSize)
+          : 1
+
+      return {
+        ...result.data,
+        totalPages:
+          typeof result.data.totalPages === 'number' && Number.isFinite(result.data.totalPages)
+            ? Math.max(1, result.data.totalPages)
+            : Math.max(1, fallbackTotalPages),
+      }
+    },
+    [],
+  )
+
   const searchClients = useCallback(
     async (input: string): Promise<AsyncSelectOption<ClientListItem>[]> => {
       const term = input.trim()
@@ -62,6 +106,7 @@ export const useCollateralClientSearch = () => {
   }, [])
 
   return {
+    listClients,
     searchClients,
     getOptionById,
   }

@@ -1,5 +1,6 @@
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import { AccountingStatusBadge } from './accounting-status-badge'
+import { TableTabular } from '@/presentation/share/components/table-tabular'
 
 interface ChildrenMap {
   [parentId: string]: {
@@ -23,6 +24,11 @@ interface ChartAccountsTableProps {
   onCreateChild?: (account: ChartAccountListItem) => void
 }
 
+interface VisibleChartAccountRow {
+  account: ChartAccountListItem
+  level: number
+}
+
 export const ChartAccountsTable = ({
   accounts,
   childrenByParent,
@@ -38,138 +44,164 @@ export const ChartAccountsTable = ({
   void page
   void totalPages
 
-  const renderRows = (
+  const buildVisibleRows = (
     items: ChartAccountListItem[],
     level: number,
-    path: string,
-  ): JSX.Element[] => {
-    return items.flatMap((account, index) => {
-      const isExpanded = expandedIds.has(account.id)
+  ): VisibleChartAccountRow[] =>
+    items.flatMap((account) => {
+      const rows: VisibleChartAccountRow[] = [{ account, level }]
       const childrenState = childrenByParent[account.id]
-      const hasChildren = (childrenState?.items.length ?? 0) > 0
-      const rowKey = `${path}-${account.id}-${index}`
-      const rows: JSX.Element[] = [
-        <div
-          key={rowKey}
-          className="grid grid-cols-5 items-center gap-3 px-3 py-2 text-[13px] hover:bg-slate-50/70 dark:hover:bg-slate-900"
-          role="treeitem"
-          aria-expanded={account.isGroup ? isExpanded : undefined}
-        >
-          <div className="col-span-2 flex items-center gap-2">
-            <div style={{ width: level * 16 }} />
+
+      if (
+        account.isGroup &&
+        expandedIds.has(account.id) &&
+        childrenState?.items.length
+      ) {
+        rows.push(...buildVisibleRows(childrenState.items, level + 1))
+      }
+
+      return rows
+    })
+
+  const visibleRows = buildVisibleRows(accounts, 0)
+  const columns = [
+    {
+      key: 'account',
+      header: 'Cuenta',
+      className: 'min-w-[330px]',
+      render: ({ account, level }: VisibleChartAccountRow) => {
+        const isExpanded = expandedIds.has(account.id)
+        const childrenState = childrenByParent[account.id]
+        const isEmptyExpandedGroup =
+          account.isGroup &&
+          isExpanded &&
+          !childrenState?.isLoading &&
+          !childrenState?.error &&
+          !childrenState?.items.length
+
+        return (
+          <span className="flex items-start gap-2">
+            <span className="inline-block shrink-0" style={{ width: level * 16 }} />
             {account.isGroup ? (
               <button
                 type="button"
                 onClick={() => onToggleExpand(account.id, account.isGroup)}
-                className="btn-icon h-7 w-7"
+                className="btn-table-action w-7 shrink-0 px-0"
                 aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
               >
                 {childrenState?.isLoading ? (
-                  <SpinnerIcon className="h-4 w-4 animate-spin" />
+                  <SpinnerIcon className="mx-auto h-4 w-4 animate-spin" />
                 ) : isExpanded ? (
-                  <ChevronDownIcon className="h-4 w-4" />
+                  <ChevronDownIcon className="mx-auto h-4 w-4" />
                 ) : (
-                  <ChevronRightIcon className="h-4 w-4" />
+                  <ChevronRightIcon className="mx-auto h-4 w-4" />
                 )}
               </button>
             ) : (
-              <div className="h-7 w-7" />
+              <span className="h-7 w-7 shrink-0" />
             )}
-            <div className="flex flex-col">
+            <span className="flex flex-col">
               <span className="font-semibold text-slate-800 dark:text-slate-100">
                 {account.code}
               </span>
               <span className="text-xs text-slate-500 dark:text-slate-400">
                 {account.name} • {account.slug}
               </span>
-            </div>
-          </div>
-          <div className="text-slate-800 dark:text-slate-100">
-            {account.isGroup ? 'Grupo' : 'Posteable'}
-          </div>
-          <div className="text-slate-800 dark:text-slate-100">
-            {account.normalBalance === 'debit' ? 'Debe' : 'Haber'}
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <AccountingStatusBadge isActive={account.isActive} />
-            <div className="flex items-center gap-2">
-              {account.isGroup && onCreateChild ? (
-                <button
-                  type="button"
-                  onClick={() => onCreateChild(account)}
-                  className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                >
-                  Nuevo hijo
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => onEdit(account)}
-                className="rounded-md border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-              >
-                Editar
-              </button>
-            </div>
-          </div>
-        </div>,
-      ]
-
-      if (account.isGroup && isExpanded) {
-            if (childrenState?.isLoading) {
-              rows.push(
-                <div
-                  key={`${rowKey}-loading`}
-                  className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400"
-                >
+              {account.isGroup && isExpanded && childrenState?.isLoading ? (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   Cargando subcuentas...
-                </div>,
-              )
-            } else if (childrenState?.error) {
-              rows.push(
-                <div
-                  key={`${rowKey}-error`}
-                  className="px-4 py-2 text-xs text-red-600 dark:text-red-300"
-                >
+                </span>
+              ) : null}
+              {account.isGroup && isExpanded && childrenState?.error ? (
+                <span className="text-xs text-red-600 dark:text-red-300">
                   {childrenState.error}
-                </div>,
-              )
-            } else if (hasChildren) {
-          rows.push(...renderRows(childrenState.items, level + 1, `${rowKey}-child`))
-        } else {
-              rows.push(
-                <div
-                  key={`${rowKey}-empty`}
-                  className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400"
-                >
+                </span>
+              ) : null}
+              {isEmptyExpandedGroup ? (
+                <span className="text-xs text-slate-500 dark:text-slate-400">
                   No hay subcuentas para esta cuenta.
-                </div>,
-              )
-            }
-      }
-
-      return rows
-    })
-  }
+                </span>
+              ) : null}
+            </span>
+          </span>
+        )
+      },
+      getTitle: ({ account }: VisibleChartAccountRow) =>
+        `${account.code} - ${account.name} - ${account.slug}`,
+    },
+    {
+      key: 'type',
+      header: 'Tipo',
+      className: 'min-w-[95px]',
+      render: ({ account }: VisibleChartAccountRow) =>
+        account.isGroup ? 'Grupo' : 'Posteable',
+      getTitle: ({ account }: VisibleChartAccountRow) =>
+        account.isGroup ? 'Grupo' : 'Posteable',
+    },
+    {
+      key: 'balance',
+      header: 'Naturaleza',
+      className: 'min-w-[95px]',
+      render: ({ account }: VisibleChartAccountRow) =>
+        account.normalBalance === 'debit' ? 'Debe' : 'Haber',
+      getTitle: ({ account }: VisibleChartAccountRow) =>
+        account.normalBalance === 'debit' ? 'Debe' : 'Haber',
+    },
+    {
+      key: 'status',
+      header: 'Estado',
+      className: 'min-w-[100px]',
+      render: ({ account }: VisibleChartAccountRow) => (
+        <AccountingStatusBadge isActive={account.isActive} />
+      ),
+      getTitle: ({ account }: VisibleChartAccountRow) =>
+        account.isActive ? 'Activo' : 'Inactivo',
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      className: 'min-w-[185px]',
+      render: ({ account }: VisibleChartAccountRow) => (
+        <span className="flex items-center justify-end gap-2">
+          {account.isGroup && onCreateChild ? (
+            <button
+              type="button"
+              onClick={() => onCreateChild(account)}
+              className="btn-table-action"
+            >
+              Nuevo hijo
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => onEdit(account)}
+            className="btn-table-action"
+          >
+            Editar
+          </button>
+        </span>
+      ),
+    },
+  ]
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="divide-y divide-slate-200 dark:divide-slate-800" role="tree">
-        {isLoading ? (
-          <div className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
-            Cargando plan de cuentas...
-          </div>
-        ) : error ? (
-          <div className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300">
-            {error}
-          </div>
-        ) : !accounts.length ? (
-          <div className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
-            No hay cuentas registradas con los filtros actuales.
-          </div>
-        ) : (
-          renderRows(accounts, 0, 'root')
-        )}
-      </div>
+    <div className="space-y-3">
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+          {error}
+        </div>
+      ) : null}
+
+      <TableTabular
+        title="Plan de cuentas"
+        columns={columns}
+        rows={visibleRows}
+        rowKey={({ account }) => account.id}
+        isLoading={isLoading}
+        loadingMessage="Cargando plan de cuentas..."
+        emptyMessage={error ? 'No fue posible cargar el plan de cuentas.' : 'No hay cuentas registradas con los filtros actuales.'}
+        maxHeightClassName="max-h-[640px]"
+      />
     </div>
   )
 }

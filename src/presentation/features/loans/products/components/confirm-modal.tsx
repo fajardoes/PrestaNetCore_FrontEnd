@@ -1,10 +1,15 @@
+import type { ReactNode } from 'react'
+
 interface ConfirmModalProps {
   open: boolean
   title: string
   description: string
   confirmLabel?: string
   cancelLabel?: string
+  panelClassName?: string
   isProcessing?: boolean
+  confirmDisabled?: boolean
+  children?: ReactNode
   onConfirm: () => void
   onCancel: () => void
 }
@@ -15,7 +20,10 @@ export const ConfirmModal = ({
   description,
   confirmLabel = 'Confirmar',
   cancelLabel = 'Cancelar',
+  panelClassName,
   isProcessing,
+  confirmDisabled,
+  children,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) => {
@@ -23,7 +31,11 @@ export const ConfirmModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
-      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
+      <div
+        className={`w-full rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950 ${
+          panelClassName ?? 'max-w-md'
+        }`}
+      >
         <div className="space-y-2">
           <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
             {title}
@@ -32,6 +44,7 @@ export const ConfirmModal = ({
             {description}
           </p>
         </div>
+        {children ? <div className="mt-4">{children}</div> : null}
         <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
           <button
             type="button"
@@ -45,7 +58,7 @@ export const ConfirmModal = ({
             type="button"
             className="btn-primary px-4 py-2 text-sm"
             onClick={onConfirm}
-            disabled={isProcessing}
+            disabled={isProcessing || confirmDisabled}
           >
             {isProcessing ? 'Procesando...' : confirmLabel}
           </button>

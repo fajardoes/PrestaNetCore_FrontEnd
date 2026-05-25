@@ -56,14 +56,19 @@ export const EditUserModal = ({
       isDeleted: false,
       roles: [],
       agencyId: '',
+      queryOfficeIds: [],
     },
   })
 
   const selectedRoles = watch('roles')
+  const selectedQueryOfficeIds = watch('queryOfficeIds')
   const agenciesForSelect = useMemo(() => availableAgencies ?? [], [availableAgencies])
   const [selectedAgency, setSelectedAgency] = useState<
     AsyncSelectOption<Agency> | null
   >(null)
+  const [selectedQueryOffices, setSelectedQueryOffices] = useState<
+    AsyncSelectOption<Agency>[]
+  >([])
 
   useEffect(() => {
     if (!user) return
@@ -74,6 +79,7 @@ export const EditUserModal = ({
       isDeleted: user.isDeleted,
       roles: user.roles ?? [],
       agencyId: user.agencyId ?? '',
+      queryOfficeIds: user.queryOfficeIds ?? [],
     })
 
     if (!user.agencyId) {
@@ -103,6 +109,43 @@ export const EditUserModal = ({
     })
   }, [reset, user, agenciesForSelect])
 
+  useEffect(() => {
+    if (!user) {
+      setSelectedQueryOffices([])
+      return
+    }
+
+    const selected = (user.queryOfficeIds ?? [])
+      .filter((officeId) => officeId !== user.agencyId)
+      .flatMap((officeId) => {
+        const agency = agenciesForSelect.find((item) => item.id === officeId)
+        if (!agency) return []
+        return [
+          {
+            value: agency.id,
+            label: `${agency.code} - ${agency.name}`,
+            meta: agency,
+          },
+        ]
+      })
+
+    setSelectedQueryOffices(selected)
+  }, [user, agenciesForSelect])
+
+  useEffect(() => {
+    if (!selectedAgency?.value || !selectedQueryOfficeIds?.length) return
+
+    const filtered = selectedQueryOfficeIds.filter(
+      (officeId) => officeId !== selectedAgency.value,
+    )
+    if (filtered.length !== selectedQueryOfficeIds.length) {
+      setValue('queryOfficeIds', filtered, { shouldValidate: true })
+      setSelectedQueryOffices((prev) =>
+        prev.filter((option) => option.value !== selectedAgency.value),
+      )
+    }
+  }, [selectedAgency, selectedQueryOfficeIds, setValue])
+
   if (!open || !user) {
     return null
   }
@@ -126,6 +169,30 @@ export const EditUserModal = ({
       meta: agency,
     }))
   }
+
+  const getQueryOfficeOptions = (inputValue: string) => {
+    const term = inputValue.trim().toLowerCase()
+    const filtered = agenciesForSelect.filter((agency) => {
+      if (selectedAgency?.value === agency.id) {
+        return false
+      }
+
+      if (!term) return true
+      return (
+        agency.name.toLowerCase().includes(term) ||
+        agency.code.toLowerCase().includes(term)
+      )
+    })
+
+    return filtered.map((agency) => ({
+      value: agency.id,
+      label: `${agency.code} - ${agency.name}`,
+      meta: agency,
+    }))
+  }
+
+  const loadQueryOfficeOptions = async (inputValue: string) =>
+    getQueryOfficeOptions(inputValue)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
@@ -220,6 +287,39 @@ export const EditUserModal = ({
                   {errors.phoneNumber.message}
                 </p>
               ) : null}
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
+              <label
+                htmlFor="queryOfficeIds"
+                className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+              >
+                Oficinas de consulta
+              </label>
+              <AsyncSelect<Agency, true>
+                value={selectedQueryOffices}
+                onChange={(options) => {
+                  const selected = options ?? []
+                  setSelectedQueryOffices(selected)
+                  setValue(
+                    'queryOfficeIds',
+                    selected.map((option) => option.value),
+                    { shouldValidate: true },
+                  )
+                }}
+                isMulti
+                loadOptions={loadQueryOfficeOptions}
+                placeholder="Buscar oficinas de consulta..."
+                inputId="queryOfficeIds"
+                instanceId="security-user-query-offices-edit"
+                isDisabled={isSaving || agenciesLoading}
+                defaultOptions={getQueryOfficeOptions('')}
+                noOptionsMessage="Sin oficinas"
+              />
+              <input type="hidden" {...register('queryOfficeIds')} />
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Opcional. La oficina principal siempre se incluye en el alcance.
+              </p>
             </div>
           </div>
 

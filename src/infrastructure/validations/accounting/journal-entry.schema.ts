@@ -43,6 +43,22 @@ export const journalEntrySchema = yup.object({
   date: yup
     .string()
     .required('La fecha es obligatoria.'),
+  eventDate: yup
+    .string()
+    .optional()
+    .nullable(),
+  postingMode: yup
+    .string()
+    .oneOf(['MANUAL_REGULAR', 'MANUAL_ADJUSTMENT'])
+    .required('El tipo de asiento es obligatorio.'),
+  requestedPostingPeriodId: yup
+    .string()
+    .nullable()
+    .when('postingMode', {
+      is: 'MANUAL_ADJUSTMENT',
+      then: (schema) => schema.required('Selecciona el periodo de ajuste.'),
+      otherwise: (schema) => schema.optional().nullable(),
+    }),
   description: yup
     .string()
     .trim()

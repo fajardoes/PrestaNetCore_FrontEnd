@@ -1,5 +1,6 @@
 ﻿import AsyncSelect from 'react-select/async'
-import type { SingleValue } from 'react-select'
+import type { OnChangeValue } from 'react-select'
+import { reactSelectClassNames, reactSelectMenuPortalStyles } from './react-select-styles'
 
 export interface AsyncSelectOption<TMeta = unknown> {
   value: string
@@ -7,9 +8,13 @@ export interface AsyncSelectOption<TMeta = unknown> {
   meta?: TMeta
 }
 
-interface AsyncSelectFieldProps<TMeta = unknown> {
-  value: AsyncSelectOption<TMeta> | null
-  onChange: (option: AsyncSelectOption<TMeta> | null) => void
+type AsyncSelectValue<TMeta, TIsMulti extends boolean> = TIsMulti extends true
+  ? AsyncSelectOption<TMeta>[]
+  : AsyncSelectOption<TMeta> | null
+
+interface AsyncSelectFieldProps<TMeta = unknown, TIsMulti extends boolean = false> {
+  value: AsyncSelectValue<TMeta, TIsMulti>
+  onChange: (option: AsyncSelectValue<TMeta, TIsMulti>) => void
   loadOptions: (inputValue: string) => Promise<AsyncSelectOption<TMeta>[]>
   placeholder?: string
   inputId?: string
@@ -21,39 +26,12 @@ interface AsyncSelectFieldProps<TMeta = unknown> {
   noOptionsMessage?: string
   menuPortalTarget?: HTMLElement | null
   menuPosition?: 'absolute' | 'fixed'
-}
-
-const classNames = {
-  control: (state: { isFocused: boolean; isDisabled: boolean }) =>
-    [
-      'min-h-[42px] w-full rounded-lg border px-2 text-sm shadow-sm transition',
-      state.isDisabled ? 'bg-slate-100 text-slate-400 dark:bg-slate-800' : 'bg-white dark:bg-slate-900',
-      state.isFocused
-        ? 'border-primary ring-2 ring-primary/30'
-        : 'border-slate-300 dark:border-slate-700',
-    ].join(' '),
-  valueContainer: () => 'px-1',
-  input: () => 'text-sm text-slate-900 dark:text-slate-100',
-  placeholder: () => 'text-sm text-slate-400',
-  singleValue: () => 'text-sm text-slate-900 dark:text-slate-100',
-  indicatorsContainer: () => 'text-slate-400',
-  menu: () =>
-    'mt-2 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900',
-  option: (state: { isFocused: boolean; isSelected: boolean }) =>
-    [
-      'px-3 py-2 text-sm',
-      state.isFocused ? 'bg-slate-100 dark:bg-slate-800' : '',
-      state.isSelected
-        ? 'font-semibold text-slate-900 dark:text-slate-50'
-        : 'text-slate-700 dark:text-slate-200',
-    ].join(' '),
-  noOptionsMessage: () => 'px-3 py-2 text-sm text-slate-500 dark:text-slate-400',
-  loadingMessage: () => 'px-3 py-2 text-sm text-slate-500 dark:text-slate-400',
+  isMulti?: TIsMulti
 }
 
 const defaultNoOptions = () => 'Sin resultados'
 
-const AsyncSelectField = <TMeta,>({
+const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
   value,
   onChange,
   loadOptions,
@@ -67,7 +45,8 @@ const AsyncSelectField = <TMeta,>({
   noOptionsMessage,
   menuPortalTarget,
   menuPosition,
-}: AsyncSelectFieldProps<TMeta>) => {
+  isMulti,
+}: AsyncSelectFieldProps<TMeta, TIsMulti>) => {
   return (
     <AsyncSelect
       unstyled
@@ -76,24 +55,19 @@ const AsyncSelectField = <TMeta,>({
       inputId={inputId}
       instanceId={instanceId}
       value={value}
-      onChange={(option: SingleValue<AsyncSelectOption<TMeta>>) =>
-        onChange(option ?? null)
+      onChange={(option: OnChangeValue<AsyncSelectOption<TMeta>, TIsMulti>) =>
+        onChange((option ?? null) as AsyncSelectValue<TMeta, TIsMulti>)
       }
       loadOptions={loadOptions}
       placeholder={placeholder}
       isClearable={isClearable}
       isDisabled={isDisabled}
       isLoading={isLoading}
-      classNames={classNames}
+      isMulti={isMulti}
+      classNames={reactSelectClassNames}
       menuPortalTarget={menuPortalTarget}
       menuPosition={menuPosition}
-      styles={
-        menuPortalTarget
-          ? {
-              menuPortal: (base) => ({ ...base, zIndex: 60 }),
-            }
-          : undefined
-      }
+      styles={menuPortalTarget ? reactSelectMenuPortalStyles : undefined}
       noOptionsMessage={noOptionsMessage ? () => noOptionsMessage : defaultNoOptions}
     />
   )

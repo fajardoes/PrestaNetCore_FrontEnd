@@ -1,6 +1,12 @@
 import type { MenuItemAdminDto } from '@/infrastructure/interfaces/security/menu'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
-import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableTabular } from '@/presentation/share/components/table-tabular'
+
+interface VisibleMenuRow {
+  item: MenuItemAdminDto
+  level: number
+}
+
 interface MenusTableProps {
   items: MenuItemAdminDto[]
   expandedIds: Set<string>
@@ -20,24 +26,38 @@ export const MenusTable = ({
   onEdit,
   onDelete,
 }: MenusTableProps) => {
-  const renderRows = (
+  const buildVisibleRows = (
     entries: MenuItemAdminDto[],
     level: number,
-    path: string,
-  ): JSX.Element[] => {
-    return entries.flatMap((item, index) => {
+  ): VisibleMenuRow[] => {
+    return entries.flatMap((item) => {
       const hasChildren = Boolean(item.children?.length)
       const isExpanded = expandedIds.has(item.id)
-      const rowKey = `${path}-${item.id}-${index}`
-      const rows: JSX.Element[] = [
-        <div
-          key={rowKey}
-          className="grid grid-cols-5 items-center gap-3 px-3 py-2 text-[13px] hover:bg-slate-50/70 dark:hover:bg-slate-900"
-          role="treeitem"
-          aria-expanded={hasChildren ? isExpanded : undefined}
-        >
-          <div className="col-span-2 flex items-center gap-2">
-            <div style={{ width: level * 16 }} />
+      const row = { item, level }
+
+      if (hasChildren && isExpanded) {
+        return [row, ...buildVisibleRows(item.children ?? [], level + 1)]
+      }
+
+      return [row]
+    })
+  }
+
+  const rows = buildVisibleRows(items, 0)
+  const columns = [
+    {
+      key: 'menu',
+      header: 'Menu',
+      className: 'min-w-[280px]',
+      render: ({ item, level }: VisibleMenuRow) => {
+        const hasChildren = Boolean(item.children?.length)
+        const isExpanded = expandedIds.has(item.id)
+
+        return (
+          <span
+            className="flex items-center gap-2"
+            style={{ paddingLeft: level * 16 }}
+          >
             {hasChildren ? (
               <button
                 type="button"
@@ -52,82 +72,96 @@ export const MenusTable = ({
                 )}
               </button>
             ) : (
-              <div className="h-7 w-7" />
+              <span className="h-7 w-7" />
             )}
-            <div className="flex flex-col">
-              <span className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
-                {item.icon ? (
-                  <span className="rounded-md bg-slate-100 px-1.5 py-1 text-slate-500 dark:bg-slate-800/70 dark:text-slate-300">
-                    <MenuIcon iconName={item.icon} className="h-4 w-4" />
-                  </span>
-                ) : null}
-                {item.title}
+            {item.icon ? (
+              <span className="rounded-md bg-slate-100 px-1.5 py-1 text-slate-500 dark:bg-slate-800/70 dark:text-slate-300">
+                <MenuIcon iconName={item.icon} className="h-4 w-4" />
               </span>
-            </div>
-          </div>
-          <div className="text-slate-800 dark:text-slate-100">
-            {item.route ?? 'Contenedor'}
-          </div>
-          <div className="text-slate-800 dark:text-slate-100">{item.order}</div>
-          <div className="flex items-center justify-between gap-2">
-            <span
-              className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                item.isActive
-                  ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-100 dark:ring-emerald-500/40'
-                  : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
-              }`}
-            >
-              {item.isActive ? 'Activo' : 'Inactivo'}
+            ) : null}
+            <span className="font-semibold text-slate-800 dark:text-slate-100">
+              {item.title}
             </span>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => onEdit(item)}
-                className="btn-table-action"
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete(item)}
-                className="btn-table-action w-7 px-0"
-                aria-label="Eliminar menu"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        </div>,
-      ]
-
-      if (hasChildren && isExpanded) {
-        rows.push(...renderRows(item.children ?? [], level + 1, `${rowKey}-child`))
-      }
-
-      return rows
-    })
-  }
+          </span>
+        )
+      },
+      getTitle: ({ item }: VisibleMenuRow) => item.title,
+    },
+    {
+      key: 'route',
+      header: 'Ruta',
+      className: 'min-w-[180px]',
+      render: ({ item }: VisibleMenuRow) => item.route ?? 'Contenedor',
+      getTitle: ({ item }: VisibleMenuRow) => item.route ?? 'Contenedor',
+    },
+    {
+      key: 'order',
+      header: 'Orden',
+      render: ({ item }: VisibleMenuRow) => item.order,
+      getTitle: ({ item }: VisibleMenuRow) => String(item.order),
+    },
+    {
+      key: 'status',
+      header: 'Estado',
+      render: ({ item }: VisibleMenuRow) => (
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+            item.isActive
+              ? 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-100 dark:ring-sky-500/40'
+              : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
+          }`}
+        >
+          {item.isActive ? 'Activo' : 'Inactivo'}
+        </span>
+      ),
+      getTitle: ({ item }: VisibleMenuRow) =>
+        item.isActive ? 'Activo' : 'Inactivo',
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      className: 'min-w-[120px]',
+      render: ({ item }: VisibleMenuRow) => (
+        <span className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => onEdit(item)}
+            className="btn-table-action"
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(item)}
+            className="btn-table-action w-7 px-0"
+            aria-label="Eliminar menu"
+          >
+            <TrashIcon className="h-4 w-4" />
+          </button>
+        </span>
+      ),
+    },
+  ]
 
   return (
-    <TableContainer mode="legacy-compact">
-      <div className="divide-y divide-slate-200 dark:divide-slate-800" role="tree">
-        {isLoading ? (
-          <div className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
-            Cargando menus...
-          </div>
-        ) : error ? (
-          <div className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300">
-            {error}
-          </div>
-        ) : !items.length ? (
-          <div className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
-            No hay menus registrados.
-          </div>
-        ) : (
-          renderRows(items, 0, 'root')
-        )}
-      </div>
-    </TableContainer>
+    <div className="space-y-3">
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+          {error}
+        </div>
+      ) : null}
+
+      <TableTabular
+        title="Listado de menus"
+        columns={columns}
+        rows={rows}
+        rowKey={({ item }) => item.id}
+        isLoading={isLoading}
+        loadingMessage="Cargando menus..."
+        emptyMessage={error ? 'No fue posible cargar los menus.' : 'No hay menus registrados.'}
+        maxHeightClassName="max-h-[640px]"
+      />
+    </div>
   )
 }
 

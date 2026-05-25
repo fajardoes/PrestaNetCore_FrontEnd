@@ -79,7 +79,7 @@ export const LoanDisbursementReversalEligibilityCard = ({
           <div
             className={`rounded-xl border p-3 text-sm ${
               eligibility.isEligible
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100'
+                ? 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100'
                 : 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200'
             }`}
           >

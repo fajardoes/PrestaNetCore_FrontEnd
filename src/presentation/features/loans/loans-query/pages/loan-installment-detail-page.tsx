@@ -92,7 +92,7 @@ export const LoanInstallmentDetailPage = () => {
             label="Total pagado"
             value={`L ${formatMoney(installment.totalPaid)}`}
             hint={`Avance ${formatMoney(paidRatio)}%`}
-            accent="emerald"
+            accent="sky"
           />
           <QueryMetricCard
             label="Fecha ajustada"
@@ -197,7 +197,7 @@ export const LoanInstallmentDetailPage = () => {
             label="Pagado"
             value={`L ${formatMoney(componentSummary.paid)}`}
             hint="Monto cubierto en componentes"
-            accent="emerald"
+            accent="sky"
           />
         </div>
 

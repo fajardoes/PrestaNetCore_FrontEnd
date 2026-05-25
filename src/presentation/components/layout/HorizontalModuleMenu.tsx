@@ -139,7 +139,7 @@ const HorizontalLinkItem = ({
       className={[
         'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition whitespace-nowrap',
         isActive
-          ? 'border-emerald-300 bg-emerald-50 text-emerald-900 shadow-sm dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100'
+          ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100'
           : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800',
       ].join(' ')}
     >
@@ -248,7 +248,7 @@ const HorizontalGroupItem = ({
                             [
                               'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
                               isCurrent
-                                ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100'
+                                ? 'bg-sky-50 text-sky-900 dark:bg-sky-500/10 dark:text-sky-100'
                                 : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
                             ].join(' ')
                           }
@@ -269,7 +269,7 @@ const HorizontalGroupItem = ({
                       [
                         'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
                         isCurrent
-                          ? 'bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100'
+                          ? 'bg-sky-50 text-sky-900 dark:bg-sky-500/10 dark:text-sky-100'
                           : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
                       ].join(' ')
                     }

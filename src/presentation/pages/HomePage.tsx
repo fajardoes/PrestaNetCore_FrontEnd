@@ -171,7 +171,7 @@ export const HomePage = () => {
             </div>
             <StateBadge
               label={user ? 'Sesion activa' : 'Sin sesion'}
-              tone={user ? 'green' : 'amber'}
+              tone={user ? 'sky' : 'amber'}
             />
           </div>
 
@@ -233,11 +233,11 @@ const StateBadge = ({
   tone,
 }: {
   label: string
-  tone: 'green' | 'amber'
+  tone: 'sky' | 'amber'
 }) => {
   const toneClasses =
-    tone === 'green'
-      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200'
+    tone === 'sky'
+      ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200'
       : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200'
 
   return (

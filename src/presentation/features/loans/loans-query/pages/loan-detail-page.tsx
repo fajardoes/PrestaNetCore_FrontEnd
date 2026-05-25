@@ -142,7 +142,7 @@ export const LoanDetailPage = () => {
             label="Saldo cronograma"
             value={formatCurrency(installmentSummary.totalProjected - installmentSummary.totalPaid)}
             hint={`${formatMoney(paidRatio)}% del cronograma ya cubierto`}
-            accent="emerald"
+            accent="sky"
           />
           <QueryMetricCard
             label="Próximo vencimiento"
@@ -232,7 +232,7 @@ export const LoanDetailPage = () => {
               </div>
               <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-cyan-600 via-sky-500 to-emerald-500 transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-600 via-sky-500 to-sky-400 transition-all"
                   style={{ width: `${Math.max(0, Math.min(paidRatio, 100))}%` }}
                 />
               </div>
@@ -354,7 +354,7 @@ export const LoanDetailPage = () => {
                 label="Liquidadas"
                 value={String(installmentSummary.settledCount)}
                 hint="Cuotas completamente pagadas"
-                accent="emerald"
+                accent="sky"
               />
               <QueryMetricCard
                 label="Total pagado"

@@ -1,7 +1,9 @@
 import { StatusBadge } from '@/presentation/features/security/components/status-badge'
-import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import { TableTabular } from '@/presentation/share/components/table-tabular'
 import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
+
+const PAGE_SIZE = 10
 
 interface UsersTableProps {
   users: SecurityUser[]
@@ -24,6 +26,104 @@ export const UsersTable = ({
   onEdit,
   onGenerateTemporaryPassword,
 }: UsersTableProps) => {
+  const columns = [
+    {
+      key: 'user',
+      header: 'Usuario',
+      render: (user: SecurityUser) => (
+        <div>
+          <div className="font-semibold text-slate-800 dark:text-slate-100">
+            {user.email}
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            {user.emailConfirmed ? 'Correo verificado' : 'Correo pendiente'}
+          </div>
+        </div>
+      ),
+      getTitle: (user: SecurityUser) => user.email,
+    },
+    {
+      key: 'phone',
+      header: 'Teléfono',
+      render: (user: SecurityUser) => user.phoneNumber ?? '—',
+      getTitle: (user: SecurityUser) => user.phoneNumber ?? 'Sin teléfono',
+    },
+    {
+      key: 'agency',
+      header: 'Agencia',
+      render: (user: SecurityUser) => (
+        <div>
+          <div className="font-medium text-slate-800 dark:text-slate-100">
+            {user.agencyName ?? 'Casa Matriz'}
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">
+            {user.agencyCode ?? 'HQ'}
+          </div>
+        </div>
+      ),
+      getTitle: (user: SecurityUser) =>
+        `${user.agencyName ?? 'Casa Matriz'} (${user.agencyCode ?? 'HQ'})`,
+    },
+    {
+      key: 'roles',
+      header: 'Roles',
+      className: 'min-w-[220px]',
+      render: (user: SecurityUser) => (
+        <div className="flex flex-wrap gap-2">
+          {user.roles.map((role) => (
+            <span
+              key={role}
+              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700"
+            >
+              {role}
+            </span>
+          ))}
+        </div>
+      ),
+      getTitle: (user: SecurityUser) => user.roles.join(', '),
+    },
+    {
+      key: 'status',
+      header: 'Estado',
+      render: (user: SecurityUser) => (
+        <StatusBadge
+          isDeleted={user.isDeleted}
+          mustChangePassword={user.mustChangePassword}
+        />
+      ),
+      getTitle: (user: SecurityUser) =>
+        user.mustChangePassword
+          ? 'Requiere cambio'
+          : user.isDeleted
+            ? 'Inactivo'
+            : 'Activo',
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      className: 'min-w-[120px]',
+      render: (user: SecurityUser) => (
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => onEdit(user)}
+            className="btn-table-action"
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => onGenerateTemporaryPassword(user)}
+            className="btn-table-action w-7 px-0"
+            aria-label="Generar contraseña temporal"
+          >
+            <KeyIcon className="h-4 w-4" />
+          </button>
+        </div>
+      ),
+    },
+  ]
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
@@ -35,131 +135,29 @@ export const UsersTable = ({
         </p>
       </div>
 
-      <TableContainer mode="legacy-compact">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead className="bg-slate-50 dark:bg-slate-900">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Usuario
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Teléfono
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Agencia
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Roles
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Estado
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {isLoading ? (
-                <tr>
-                  <td
-                    className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                    colSpan={6}
-                  >
-                    Cargando usuarios...
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td
-                    className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
-                    colSpan={6}
-                  >
-                    {error}
-                  </td>
-                </tr>
-              ) : !users.length ? (
-                <tr>
-                  <td
-                    className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                    colSpan={6}
-                  >
-                    No hay usuarios para mostrar.
-                  </td>
-                </tr>
-              ) : (
-                users.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-900">
-                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                      <div className="font-semibold">{user.email}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {user.emailConfirmed ? 'Correo verificado' : 'Correo pendiente'}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                      {user.phoneNumber ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                      <div className="flex flex-col">
-                        <span className="font-medium">
-                          {user.agencyName ?? 'Casa Matriz'}
-                        </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400">
-                          {user.agencyCode ?? 'HQ'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                      <div className="flex flex-wrap gap-2">
-                        {user.roles.map((role) => (
-                          <span
-                            key={role}
-                            className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700"
-                          >
-                            {role}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge
-                        isDeleted={user.isDeleted}
-                        mustChangePassword={user.mustChangePassword}
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onEdit(user)}
-                          className="btn-table-action"
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onGenerateTemporaryPassword(user)}
-                          className="btn-table-action w-7 px-0"
-                          aria-label="Generar contraseña temporal"
-                        >
-                          <KeyIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+          {error}
         </div>
+      ) : null}
 
-        <TablePagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={onPageChange}
-        />
-      </TableContainer>
+      <TableTabular
+        title="Listado de usuarios"
+        columns={columns}
+        rows={users}
+        rowKey={(user) => user.id}
+        isLoading={isLoading}
+        loadingMessage="Cargando usuarios..."
+        emptyMessage={error ? 'No fue posible cargar los usuarios.' : 'No hay usuarios para mostrar.'}
+        maxHeightClassName="max-h-[640px]"
+        rowNumberStart={(page - 1) * PAGE_SIZE + 1}
+      />
+
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+      />
     </div>
   )
 }

@@ -374,6 +374,7 @@ export const PaymentsListPage = () => {
         isLoading={payments.isLoading || isLoadingPermissions}
         error={payments.error}
         page={payments.page}
+        pageSize={payments.pageSize}
         totalPages={payments.totalPages}
         onPageChange={payments.setPage}
         onView={(payment) => navigate(`/payments/${payment.id}`)}

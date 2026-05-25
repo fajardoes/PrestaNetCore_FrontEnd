@@ -547,7 +547,7 @@ export const JournalEntryFormModal = ({
                 <span
                   className={
                     diff === 0
-                      ? 'text-emerald-600 dark:text-emerald-300'
+                      ? 'text-sky-600 dark:text-sky-300'
                       : 'text-amber-600 dark:text-amber-300'
                   }
                 >

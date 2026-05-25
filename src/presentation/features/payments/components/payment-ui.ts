@@ -51,7 +51,7 @@ export const translatePaymentApplicationStatus = (value?: string | null) => {
 export const getPaymentStatusBadgeClass = (value?: string | null) => {
   const normalized = (value ?? '').trim().toUpperCase()
   if (normalized === 'REGISTERED') {
-    return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-100'
+    return 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100'
   }
   if (normalized === 'EFFECTIVIZED') {
     return 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100'
@@ -67,7 +67,7 @@ export const getPaymentStatusBadgeClass = (value?: string | null) => {
 
 export const getPriorityStatusBadgeClass = (isActive: boolean) =>
   isActive
-    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-100'
+    ? 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100'
     : 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-100'
 
 export const formatPaymentComponentLabel = (

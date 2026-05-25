@@ -89,7 +89,7 @@ export const LoanApplicationHeaderCard = ({
             ID: {application.id} · Creada: {formatDate(application.createdAt)}
           </p>
           {loanIsDisbursed && approvedLoanLabel ? (
-            <p className="mt-1 text-sm text-teal-700 dark:text-teal-300">
+            <p className="mt-1 text-sm text-sky-700 dark:text-sky-300">
               Préstamo desembolsado: {approvedLoanLabel}
             </p>
           ) : null}

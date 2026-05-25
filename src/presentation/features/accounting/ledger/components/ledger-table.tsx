@@ -117,7 +117,7 @@ export const LedgerTable = ({
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
             {typeof openingBalance === 'number' ? (
-              <tr className="bg-emerald-50/50 dark:bg-emerald-500/10">
+              <tr className="bg-sky-50/50 dark:bg-sky-500/10">
                 <td className="px-4 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
                   —
                 </td>

@@ -7,12 +7,16 @@ import { HnIdentityText } from '@/presentation/share/components/hn-identity-text
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import type { StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
-import { TableContainer } from '@/presentation/share/components/table-container'
+import {
+  TableTabular,
+  type TableTabularColumn,
+} from '@/presentation/share/components/table-tabular'
 import { useCollateralCatalogsCache } from '@/presentation/features/collaterals/hooks/use-collateral-catalogs-cache'
 import { useCollateralsList } from '@/presentation/features/collaterals/hooks/use-collaterals-list'
 import { useCollateralClientSearch } from '@/presentation/features/collaterals/hooks/use-collateral-client-search'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
+import type { CollateralResponseDto } from '@/infrastructure/intranet/responses/collaterals/collateral-response'
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100]
 const PERSONAL_GUARANTOR_TYPE_CODE = 'PERSONAL_GUARANTOR'
@@ -84,7 +88,6 @@ export const CollateralsListPage = () => {
     () => items.some((item) => isPersonalGuarantorType(item.collateralTypeCode)),
     [items],
   )
-  const tableColumnCount = showGuarantorColumns ? 12 : 10
 
   const applyCurrentFilters = () => {
     applyFilters({
@@ -96,6 +99,144 @@ export const CollateralsListPage = () => {
       search: search.trim() || undefined,
     })
   }
+
+  const columns: TableTabularColumn<CollateralResponseDto>[] = [
+    {
+      key: 'reference',
+      header: 'Referencia',
+      className: 'min-w-[130px]',
+      render: (item) => (
+        <span className="font-medium text-slate-800 dark:text-slate-100">
+          {item.referenceNo || '—'}
+        </span>
+      ),
+      getTitle: (item) => item.referenceNo || '—',
+    },
+    {
+      key: 'type',
+      header: 'Tipo',
+      className: 'min-w-[150px]',
+      render: (item) => item.collateralTypeName ?? selectedType?.name ?? '—',
+      getTitle: (item) =>
+        item.collateralTypeName ?? selectedType?.name ?? '—',
+    },
+    {
+      key: 'status',
+      header: 'Estado',
+      className: 'min-w-[130px]',
+      render: (item) => item.statusName ?? selectedStatus?.name ?? '—',
+      getTitle: (item) => item.statusName ?? selectedStatus?.name ?? '—',
+    },
+    {
+      key: 'owner',
+      header: 'Propietario',
+      className: 'min-w-[200px]',
+      render: (item) =>
+        item.ownerClientName ?? item.ownerClientFullName ?? '—',
+      getTitle: (item) =>
+        item.ownerClientName ?? item.ownerClientFullName ?? '—',
+    },
+    {
+      key: 'identity',
+      header: 'Identidad',
+      className: 'min-w-[135px]',
+      render: (item) => (
+        <HnIdentityText
+          value={item.ownerIdentity ?? item.ownerClientIdentityNo}
+        />
+      ),
+    },
+    ...(showGuarantorColumns
+      ? [
+          {
+            key: 'guarantor',
+            header: 'Cliente Aval',
+            className: 'min-w-[200px]',
+            render: (item: CollateralResponseDto) =>
+              isPersonalGuarantorType(item.collateralTypeCode)
+                ? item.guarantorClientFullName || '—'
+                : '—',
+            getTitle: (item: CollateralResponseDto) =>
+              isPersonalGuarantorType(item.collateralTypeCode)
+                ? item.guarantorClientFullName || '—'
+                : '—',
+          },
+          {
+            key: 'guarantorIdentity',
+            header: 'Identidad Aval',
+            className: 'min-w-[135px]',
+            render: (item: CollateralResponseDto) =>
+              isPersonalGuarantorType(item.collateralTypeCode) ? (
+                <HnIdentityText value={item.guarantorClientIdentityNo} />
+              ) : (
+                '—'
+              ),
+          },
+        ]
+      : []),
+    {
+      key: 'appraisedValue',
+      header: 'Valor Avalúo',
+      className: 'min-w-[120px] text-right',
+      render: (item) => formatMoney(item.appraisedValue),
+      getTitle: (item) => formatMoney(item.appraisedValue),
+    },
+    {
+      key: 'appraisedDate',
+      header: 'Fecha Avalúo',
+      className: 'min-w-[115px]',
+      render: (item) => formatDate(item.appraisedDate),
+      getTitle: (item) => formatDate(item.appraisedDate),
+    },
+    {
+      key: 'active',
+      header: 'Activa',
+      render: (item) => (
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+            item.isActive
+              ? 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-100 dark:ring-sky-500/40'
+              : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
+          }`}
+        >
+          {item.isActive ? 'Activa' : 'Inactiva'}
+        </span>
+      ),
+      getTitle: (item) => (item.isActive ? 'Activa' : 'Inactiva'),
+    },
+    {
+      key: 'created',
+      header: 'Creada',
+      className: 'min-w-[100px]',
+      render: (item) => formatDate(item.createdAt),
+      getTitle: (item) => formatDate(item.createdAt),
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      className: 'min-w-[120px]',
+      render: (item) => (
+        <span className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            className="btn-table-action"
+            onClick={() => navigate(`/clients/collaterals/${item.id}`)}
+          >
+            Ver
+          </button>
+          {canUpdateCollaterals ? (
+            <button
+              type="button"
+              className="btn-table-action"
+              onClick={() => navigate(`/clients/collaterals/${item.id}/edit`)}
+            >
+              Editar
+            </button>
+          ) : null}
+        </span>
+      ),
+    },
+  ]
 
   if (isLoadingPermissions) {
     return (
@@ -232,178 +373,39 @@ export const CollateralsListPage = () => {
         </ListFiltersBar>
       </div>
 
-      <TableContainer mode="legacy-compact">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead className="bg-slate-50 dark:bg-slate-900">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Referencia
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Tipo
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Estado
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Propietario
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Identidad
-                </th>
-                {showGuarantorColumns ? (
-                  <>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      Cliente Aval
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                      Identidad Aval
-                    </th>
-                  </>
-                ) : null}
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Valor Avalúo
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Fecha Avalúo
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Activa
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Creada
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={tableColumnCount} className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
-                    Cargando garantías...
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={tableColumnCount} className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300">
-                    {error}
-                  </td>
-                </tr>
-              ) : !items.length ? (
-                <tr>
-                  <td colSpan={tableColumnCount} className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400">
-                    No hay garantías con los filtros actuales.
-                  </td>
-                </tr>
-              ) : (
-                items.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-900">
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800 dark:text-slate-100">
-                      {item.referenceNo || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      {item.collateralTypeName ?? selectedType?.name ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      {item.statusName ?? selectedStatus?.name ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      {item.ownerClientName ?? item.ownerClientFullName ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      <HnIdentityText
-                        value={item.ownerIdentity ?? item.ownerClientIdentityNo}
-                      />
-                    </td>
-                    {showGuarantorColumns ? (
-                      <>
-                        <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                          {isPersonalGuarantorType(item.collateralTypeCode)
-                            ? item.guarantorClientFullName || '—'
-                            : '—'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                          {isPersonalGuarantorType(item.collateralTypeCode) ? (
-                            <HnIdentityText value={item.guarantorClientIdentityNo} />
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                      </>
-                    ) : null}
-                    <td className="px-4 py-3 text-right text-sm text-slate-700 dark:text-slate-300">
-                      {formatMoney(item.appraisedValue)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      {formatDate(item.appraisedDate)}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                          item.isActive
-                            ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-100 dark:ring-emerald-500/40'
-                            : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
-                        }`}
-                      >
-                        {item.isActive ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                      {formatDate(item.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          className="btn-table-action"
-                          onClick={() => navigate(`/clients/collaterals/${item.id}`)}
-                        >
-                          Ver
-                        </button>
-                        {canUpdateCollaterals ? (
-                          <button
-                            type="button"
-                            className="btn-table-action"
-                            onClick={() => navigate(`/clients/collaterals/${item.id}/edit`)}
-                          >
-                            Editar
-                          </button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex flex-col gap-2 border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
-            <span>Tamaño de página</span>
-            <select
-              value={pageSize}
-              onChange={(event) => {
-                const next = Number(event.target.value)
-                setPageSize(next)
-                setPage(1)
-              }}
-              className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-            >
-              {PAGE_SIZE_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+      <div className="space-y-3">
+        {error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+            {error}
           </div>
+        ) : null}
 
-          <TablePagination page={page} totalPages={totalPages} onPageChange={setPage} label="Página" />
-        </div>
-      </TableContainer>
+        <TableTabular
+          title="Listado de garantías"
+          columns={columns}
+          rows={items}
+          rowKey={(item) => item.id}
+          isLoading={isLoading}
+          loadingMessage="Cargando garantías..."
+          emptyMessage={error ? 'No fue posible cargar las garantías.' : 'No hay garantías con los filtros actuales.'}
+          maxHeightClassName="max-h-[640px]"
+          rowNumberStart={(page - 1) * pageSize + 1}
+        />
+
+        <TablePagination
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          label="Página"
+          pageSize={pageSize}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
+          onPageSizeChange={(next) => {
+            setPageSize(next)
+            setPage(1)
+          }}
+          pageSizeLabel="Tamaño de página"
+        />
+      </div>
     </div>
   )
 }

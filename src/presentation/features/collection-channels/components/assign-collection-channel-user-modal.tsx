@@ -151,7 +151,7 @@ export const AssignCollectionChannelUserModal = ({
                                 Asignado a {user.currentChannelCode ?? '—'}
                               </span>
                             ) : (
-                              <span className="text-emerald-700 dark:text-emerald-300">Disponible</span>
+                              <span className="text-sky-700 dark:text-sky-300">Disponible</span>
                             )}
                           </td>
                         </tr>

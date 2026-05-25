@@ -287,6 +287,7 @@ export const CollectionChannelsPage = () => {
         isLoading={isLoading || isLoadingPermissions || channelTypesCatalog.isLoading}
         error={error ?? channelTypesCatalog.error}
         page={page}
+        pageSize={take}
         totalPages={totalPages}
         channelTypes={channelTypesCatalog.rawItems}
         onPageChange={setPage}

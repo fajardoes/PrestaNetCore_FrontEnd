@@ -4,7 +4,7 @@ type ScoringUiVariant = 'success' | 'warning' | 'danger' | 'neutral'
 
 const variantClasses: Record<ScoringUiVariant, string> = {
   success:
-    'border-emerald-200/80 bg-emerald-50/70 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100',
+    'border-sky-200/80 bg-sky-50/70 text-sky-900 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100',
   warning:
     'border-amber-200/80 bg-amber-50/80 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100',
   danger:
@@ -15,7 +15,7 @@ const variantClasses: Record<ScoringUiVariant, string> = {
 
 const factorVariantClasses: Record<ScoringUiVariant, string> = {
   success:
-    'border-emerald-200 bg-emerald-50/70 dark:border-emerald-500/30 dark:bg-emerald-500/10',
+    'border-sky-200 bg-sky-50/70 dark:border-sky-500/30 dark:bg-sky-500/10',
   warning:
     'border-amber-200 bg-amber-50/80 dark:border-amber-500/30 dark:bg-amber-500/10',
   danger:

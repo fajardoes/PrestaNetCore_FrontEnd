@@ -20,11 +20,12 @@ import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/compon
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import SelectField from '@/presentation/share/components/select'
-import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import { TableTabular } from '@/presentation/share/components/table-tabular'
 import { formatCurrency, formatDate, translatePaymentType } from '@/presentation/features/payments/components/payment-ui'
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50]
+const formatTableValue = (value?: string | null) => value?.trim() || '—'
 
 type BulkResult = {
   payment: PaymentResponse
@@ -294,6 +295,155 @@ export const PaymentsEffectivizationPage = () => {
     return failed.length === 0
   }
 
+  const columns = [
+    {
+      key: 'selection',
+      header: (
+        <input
+          type="checkbox"
+          checked={
+            eligiblePayments.length > 0 &&
+            eligiblePayments.every((payment) => selectedIds.has(payment.id))
+          }
+          onChange={toggleAllEligible}
+          disabled={!eligiblePayments.length || !canEffectivize}
+          className="h-4 w-4 rounded border-slate-300 text-primary"
+          aria-label="Seleccionar pagos elegibles"
+        />
+      ),
+      className: 'w-px whitespace-nowrap',
+      render: (payment: PaymentResponse) => {
+        const enabled = isEffectivizeEnabled(payment) && canEffectivize
+
+        return (
+          <input
+            type="checkbox"
+            checked={selectedIds.has(payment.id)}
+            disabled={!enabled}
+            title={enabled ? 'Seleccionar pago' : getEffectivizeReason(payment)}
+            onChange={() => togglePayment(payment)}
+            className="h-4 w-4 rounded border-slate-300 text-primary disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={`Seleccionar pago ${formatTableValue(payment.internalReceiptNumber)}`}
+          />
+        )
+      },
+    },
+    {
+      key: 'receipt',
+      header: 'Recibo interno',
+      className: 'whitespace-nowrap',
+      render: (payment: PaymentResponse) => (
+        <span className="font-semibold text-slate-800 dark:text-slate-100">
+          {formatTableValue(payment.internalReceiptNumber)}
+        </span>
+      ),
+      getTitle: (payment: PaymentResponse) => formatTableValue(payment.internalReceiptNumber),
+    },
+    {
+      key: 'loan',
+      header: 'Préstamo',
+      className: 'whitespace-nowrap',
+      render: (payment: PaymentResponse) => formatTableValue(payment.loanNo),
+      getTitle: (payment: PaymentResponse) => formatTableValue(payment.loanNo),
+    },
+    {
+      key: 'client',
+      header: 'Cliente',
+      className: 'w-[160px]',
+      render: (payment: PaymentResponse) => (
+        <span className="block w-[140px] whitespace-normal break-words">
+          {formatTableValue(payment.clientFullName)}
+        </span>
+      ),
+      getTitle: (payment: PaymentResponse) => formatTableValue(payment.clientFullName),
+    },
+    {
+      key: 'channel',
+      header: 'Canal',
+      className: 'w-[125px]',
+      render: (payment: PaymentResponse) => (
+        <span className="block w-[105px] whitespace-normal break-words">
+          {formatTableValue(payment.collectionChannelName)}
+        </span>
+      ),
+      getTitle: (payment: PaymentResponse) => formatTableValue(payment.collectionChannelName),
+    },
+    {
+      key: 'registeredBy',
+      header: 'Usuario',
+      className: 'w-[140px]',
+      render: (payment: PaymentResponse) => (
+        <span className="block w-[120px] whitespace-normal break-words">
+          {formatTableValue(payment.registeredByUserName || payment.registeredByUserId)}
+        </span>
+      ),
+      getTitle: (payment: PaymentResponse) =>
+        formatTableValue(payment.registeredByUserName || payment.registeredByUserId),
+    },
+    {
+      key: 'date',
+      header: 'Fecha',
+      className: 'whitespace-nowrap',
+      render: (payment: PaymentResponse) => formatDate(payment.paymentDate),
+      getTitle: (payment: PaymentResponse) => formatDate(payment.paymentDate),
+    },
+    {
+      key: 'type',
+      header: 'Tipo',
+      className: 'whitespace-nowrap',
+      render: (payment: PaymentResponse) =>
+        translatePaymentType(payment.paymentTypeCode, payment.paymentTypeName),
+      getTitle: (payment: PaymentResponse) =>
+        translatePaymentType(payment.paymentTypeCode, payment.paymentTypeName),
+    },
+    {
+      key: 'amount',
+      header: 'Monto',
+      className: 'whitespace-nowrap text-right',
+      render: (payment: PaymentResponse) => (
+        <span className="font-semibold text-slate-900 dark:text-slate-50">
+          {formatCurrency(payment.amount)}
+        </span>
+      ),
+      getTitle: (payment: PaymentResponse) => formatCurrency(payment.amount),
+    },
+    {
+      key: 'availability',
+      header: 'Acción',
+      className: 'whitespace-nowrap',
+      render: (payment: PaymentResponse) => {
+        const enabled = isEffectivizeEnabled(payment) && canEffectivize
+
+        return (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+              enabled
+                ? 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100'
+                : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-100'
+            }`}
+            title={enabled ? 'Disponible' : getEffectivizeReason(payment)}
+          >
+            {enabled ? <CheckCircle2 className="h-3.5 w-3.5" /> : <RotateCcw className="h-3.5 w-3.5" />}
+            {enabled ? 'Disponible' : 'Bloqueado'}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'actions',
+      header: 'Ver',
+      render: (payment: PaymentResponse) => (
+        <Link
+          to={`/payments/${payment.id}`}
+          className="btn-table-action inline-flex w-7 items-center justify-center px-0"
+          title="Ver detalle"
+        >
+          <Eye className="h-3.5 w-3.5" />
+        </Link>
+      ),
+    },
+  ]
+
   if (!isLoadingPermissions && !canRead) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
@@ -455,133 +605,31 @@ export const PaymentsEffectivizationPage = () => {
         </div>
       </div>
 
-      <TableContainer mode="legacy-compact" variant="strong">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead className="bg-slate-50 dark:bg-slate-900">
-              <tr>
-                <th className="px-4 py-3 text-left">
-                  <input
-                    type="checkbox"
-                    checked={
-                      eligiblePayments.length > 0 &&
-                      eligiblePayments.every((payment) => selectedIds.has(payment.id))
-                    }
-                    onChange={toggleAllEligible}
-                    disabled={!eligiblePayments.length || !canEffectivize}
-                    className="h-4 w-4 rounded border-slate-300 text-primary"
-                  />
-                </th>
-                {[
-                  'Recibo interno',
-                  'Préstamo',
-                  'Cliente',
-                  'Canal',
-                  'Usuario',
-                  'Fecha',
-                  'Tipo',
-                  'Monto',
-                  'Acción',
-                  'Ver',
-                ].map((label) => (
-                  <th
-                    key={label}
-                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300"
-                  >
-                    {label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {payments.isLoading || isLoadingPermissions ? (
-                <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                    Cargando pagos...
-                  </td>
-                </tr>
-              ) : payments.error ? (
-                <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-sm text-red-600 dark:text-red-300">
-                    {payments.error}
-                  </td>
-                </tr>
-              ) : !payments.items.length ? (
-                <tr>
-                  <td colSpan={11} className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                    No hay pagos registrados para los filtros seleccionados.
-                  </td>
-                </tr>
-              ) : (
-                payments.items.map((payment) => {
-                  const enabled = isEffectivizeEnabled(payment) && canEffectivize
-                  return (
-                    <tr key={payment.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-900">
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.has(payment.id)}
-                          disabled={!enabled}
-                          title={enabled ? 'Seleccionar pago' : getEffectivizeReason(payment)}
-                          onChange={() => togglePayment(payment)}
-                          className="h-4 w-4 rounded border-slate-300 text-primary disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                        {payment.internalReceiptNumber || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                        {payment.loanNo || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                        {payment.clientFullName || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                        {payment.collectionChannelName || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                        {payment.registeredByUserName || payment.registeredByUserId || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                        {formatDate(payment.paymentDate)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                        {translatePaymentType(payment.paymentTypeCode, payment.paymentTypeName)}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-semibold text-slate-900 dark:text-slate-50">
-                        {formatCurrency(payment.amount)}
-                      </td>
-                      <td className="px-4 py-3 text-sm">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                            enabled
-                              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-100'
-                              : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-100'
-                          }`}
-                          title={enabled ? 'Disponible' : getEffectivizeReason(payment)}
-                        >
-                          {enabled ? <CheckCircle2 className="h-3.5 w-3.5" /> : <RotateCcw className="h-3.5 w-3.5" />}
-                          {enabled ? 'Disponible' : 'Bloqueado'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          to={`/payments/${payment.id}`}
-                          className="btn-table-action inline-flex w-7 items-center justify-center px-0"
-                          title="Ver detalle"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Link>
-                      </td>
-                    </tr>
-                  )
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-        <TablePagination page={payments.page} totalPages={payments.totalPages} onPageChange={payments.setPage} />
-      </TableContainer>
+      <div className="space-y-3">
+        {payments.error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+            {payments.error}
+          </div>
+        ) : null}
+
+        <TableTabular
+          title="Pagos pendientes de efectivización"
+          columns={columns}
+          rows={payments.items}
+          rowKey={(payment) => payment.id}
+          isLoading={payments.isLoading || isLoadingPermissions}
+          loadingMessage="Cargando pagos..."
+          emptyMessage={payments.error ? 'No fue posible cargar los pagos.' : 'No hay pagos registrados para los filtros seleccionados.'}
+          maxHeightClassName="max-h-[640px]"
+          rowNumberStart={(payments.page - 1) * payments.pageSize + 1}
+        />
+
+        <TablePagination
+          page={payments.page}
+          totalPages={payments.totalPages}
+          onPageChange={payments.setPage}
+        />
+      </div>
 
       {lastResults.length ? (
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -600,7 +648,7 @@ export const PaymentsEffectivizationPage = () => {
                 <span className="font-medium text-slate-900 dark:text-slate-50">
                   {result.payment.internalReceiptNumber || result.payment.loanNo}
                 </span>
-                <span className={result.ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600 dark:text-red-300'}>
+                <span className={result.ok ? 'text-sky-700 dark:text-sky-300' : 'text-red-600 dark:text-red-300'}>
                   {result.message}
                 </span>
               </div>

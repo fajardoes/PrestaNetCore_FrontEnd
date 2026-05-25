@@ -53,7 +53,7 @@ export const CollateralDetailPage = () => {
     if (!collateral?.isActive) {
       return 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
     }
-    return 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-100 dark:ring-emerald-500/40'
+    return 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-100 dark:ring-sky-500/40'
   }, [collateral?.isActive])
 
   if (isLoadingPermissions) {

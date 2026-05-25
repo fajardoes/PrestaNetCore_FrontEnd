@@ -78,7 +78,7 @@ export const LoanInsuranceSummaryContent = ({
         <InsuranceMetric
           label="Cobrado"
           value={formatCurrency(insuranceSummary.collectedInsuranceAmount)}
-          accent="emerald"
+          accent="sky"
         />
         <InsuranceMetric
           label="Pendiente"
@@ -110,13 +110,13 @@ export const LoanInsuranceSummaryContent = ({
   )
 }
 
-type InsuranceMetricAccent = 'slate' | 'emerald' | 'amber' | 'blue'
+type InsuranceMetricAccent = 'slate' | 'sky' | 'amber' | 'blue'
 
 const insuranceMetricAccentClasses: Record<InsuranceMetricAccent, string> = {
   slate:
     'border-slate-200 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100',
-  emerald:
-    'border-emerald-200 bg-emerald-50/80 text-emerald-950 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-50',
+  sky:
+    'border-sky-200 bg-sky-50/80 text-sky-950 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-50',
   amber:
     'border-amber-200 bg-amber-50/80 text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-50',
   blue: 'border-blue-200 bg-blue-50/80 text-blue-950 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-50',

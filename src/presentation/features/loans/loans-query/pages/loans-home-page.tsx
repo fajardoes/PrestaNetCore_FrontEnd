@@ -135,7 +135,7 @@ export const LoansHomePage = () => {
                       <HnIdentityText value={selectedClient.clientIdentityNo} />
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                      <span className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 font-semibold text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100">
+                      <span className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 font-semibold text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100">
                         {selectedClient.activeLoansCount} activos
                       </span>
                       <span className="rounded-full border border-slate-200 bg-white px-3 py-1 font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200">
@@ -184,7 +184,7 @@ export const LoansHomePage = () => {
               label="Préstamos activos"
               value={String(summary?.activeLoansCount ?? selectedClient.activeLoansCount)}
               hint="Cartera vigente del cliente"
-              accent="emerald"
+              accent="sky"
             />
             <QueryMetricCard
               label="Préstamos totales"

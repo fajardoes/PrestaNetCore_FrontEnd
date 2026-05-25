@@ -143,7 +143,7 @@ export const InsurancesEditor = ({
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
                       insurance.isActive !== false
-                        ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-50 dark:ring-emerald-500/40'
+                        ? 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-50 dark:ring-sky-500/40'
                         : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
                     }`}
                   >

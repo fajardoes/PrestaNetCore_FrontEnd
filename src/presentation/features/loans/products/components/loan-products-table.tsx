@@ -1,6 +1,6 @@
 import type { LoanProductListItemDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-list-item.dto'
 import { AccountingStatusBadge } from '@/presentation/features/accounting/components/accounting-status-badge'
-import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableTabular } from '@/presentation/share/components/table-tabular'
 
 interface LoanProductsTableProps {
   items: LoanProductListItemDto[]
@@ -21,125 +21,117 @@ export const LoanProductsTable = ({
   onToggleStatus,
   isProcessingId,
 }: LoanProductsTableProps) => {
+  const columns = [
+    {
+      key: 'code',
+      header: 'Código',
+      className: 'min-w-[110px]',
+      render: (item: LoanProductListItemDto) => (
+        <span className="font-semibold text-slate-800 dark:text-slate-100">
+          {item.code}
+        </span>
+      ),
+      getTitle: (item: LoanProductListItemDto) => item.code,
+    },
+    {
+      key: 'name',
+      header: 'Nombre',
+      className: 'min-w-[220px]',
+      render: (item: LoanProductListItemDto) => item.name,
+      getTitle: (item: LoanProductListItemDto) => item.name,
+    },
+    {
+      key: 'currency',
+      header: 'Moneda',
+      className: 'min-w-[90px]',
+      render: (item: LoanProductListItemDto) => item.currencyCode,
+      getTitle: (item: LoanProductListItemDto) => item.currencyCode,
+    },
+    {
+      key: 'amount',
+      header: 'Monto',
+      className: 'min-w-[150px]',
+      render: (item: LoanProductListItemDto) =>
+        `${item.minAmount} - ${item.maxAmount}`,
+      getTitle: (item: LoanProductListItemDto) =>
+        `${item.minAmount} - ${item.maxAmount}`,
+    },
+    {
+      key: 'term',
+      header: 'Plazo',
+      className: 'min-w-[150px]',
+      render: (item: LoanProductListItemDto) =>
+        `${item.minTerm} - ${item.maxTerm} ${item.termUnit}`,
+      getTitle: (item: LoanProductListItemDto) =>
+        `${item.minTerm} - ${item.maxTerm} ${item.termUnit}`,
+    },
+    {
+      key: 'portfolioType',
+      header: 'Tipo cartera',
+      className: 'min-w-[150px]',
+      render: (item: LoanProductListItemDto) => item.portfolioType,
+      getTitle: (item: LoanProductListItemDto) => item.portfolioType,
+    },
+    {
+      key: 'status',
+      header: 'Estado',
+      render: (item: LoanProductListItemDto) => (
+        <AccountingStatusBadge isActive={item.isActive} />
+      ),
+      getTitle: (item: LoanProductListItemDto) =>
+        item.isActive ? 'Activo' : 'Inactivo',
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      className: 'min-w-[230px]',
+      render: (item: LoanProductListItemDto) => (
+        <span className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            className="btn-table-action"
+            onClick={() => onViewDetail(item)}
+          >
+            Detalle
+          </button>
+          <button
+            type="button"
+            className="btn-table-action"
+            onClick={() => onEdit(item)}
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            className="btn-table-action"
+            onClick={() => onToggleStatus(item)}
+            disabled={isProcessingId === item.id}
+          >
+            {item.isActive ? 'Desactivar' : 'Activar'}
+          </button>
+        </span>
+      ),
+    },
+  ]
+
   return (
-    <TableContainer mode="legacy-compact">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead className="bg-slate-50 dark:bg-slate-900">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Código
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Nombre
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Moneda
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Monto
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Plazo
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Tipo cartera
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Estado
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-            {isLoading ? (
-              <tr>
-                <td
-                  className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                  colSpan={8}
-                >
-                  Cargando productos...
-                </td>
-              </tr>
-            ) : error ? (
-              <tr>
-                <td
-                  className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
-                  colSpan={8}
-                >
-                  {error}
-                </td>
-              </tr>
-            ) : !items.length ? (
-              <tr>
-                <td
-                  className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                  colSpan={8}
-                >
-                  No hay productos con esos filtros.
-                </td>
-              </tr>
-            ) : (
-              items.map((item) => (
-                <tr
-                  key={item.id}
-                  className="hover:bg-slate-50/70 dark:hover:bg-slate-900"
-                >
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                    {item.code}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                    {item.name}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                    {item.currencyCode}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                    {item.minAmount} - {item.maxAmount}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                    {item.minTerm} - {item.maxTerm} {item.termUnit}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                    {item.portfolioType}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <AccountingStatusBadge isActive={item.isActive} />
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm">
-                    <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
-                      <button
-                        type="button"
-                        className="btn-table-action"
-                        onClick={() => onViewDetail(item)}
-                      >
-                        Detalle
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-table-action"
-                        onClick={() => onEdit(item)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-table-action"
-                        onClick={() => onToggleStatus(item)}
-                        disabled={isProcessingId === item.id}
-                      >
-                        {item.isActive ? 'Desactivar' : 'Activar'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </TableContainer>
+    <div className="space-y-3">
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+          {error}
+        </div>
+      ) : null}
+
+      <TableTabular
+        title="Listado de productos de préstamo"
+        columns={columns}
+        rows={items}
+        rowKey={(item) => item.id}
+        isLoading={isLoading}
+        loadingMessage="Cargando productos..."
+        emptyMessage={error ? 'No fue posible cargar los productos.' : 'No hay productos con esos filtros.'}
+        maxHeightClassName="max-h-[640px]"
+      />
+    </div>
   )
 }

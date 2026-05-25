@@ -102,7 +102,7 @@ export const Sidebar = ({
       const collapsedClasses = collapsed ? 'flex-col gap-2 px-2 py-3 text-xs' : ''
       const isExactActive = isRouteExact(item.route, location.pathname)
       const activeClasses = isActive
-        ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-emerald-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-emerald-400"
+        ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-sky-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-sky-400"
         : 'text-slate-600 dark:text-slate-200'
 
       if (isGroup) {
@@ -149,7 +149,7 @@ export const Sidebar = ({
             end={item.route === '/'}
             className={() => {
               const linkActiveClasses = isExactActive
-                ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-emerald-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-emerald-400"
+                ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-sky-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-sky-400"
                 : 'text-slate-600 dark:text-slate-200'
               return [
                 baseItemClasses,

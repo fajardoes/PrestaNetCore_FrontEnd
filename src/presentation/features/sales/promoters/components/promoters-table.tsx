@@ -1,7 +1,9 @@
-﻿import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
+import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
-import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import { TableTabular } from '@/presentation/share/components/table-tabular'
+
+const PAGE_SIZE = 10
 
 interface PromotersTableProps {
   promoters: PromoterResponse[]
@@ -26,120 +28,110 @@ export const PromotersTable = ({
   onToggle,
   processingId,
 }: PromotersTableProps) => {
+  const columns = [
+    {
+      key: 'client',
+      header: 'Cliente',
+      className: 'min-w-[240px]',
+      render: (promoter: PromoterResponse) => (
+        <span className="font-semibold text-slate-800 dark:text-slate-100">
+          {promoter.clientFullName ?? 'Sin nombre'}
+        </span>
+      ),
+      getTitle: (promoter: PromoterResponse) =>
+        promoter.clientFullName ?? 'Sin nombre',
+    },
+    {
+      key: 'identity',
+      header: 'Identidad',
+      className: 'min-w-[135px]',
+      render: (promoter: PromoterResponse) => (
+        <HnIdentityText value={promoter.clientIdentityNo} fallback="--" />
+      ),
+    },
+    {
+      key: 'agency',
+      header: 'Agencia',
+      className: 'min-w-[180px]',
+      render: (promoter: PromoterResponse) => promoter.agencyName ?? '--',
+      getTitle: (promoter: PromoterResponse) => promoter.agencyName ?? '--',
+    },
+    {
+      key: 'code',
+      header: 'Codigo',
+      className: 'min-w-[100px]',
+      render: (promoter: PromoterResponse) => promoter.code ?? '--',
+      getTitle: (promoter: PromoterResponse) => promoter.code ?? '--',
+    },
+    {
+      key: 'status',
+      header: 'Estado',
+      render: (promoter: PromoterResponse) => (
+        <span
+          className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+            promoter.isActive
+              ? 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-100 dark:ring-sky-500/40'
+              : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
+          }`}
+        >
+          {promoter.isActive ? 'Activo' : 'Inactivo'}
+        </span>
+      ),
+      getTitle: (promoter: PromoterResponse) =>
+        promoter.isActive ? 'Activo' : 'Inactivo',
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      className: 'min-w-[170px]',
+      render: (promoter: PromoterResponse) => (
+        <span className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => onEdit(promoter)}
+            className="btn-table-action"
+            disabled={processingId === promoter.id}
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggle(promoter)}
+            className="btn-table-action"
+            disabled={processingId === promoter.id}
+          >
+            {promoter.isActive ? 'Desactivar' : 'Activar'}
+          </button>
+        </span>
+      ),
+    },
+  ]
+
   return (
-    <TableContainer mode="legacy-compact">
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-          <thead className="bg-slate-50 dark:bg-slate-900">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Cliente
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Identidad
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Agencia
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Codigo
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Estado
-              </th>
-              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-            {isLoading ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                >
-                  Cargando promotores...
-                </td>
-              </tr>
-            ) : error ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
-                >
-                  {error}
-                </td>
-              </tr>
-            ) : !promoters.length ? (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                >
-                  No hay promotores registrados.
-                </td>
-              </tr>
-            ) : (
-              promoters.map((promoter) => (
-                <tr
-                  key={promoter.id}
-                  className="hover:bg-slate-50/70 dark:hover:bg-slate-900"
-                >
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-800 dark:text-slate-100">
-                    {promoter.clientFullName ?? 'Sin nombre'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                    <HnIdentityText value={promoter.clientIdentityNo} fallback="--" />
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                    {promoter.agencyName ?? '--'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-700 dark:text-slate-200">
-                    {promoter.code ?? '--'}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
-                        promoter.isActive
-                          ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-100 dark:ring-emerald-500/40'
-                          : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
-                      }`}
-                    >
-                      {promoter.isActive ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right text-sm">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onEdit(promoter)}
-                        className="btn-table-action"
-                        disabled={processingId === promoter.id}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onToggle(promoter)}
-                        className="btn-table-action"
-                        disabled={processingId === promoter.id}
-                      >
-                        {promoter.isActive ? 'Desactivar' : 'Activar'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+    <div className="space-y-3">
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+          {error}
+        </div>
+      ) : null}
+
+      <TableTabular
+        title="Listado de promotores"
+        columns={columns}
+        rows={promoters}
+        rowKey={(promoter) => promoter.id}
+        isLoading={isLoading}
+        loadingMessage="Cargando promotores..."
+        emptyMessage={error ? 'No fue posible cargar los promotores.' : 'No hay promotores registrados.'}
+        maxHeightClassName="max-h-[640px]"
+        rowNumberStart={(page - 1) * PAGE_SIZE + 1}
+      />
+
       <TablePagination
         page={page}
         totalPages={totalPages}
         onPageChange={onPageChange}
       />
-    </TableContainer>
+    </div>
   )
 }

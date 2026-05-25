@@ -2,8 +2,10 @@ import type { LoanClientSearchItemResponse } from '@/infrastructure/loans/respon
 import { formatDate } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
-import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import { TableTabular } from '@/presentation/share/components/table-tabular'
+
+const CLIENTS_PAGE_SIZE = 10
 
 interface LoanClientPickerModalProps {
   open: boolean
@@ -36,6 +38,67 @@ export const LoanClientPickerModal = ({
 }: LoanClientPickerModalProps) => {
   if (!open) return null
 
+  const columns = [
+    {
+      key: 'action',
+      header: 'Acción',
+      className: 'min-w-[115px]',
+      render: (client: LoanClientSearchItemResponse) => {
+        const isSelected = client.id === selectedClientId
+
+        return (
+          <button
+            type="button"
+            className="btn-table-action border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
+            onClick={() => onSelect(client)}
+          >
+            {isSelected ? 'Seleccionado' : 'Seleccionar'}
+          </button>
+        )
+      },
+    },
+    {
+      key: 'client',
+      header: 'Cliente',
+      className: 'min-w-[240px]',
+      render: (client: LoanClientSearchItemResponse) => (
+        <span className="font-medium text-slate-800 dark:text-slate-100">
+          {client.clientFullName}
+        </span>
+      ),
+      getTitle: (client: LoanClientSearchItemResponse) => client.clientFullName,
+    },
+    {
+      key: 'identity',
+      header: 'Identidad',
+      className: 'min-w-[135px]',
+      render: (client: LoanClientSearchItemResponse) => (
+        <HnIdentityText value={client.clientIdentityNo} />
+      ),
+    },
+    {
+      key: 'activeLoans',
+      header: 'Préstamos activos',
+      className: 'min-w-[125px] text-right',
+      render: (client: LoanClientSearchItemResponse) => client.activeLoansCount,
+      getTitle: (client: LoanClientSearchItemResponse) => String(client.activeLoansCount),
+    },
+    {
+      key: 'totalLoans',
+      header: 'Total préstamos',
+      className: 'min-w-[115px] text-right',
+      render: (client: LoanClientSearchItemResponse) => client.totalLoansCount,
+      getTitle: (client: LoanClientSearchItemResponse) => String(client.totalLoansCount),
+    },
+    {
+      key: 'nextDueDate',
+      header: 'Próximo vencimiento',
+      className: 'min-w-[145px]',
+      render: (client: LoanClientSearchItemResponse) => formatDate(client.nextDueDate),
+      getTitle: (client: LoanClientSearchItemResponse) => formatDate(client.nextDueDate),
+    },
+  ]
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
       <div className="flex max-h-[90vh] w-full max-w-6xl flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
@@ -63,74 +126,34 @@ export const LoanClientPickerModal = ({
             showStatus={false}
           />
 
-          <TableContainer mode="legacy-compact" variant="strong" className="h-full">
-            <div className="max-h-[52vh] overflow-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr>
-                    <th>Acción</th>
-                    <th>Cliente</th>
-                    <th>Identidad</th>
-                    <th className="text-right">Préstamos activos</th>
-                    <th className="text-right">Total préstamos</th>
-                    <th>Próximo vencimiento</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={6} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
-                        Cargando clientes...
-                      </td>
-                    </tr>
-                  ) : error ? (
-                    <tr>
-                      <td colSpan={6} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
-                        {error}
-                      </td>
-                    </tr>
-                  ) : !clients.length ? (
-                    <tr>
-                      <td colSpan={6} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
-                        No se encontraron clientes con préstamos.
-                      </td>
-                    </tr>
-                  ) : (
-                    clients.map((client) => {
-                      const isSelected = client.id === selectedClientId
-                      return (
-                        <tr key={client.id} className={isSelected ? 'bg-primary/5 dark:bg-primary/10' : ''}>
-                          <td>
-                            <button
-                              type="button"
-                              className="btn-table-action border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
-                              onClick={() => onSelect(client)}
-                            >
-                              {isSelected ? 'Seleccionado' : 'Seleccionar'}
-                            </button>
-                          </td>
-                          <td className="font-medium text-slate-800 dark:text-slate-100">
-                            {client.clientFullName}
-                          </td>
-                          <td>
-                            <HnIdentityText value={client.clientIdentityNo} />
-                          </td>
-                          <td className="text-right">{client.activeLoansCount}</td>
-                          <td className="text-right">{client.totalLoansCount}</td>
-                          <td>{formatDate(client.nextDueDate)}</td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
+          {error ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-100">
+              {error}
             </div>
+          ) : null}
+
+          <TableTabular
+            title="Clientes con préstamos"
+            columns={columns}
+            rows={clients}
+            rowKey={(client) => client.id}
+            isLoading={isLoading}
+            loadingMessage="Cargando clientes..."
+            emptyMessage={error ? 'No fue posible cargar los clientes.' : 'No se encontraron clientes con préstamos.'}
+            maxHeightClassName="max-h-[52vh]"
+            rowNumberStart={(page - 1) * CLIENTS_PAGE_SIZE + 1}
+            getRowClassName={(client) =>
+              client.id === selectedClientId ? 'bg-primary/5 dark:bg-primary/10' : ''
+            }
+          />
+
+          <div>
             <TablePagination
               page={page}
               totalPages={Math.max(1, totalPages)}
               onPageChange={(nextPage) => onPageChange(Math.max(1, nextPage))}
             />
-          </TableContainer>
+          </div>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import { DisbursementSummaryCard } from '@/presentation/features/loans/component
 import { RecognitionPolicyBadges } from '@/presentation/features/loans/components/recognition-policy-badges'
 import { LoanDisbursementReversalEligibilityCard } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-eligibility-card'
 import { LoanDisbursementReversalModal } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-modal'
+import { LoanAnticipatedInstallmentSection } from '@/presentation/features/loans/loans-query/components/loan-anticipated-installment-section'
 import {
   QueryDetailField,
   QueryHeroCard,
@@ -16,6 +17,7 @@ import {
 } from '@/presentation/features/loans/loans-query/components/loan-query-ui'
 import { useLoanInstallments } from '@/presentation/features/loans/loans-query/hooks/use-loan-installments'
 import { useLoan } from '@/presentation/features/loans/loans-query/hooks/use-loan'
+import { useLoanAnticipatedInstallment } from '@/presentation/features/loans/loans-query/hooks/use-loan-anticipated-installment'
 import {
   formatCurrency,
   formatDate,
@@ -58,6 +60,10 @@ export const LoanDetailPage = () => {
 
   const canReadEligibility = hasPermission('loans.disbursement_reversal.read_eligibility')
   const canExecuteReversal = hasPermission('loans.disbursement_reversal.execute')
+  const canViewAnticipatedInstallment = allowedActions.includes('view_anticipated_installment')
+  const canApplyAnticipatedInstallment = allowedActions.includes('apply_anticipated_installment')
+  const canReverseAnticipatedInstallment = allowedActions.includes('reverse_anticipated_installment_application')
+  const anticipatedInstallment = useLoanAnticipatedInstallment(id, canViewAnticipatedInstallment)
   const isDisbursementAlreadyReversed =
     Boolean(loan?.isDisbursementReversed) ||
     (loan?.statusCode ?? '').trim().toUpperCase() === 'DISBURSEMENT_REVERSED'
@@ -153,7 +159,7 @@ export const LoanDetailPage = () => {
           <QueryMetricCard
             label="Tasa nominal"
             value={formatRateAsPercent(loan.nominalRate)}
-            hint={`${loan.term} períodos a ${loan.paymentFrequencyName}`}
+            hint={`Plazo contractual: ${loan.term} ${loan.termUnitName}`}
             accent="slate"
           />
         </div>
@@ -195,7 +201,15 @@ export const LoanDetailPage = () => {
               label="Primera cuota"
               value={formatDate(loan.firstDueDate)}
             />
-            <QueryDetailField label="Vencimiento" value={formatDate(loan.maturityDate)} />
+            <QueryDetailField
+              label="Plazo contractual"
+              value={`${loan.term} ${loan.termUnitName}`}
+            />
+            <QueryDetailField label="Frecuencia pactada" value={loan.paymentFrequencyName} />
+            <QueryDetailField
+              label="Vencimiento contractual"
+              value={formatDate(loan.maturityDate)}
+            />
             <QueryDetailField label="ID cliente" value={loan.clientId} />
             <QueryDetailField label="ID producto" value={loan.loanProductId} />
           </div>
@@ -208,7 +222,7 @@ export const LoanDetailPage = () => {
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <QueryMetricCard
-                label="Cuotas registradas"
+                label="Número de cuotas"
                 value={String(loan.installmentsCount ?? installments.length)}
                 hint={`${installmentSummary.settledCount} liquidada(s)`}
                 accent="slate"
@@ -241,7 +255,7 @@ export const LoanDetailPage = () => {
             <div className="grid gap-3">
               <SignalRow
                 icon={<ClipboardList className="h-4 w-4" />}
-                label="Frecuencia de pago"
+                label="Frecuencia pactada"
                 value={loan.paymentFrequencyName}
               />
               <SignalRow
@@ -306,6 +320,25 @@ export const LoanDetailPage = () => {
       )}
 
       <DisbursementSummaryCard data={loan} />
+
+      {canViewAnticipatedInstallment ? (
+        <LoanAnticipatedInstallmentSection
+          detail={anticipatedInstallment.detail}
+          isLoading={anticipatedInstallment.isLoading}
+          isSaving={anticipatedInstallment.isSaving}
+          error={anticipatedInstallment.error}
+          canApply={canApplyAnticipatedInstallment}
+          canReverse={canReverseAnticipatedInstallment}
+          onApply={anticipatedInstallment.apply}
+          onReverse={anticipatedInstallment.reverse}
+          onRefreshActions={async () => {
+            await Promise.all([
+              loadLoan(id, { includeEligibility: canReadEligibility }),
+              loadInstallments(id),
+            ])
+          }}
+        />
+      ) : null}
 
       {!isDisbursementAlreadyReversed ? (
         <LoanDisbursementReversalEligibilityCard
@@ -518,5 +551,8 @@ const SignalRow = ({
 const formatAllowedAction = (value: string) => {
   const normalized = value.trim().toLowerCase()
   if (normalized === 'reverse_disbursement') return 'Revertir desembolso'
+  if (normalized === 'view_anticipated_installment') return 'Ver cuota anticipada'
+  if (normalized === 'apply_anticipated_installment') return 'Aplicar cuota anticipada'
+  if (normalized === 'reverse_anticipated_installment_application') return 'Reversar aplicación de cuota anticipada'
   return value
 }

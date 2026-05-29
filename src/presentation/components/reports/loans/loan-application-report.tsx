@@ -346,9 +346,12 @@ export const LoanApplicationReport = ({
             label="Principal solicitado"
             value={formatMoney(data.application.requestedPrincipal)}
           />
-          <InfoItem label="Plazo solicitado" value={String(data.application.requestedTerm)} />
           <InfoItem
-            label="Frecuencia solicitada"
+            label="Duracion solicitada"
+            value={`${data.application.requestedTerm} ${data.loanProduct.termUnitName || ''}`.trim()}
+          />
+          <InfoItem
+            label="Frecuencia negociada"
             value={data.application.requestedPaymentFrequencyName || '—'}
           />
           <InfoItem

@@ -21,5 +21,6 @@ export const LOAN_CATALOG_DEFINITIONS: LoanCatalogDefinition[] = [
   { key: 'insurance-calculation-bases', title: 'Bases de cálculo de seguro' },
   { key: 'insurance-value-types', title: 'Tipos de valor de seguro' },
   { key: 'insurance-charge-timings', title: 'Momentos de cobro de seguro' },
+  { key: 'delinquency-calculation-bases', title: 'Bases de cálculo de mora' },
   { key: 'collateral-types', title: 'Tipos de garantía' },
 ]

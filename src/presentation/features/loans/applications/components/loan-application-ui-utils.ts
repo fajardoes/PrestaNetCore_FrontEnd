@@ -1,11 +1,41 @@
 import type { LoanApplicationFinancialProfileResponse } from '@/infrastructure/loans/responses/loan-application-financial-profile-response'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
+import type {
+  PaymentFrequencyCode,
+  TermUnitCode,
+} from '@/infrastructure/loans/types/loan-contract.types'
 
 export const formatDate = (value?: string | null) => {
   if (!value) return '—'
-  const parsed = new Date(value)
+  const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  const parsed = dateOnlyMatch
+    ? new Date(
+        Number(dateOnlyMatch[1]),
+        Number(dateOnlyMatch[2]) - 1,
+        Number(dateOnlyMatch[3]),
+      )
+    : new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
   return parsed.toLocaleDateString('es-HN')
+}
+
+export const formatTermUnitCode = (value?: TermUnitCode | string | null) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'DAYS') return 'Días'
+  if (normalized === 'WEEKS') return 'Semanas'
+  if (normalized === 'MONTHS') return 'Meses'
+  return value?.trim() || '—'
+}
+
+export const formatPaymentFrequencyCode = (
+  value?: PaymentFrequencyCode | string | null,
+) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'DAILY') return 'Diario'
+  if (normalized === 'WEEKLY') return 'Semanal'
+  if (normalized === 'BIWEEKLY') return 'Quincenal'
+  if (normalized === 'MONTHLY') return 'Mensual'
+  return value?.trim() || '—'
 }
 
 export const formatDateTime = (value?: string | null) => {
@@ -219,6 +249,7 @@ export const hasDisbursementData = (value: {
   grossDisbursementAmount?: number | null
   totalDisbursementFees?: number | null
   totalDisbursementInsurance?: number | null
+  anticipatedInstallmentDeductionAmount?: number | null
   totalScheduledInsurance?: number | null
   netDisbursementAmount?: number | null
   disbursementJournalEntryId?: string | null
@@ -227,6 +258,7 @@ export const hasDisbursementData = (value: {
   value.grossDisbursementAmount != null ||
   value.totalDisbursementFees != null ||
   value.totalDisbursementInsurance != null ||
+  value.anticipatedInstallmentDeductionAmount != null ||
   value.totalScheduledInsurance != null ||
   value.netDisbursementAmount != null ||
   Boolean(value.disbursementJournalEntryNumber?.trim()) ||

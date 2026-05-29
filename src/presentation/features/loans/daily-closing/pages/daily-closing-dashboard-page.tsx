@@ -10,6 +10,7 @@ import {
 import { DailyClosingRunActionModal } from '@/presentation/features/loans/daily-closing/components/daily-closing-run-action-modal'
 import { DailyClosingRunResultSummary } from '@/presentation/features/loans/daily-closing/components/daily-closing-run-result-summary'
 import { DailyClosingStatusCards } from '@/presentation/features/loans/daily-closing/components/daily-closing-status-cards'
+import { translateRunStatus } from '@/presentation/features/loans/daily-closing/components/daily-closing-ui'
 import { useDailyClosingRunMutation } from '@/presentation/features/loans/daily-closing/hooks/use-daily-closing-run-mutation'
 import { useDailyClosingStatus } from '@/presentation/features/loans/daily-closing/hooks/use-daily-closing-status'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
@@ -43,7 +44,10 @@ export const DailyClosingDashboardPage = () => {
 
     const result = await mutation.run({
       businessDate: refreshedStatus?.businessDate ?? null,
-      allowReprocess: actionKind === 'reprocess',
+      allowReprocess:
+        actionKind === 'reprocess' ||
+        (actionKind === 'dry-run' &&
+          Boolean(refreshedStatus?.hasCompletedRunForBusinessDate)),
       dryRun: actionKind === 'dry-run',
       closeBusinessDayOnSuccess:
         actionKind === 'dry-run' ? false : payload.closeBusinessDayOnSuccess,
@@ -102,6 +106,16 @@ export const DailyClosingDashboardPage = () => {
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-100">
               Ya existe un cierre para la fecha operativa vigente. Para volver a ejecutar
               se usara reproceso con allowReprocess=true.
+            </div>
+          ) : null}
+          {status.hasRunningRun ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+              Hay un cierre en ejecucion
+              {status.currentRunStatus
+                ? ` (${translateRunStatus(status.currentRunStatus)})`
+                : ''}.
+              Si permanece en este estado por demasiado tiempo, revise el run actual
+              antes de intentar un nuevo cierre.
             </div>
           ) : null}
         </div>

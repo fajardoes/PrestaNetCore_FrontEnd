@@ -79,7 +79,7 @@ export const DailyClosingActionsPanel = ({
                   title={disabledReason ?? 'Reprocesar cierre'}
                 >
                   <RotateCcw className="h-4 w-4" />
-                  Reprocesar
+                  Reprocesar cierre
                 </button>
               ) : (
                 <button

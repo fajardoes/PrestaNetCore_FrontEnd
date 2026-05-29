@@ -24,6 +24,7 @@ export type LoanCatalogKey =
   | 'insurance-calculation-bases'
   | 'insurance-value-types'
   | 'insurance-charge-timings'
+  | 'delinquency-calculation-bases'
   | 'collateral-types'
 
 const basePath = '/loans/catalogs'

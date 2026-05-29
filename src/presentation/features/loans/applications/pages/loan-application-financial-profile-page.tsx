@@ -97,7 +97,10 @@ export const LoanApplicationFinancialProfilePage = () => {
           <CompactInfo label="Producto" value={application.loanProductName} />
           <CompactInfo label="Promotor" value={application.promoterClientFullName} />
           <CompactInfo label="Capital" value={formatMoney(application.requestedPrincipal)} />
-          <CompactInfo label="Plazo" value={String(application.requestedTerm)} />
+          <CompactInfo
+            label="Duración solicitada"
+            value={`${application.requestedTerm} ${application.requestedTermUnitName}`}
+          />
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
             <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Estado ficha

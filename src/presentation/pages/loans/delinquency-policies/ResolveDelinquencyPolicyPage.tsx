@@ -188,9 +188,22 @@ export const ResolveDelinquencyPolicyPage = () => {
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <InfoItem label="Días gracia" value={String(data.graceDays)} />
               <InfoItem label="Tasa anual" value={String(data.penaltyRateAnnual)} />
-              <InfoItem label="Base" value={String(data.rateBase)} />
-              <InfoItem label="Base cálculo" value={data.calculationBase} />
-              <InfoItem label="Modo redondeo" value={data.roundingMode} />
+              <InfoItem
+                label="Base de tasa"
+                value={data.rateBaseName || data.rateBaseCode || String(data.rateBase)}
+              />
+              <InfoItem
+                label="Base cálculo"
+                value={
+                  data.calculationBaseName ||
+                  data.calculationBaseCode ||
+                  data.calculationBase
+                }
+              />
+              <InfoItem
+                label="Modo redondeo"
+                value={data.roundingModeName || data.roundingModeCode || data.roundingMode}
+              />
               <InfoItem label="Decimales" value={String(data.roundingDecimals)} />
               <InfoItem
                 label="Incluye sábado"

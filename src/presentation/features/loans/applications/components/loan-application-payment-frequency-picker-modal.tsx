@@ -36,7 +36,7 @@ export const LoanApplicationPaymentFrequencyPickerModal = ({
               Seleccionar frecuencia de pago
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Selecciona la frecuencia solicitada para esta solicitud.
+              Selecciona cada cuánto se realizará un pago. La duración solicitada no cambia.
             </p>
           </div>
           <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={onClose}>

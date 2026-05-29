@@ -14,6 +14,9 @@ export type LoanApplicationAllowedAction =
   | 'return_to_draft'
   | 'preview_schedule'
   | 'print'
+  | 'view_anticipated_installment'
+  | 'manage_anticipated_installment'
+  | 'cancel_anticipated_installment'
 
 export interface LoanApplicationActionsResponse {
   loanApplicationId: string

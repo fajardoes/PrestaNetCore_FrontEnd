@@ -10,6 +10,7 @@ import { LoanApplicationFeesCard } from '@/presentation/features/loans/applicati
 import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applications/components/loan-application-header-card'
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
 import { LoanApplicationRequestedDataCard } from '@/presentation/features/loans/applications/components/loan-application-requested-data-card'
+import { LoanApplicationAnticipatedInstallmentSection } from '@/presentation/features/loans/applications/components/loan-application-anticipated-installment-section'
 import { useGenerateLoanApplicationScoring } from '@/presentation/features/loans/applications/hooks/use-generate-loan-application-scoring'
 import { useLoanApplicationFees } from '@/presentation/features/loans/applications/hooks/use-loan-application-fees'
 import { DisburseLoanModal } from '@/presentation/features/loans/components/disburse-loan-modal'
@@ -21,6 +22,7 @@ import { useLoanApplicationScoring } from '@/presentation/features/loans/applica
 import { useLoanApplicationScoringHistory } from '@/presentation/features/loans/applications/hooks/use-loan-application-scoring-history'
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
+import { useLoanApplicationAnticipatedInstallment } from '@/presentation/features/loans/applications/hooks/use-loan-application-anticipated-installment'
 import { MessageModal } from '@/presentation/share/components/message-modal'
 import type { LoanApplicationAllowedAction } from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
@@ -119,6 +121,11 @@ export const LoanApplicationDetailPage = () => {
     previewSchedule,
     saveFeeOverrides,
   } = useLoanApplicationMutations()
+  const canViewAnticipatedInstallment = allowedActions.includes('view_anticipated_installment')
+  const anticipatedInstallment = useLoanApplicationAnticipatedInstallment(
+    id,
+    canViewAnticipatedInstallment,
+  )
 
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
   const [pendingCollateral, setPendingCollateral] =
@@ -276,6 +283,8 @@ export const LoanApplicationDetailPage = () => {
   const canPrint = hasAction('print')
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
+  const canManageAnticipatedInstallment = hasAction('manage_anticipated_installment')
+  const canCancelAnticipatedInstallment = hasAction('cancel_anticipated_installment')
   const totalDisbursementInsurance =
     loanDetail?.totalDisbursementInsurance ?? application.totalDisbursementInsurance ?? 0
   const disbursementDetail = {
@@ -284,6 +293,10 @@ export const LoanApplicationDetailPage = () => {
     totalDisbursementFees:
       loanDetail?.totalDisbursementFees ?? application.totalDisbursementFees ?? null,
     totalDisbursementInsurance,
+    anticipatedInstallmentDeductionAmount:
+      loanDetail?.anticipatedInstallmentDeductionAmount ??
+      application.anticipatedInstallmentDeductionAmount ??
+      null,
     totalScheduledInsurance:
       loanDetail?.totalScheduledInsurance ?? application.totalScheduledInsurance ?? null,
     netDisbursementAmount:
@@ -323,6 +336,13 @@ export const LoanApplicationDetailPage = () => {
 
   const refreshApplicationState = async () => {
     await Promise.all([loadById(id), loadFeesByApplicationId(id)])
+  }
+
+  const refreshDisbursementPreview = async () => {
+    setPreview(null)
+    if (canPreview) {
+      await generatePaymentPlan()
+    }
   }
 
   const buildFeeOverridePayload = (
@@ -377,6 +397,7 @@ export const LoanApplicationDetailPage = () => {
 
   const openDisbursementModal = () => {
     setDisburseModalOpen(true)
+    setPreview(null)
     void generatePaymentPlan()
   }
 
@@ -424,6 +445,25 @@ export const LoanApplicationDetailPage = () => {
       ) : null}
 
       <LoanApplicationRequestedDataCard application={application} />
+
+      {canViewAnticipatedInstallment ? (
+        <LoanApplicationAnticipatedInstallmentSection
+          data={anticipatedInstallment.data}
+          history={anticipatedInstallment.history}
+          isLoading={anticipatedInstallment.isLoading}
+          isSaving={anticipatedInstallment.isSaving}
+          error={anticipatedInstallment.error}
+          canManage={canManageAnticipatedInstallment}
+          canCancel={canCancelAnticipatedInstallment}
+          onPreview={anticipatedInstallment.previewLimit}
+          onSave={anticipatedInstallment.save}
+          onCancel={anticipatedInstallment.cancel}
+          onRefreshActions={async () => {
+            await loadById(id)
+            await refreshDisbursementPreview()
+          }}
+        />
+      ) : null}
 
       {(canViewScoring || canViewScoringHistory) ? (
         <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -603,6 +643,7 @@ export const LoanApplicationDetailPage = () => {
               : mapRateToPercentValue(application.requestedRateOverride),
           firstDueDateOverride: null,
         }}
+        termUnitName={application.requestedTermUnitName}
         applicationLabel={application.applicationNo || application.id.slice(0, 8)}
         onClose={() => setPaymentPlanOpen(false)}
       />
@@ -792,7 +833,8 @@ export const LoanApplicationDetailPage = () => {
           if (result.success) {
             setApplication(result.data)
             setDisburseModalOpen(false)
-            await refreshApplicationState()
+            setPreview(null)
+            await Promise.all([refreshApplicationState(), anticipatedInstallment.refresh()])
             setFeedback({
               tone: 'success',
               title: 'Solicitud desembolsada',
@@ -801,9 +843,20 @@ export const LoanApplicationDetailPage = () => {
             return
           }
 
+          if (result.status === 409) {
+            setPreview(null)
+            await Promise.all([refreshApplicationState(), anticipatedInstallment.refresh()])
+            if (canPreview) {
+              await generatePaymentPlan()
+            }
+          }
+
           setFeedback({
             tone: 'error',
-            title: 'No se pudo desembolsar la solicitud',
+            title:
+              result.status === 409
+                ? 'El resumen del desembolso debe actualizarse'
+                : 'No se pudo desembolsar la solicitud',
             description: result.error,
           })
         }}

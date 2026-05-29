@@ -1,5 +1,9 @@
 import type { LoanDisbursementChargeResponse } from './loan-disbursement-charge-response'
 import type { LoanInsuranceResponse } from './loan-insurance-response'
+import type {
+  PaymentFrequencyCode,
+  TermUnitCode,
+} from '@/infrastructure/loans/types/loan-contract.types'
 
 export interface LoanResponse {
   id: string
@@ -15,8 +19,11 @@ export interface LoanResponse {
   statusName: string
   principal: number
   term: number
+  termUnitId: string
+  termUnitCode: TermUnitCode
+  termUnitName: string
   paymentFrequencyId: string
-  paymentFrequencyCode: string
+  paymentFrequencyCode: PaymentFrequencyCode
   paymentFrequencyName: string
   createdOperationalDate: string
   scheduleCommittedOperationalDate: string
@@ -29,6 +36,7 @@ export interface LoanResponse {
   netDisbursementAmount?: number | null
   totalDisbursementFees?: number | null
   totalDisbursementInsurance?: number | null
+  anticipatedInstallmentDeductionAmount?: number | null
   totalScheduledInsurance?: number | null
   disbursementJournalEntryId?: string | null
   disbursementJournalEntryNumber?: string | null

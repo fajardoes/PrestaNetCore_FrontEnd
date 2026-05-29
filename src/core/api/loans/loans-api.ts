@@ -10,6 +10,17 @@ import type { LoanDisbursementReversalEligibilityResponse } from '@/infrastructu
 import type { LoanDisbursementReversalResponse } from '@/infrastructure/loans/responses/loan-disbursement-reversal-response'
 import type { LoanListResponse } from '@/infrastructure/loans/responses/loan-list-response'
 import type { LoanResponse } from '@/infrastructure/loans/responses/loan-response'
+import type {
+  ApplyAnticipatedInstallmentRequest,
+  ReverseAnticipatedInstallmentApplicationRequest,
+  UpsertAnticipatedInstallmentSettingsRequest,
+} from '@/infrastructure/loans/requests/anticipated-installment-request'
+import type {
+  AnticipatedInstallmentApplicationResponse,
+  AnticipatedInstallmentCatalogItem,
+  AnticipatedInstallmentLoanDetailResponse,
+  AnticipatedInstallmentSettingsResponse,
+} from '@/infrastructure/loans/responses/anticipated-installment-response'
 
 const basePath = '/loans'
 
@@ -82,3 +93,102 @@ export const getLoanInstallment = async (
   )
   return data
 }
+
+export const getLoanAnticipatedInstallment = async (
+  loanId: string,
+): Promise<AnticipatedInstallmentLoanDetailResponse> => {
+  const { data } = await httpClient.get<AnticipatedInstallmentLoanDetailResponse>(
+    `${basePath}/${loanId}/anticipated-installment`,
+  )
+  return data
+}
+
+export const applyLoanAnticipatedInstallment = async (
+  loanId: string,
+  payload: ApplyAnticipatedInstallmentRequest,
+): Promise<AnticipatedInstallmentApplicationResponse> => {
+  const { data } = await httpClient.post<AnticipatedInstallmentApplicationResponse>(
+    `${basePath}/${loanId}/anticipated-installment/apply`,
+    payload,
+  )
+  return data
+}
+
+export const listLoanAnticipatedInstallmentApplications = async (
+  loanId: string,
+): Promise<AnticipatedInstallmentApplicationResponse[]> => {
+  const { data } = await httpClient.get<AnticipatedInstallmentApplicationResponse[]>(
+    `${basePath}/${loanId}/anticipated-installment/applications`,
+  )
+  return data
+}
+
+export const reverseLoanAnticipatedInstallmentApplication = async (
+  loanId: string,
+  applicationId: string,
+  payload: ReverseAnticipatedInstallmentApplicationRequest,
+): Promise<AnticipatedInstallmentApplicationResponse> => {
+  const { data } = await httpClient.post<AnticipatedInstallmentApplicationResponse>(
+    `${basePath}/${loanId}/anticipated-installment/applications/${applicationId}/reverse`,
+    payload,
+  )
+  return data
+}
+
+export const listAnticipatedInstallmentSettings =
+  async (): Promise<AnticipatedInstallmentSettingsResponse[]> => {
+    const { data } = await httpClient.get<AnticipatedInstallmentSettingsResponse[]>(
+      `${basePath}/anticipated-installment-settings`,
+    )
+    return data
+  }
+
+export const createAnticipatedInstallmentSetting = async (
+  payload: UpsertAnticipatedInstallmentSettingsRequest,
+): Promise<AnticipatedInstallmentSettingsResponse> => {
+  const { data } = await httpClient.post<AnticipatedInstallmentSettingsResponse>(
+    `${basePath}/anticipated-installment-settings`,
+    payload,
+  )
+  return data
+}
+
+export const getAnticipatedInstallmentSetting = async (
+  id: string,
+): Promise<AnticipatedInstallmentSettingsResponse> => {
+  const { data } = await httpClient.get<AnticipatedInstallmentSettingsResponse>(
+    `${basePath}/anticipated-installment-settings/${id}`,
+  )
+  return data
+}
+
+export const updateAnticipatedInstallmentSetting = async (
+  id: string,
+  payload: UpsertAnticipatedInstallmentSettingsRequest,
+): Promise<AnticipatedInstallmentSettingsResponse> => {
+  const { data } = await httpClient.put<AnticipatedInstallmentSettingsResponse>(
+    `${basePath}/anticipated-installment-settings/${id}`,
+    payload,
+  )
+  return data
+}
+
+export const deactivateAnticipatedInstallmentSetting = async (id: string): Promise<void> => {
+  await httpClient.patch(`${basePath}/anticipated-installment-settings/${id}/deactivate`)
+}
+
+export const listAnticipatedInstallmentStatuses =
+  async (): Promise<AnticipatedInstallmentCatalogItem[]> => {
+    const { data } = await httpClient.get<AnticipatedInstallmentCatalogItem[]>(
+      `${basePath}/catalogs/anticipated-installment-statuses`,
+    )
+    return data
+  }
+
+export const listAnticipatedInstallmentLimitStrategies =
+  async (): Promise<AnticipatedInstallmentCatalogItem[]> => {
+    const { data } = await httpClient.get<AnticipatedInstallmentCatalogItem[]>(
+      `${basePath}/catalogs/anticipated-installment-limit-strategies`,
+    )
+    return data
+  }

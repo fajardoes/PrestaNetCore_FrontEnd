@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { Printer } from 'lucide-react'
 import { DatePicker } from '@/presentation/share/components/date-picker'
+import SelectField from '@/presentation/share/components/select'
 import {
   loanSchedulePreviewSchema,
   type LoanSchedulePreviewFormValues,
@@ -9,8 +10,11 @@ import {
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
 import {
   formatInterestCalculationMethod,
+  formatDate,
   getInstallmentComponentAmount,
   formatMoney,
+  formatPaymentFrequencyCode,
+  formatTermUnitCode,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { yupResolver } from '@hookform/resolvers/yup'
@@ -28,6 +32,7 @@ interface LoanApplicationPaymentPlanModalProps {
   onGenerate: (values: LoanSchedulePreviewFormValues) => void
   listPaymentFrequencies: () => Promise<LoanCatalogItemDto[]>
   initialValues?: Partial<LoanSchedulePreviewFormValues>
+  termUnitName?: string
   applicationLabel?: string
   onClose: () => void
 }
@@ -47,6 +52,7 @@ export const LoanApplicationPaymentPlanModal = ({
   onGenerate,
   listPaymentFrequencies,
   initialValues,
+  termUnitName,
   applicationLabel,
   onClose,
 }: LoanApplicationPaymentPlanModalProps) => {
@@ -72,6 +78,10 @@ export const LoanApplicationPaymentPlanModal = ({
       resolver: yupResolver(loanSchedulePreviewSchema),
       defaultValues: resolvedDefaultValues,
     })
+  const lastInstallment = preview?.installments.at(-1)
+  const hasAdjustedLastPayment =
+    Boolean(lastInstallment) &&
+    lastInstallment?.dueDateAdjusted !== lastInstallment?.dueDateOriginal
 
   useEffect(() => {
     if (!open) return
@@ -146,7 +156,7 @@ export const LoanApplicationPaymentPlanModal = ({
             >
               <div className="space-y-1">
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Monto (ajuste)
+                  Capital a simular
                 </label>
                 <input
                   type="number"
@@ -162,7 +172,7 @@ export const LoanApplicationPaymentPlanModal = ({
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Plazo (ajuste)
+                  Duración a simular ({termUnitName || 'unidad contractual'})
                 </label>
                 <input
                   type="number"
@@ -178,20 +188,32 @@ export const LoanApplicationPaymentPlanModal = ({
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  Frecuencia (ajuste)
+                  Frecuencia de cuotas
                 </label>
-                <select
-                  disabled={isLoading || frequencyLoading}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
-                  {...register('paymentFrequencyIdOverride')}
-                >
-                  <option value="">{frequencyLoading ? 'Cargando...' : 'Opcional'}</option>
-                  {frequencyOptions.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  name="paymentFrequencyIdOverride"
+                  control={control}
+                  render={({ field }) => (
+                    <SelectField<LoanCatalogItemDto>
+                      value={
+                        frequencyOptions
+                          .filter((item) => item.id === field.value)
+                          .map((item) => ({ value: item.id, label: item.name, meta: item }))[0] ??
+                        null
+                      }
+                      onChange={(option) => field.onChange(option?.value ?? null)}
+                      options={frequencyOptions.map((item) => ({
+                        value: item.id,
+                        label: item.name,
+                        meta: item,
+                      }))}
+                      placeholder="Opcional"
+                      isClearable
+                      isDisabled={isLoading || frequencyLoading}
+                      isLoading={frequencyLoading}
+                    />
+                  )}
+                />
                 {frequencyError ? (
                   <p className="text-xs text-red-600 dark:text-red-300">{frequencyError}</p>
                 ) : null}
@@ -261,6 +283,22 @@ export const LoanApplicationPaymentPlanModal = ({
           ) : (
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
+                <Meta
+                  label="Duración contractual"
+                  value={`${preview.metadata.contractualTerm} ${formatTermUnitCode(preview.metadata.termUnitCode)}`}
+                />
+                <Meta
+                  label="Frecuencia de pago"
+                  value={formatPaymentFrequencyCode(preview.metadata.paymentFrequencyCode)}
+                />
+                <Meta
+                  label="Vencimiento contractual"
+                  value={formatDate(preview.metadata.maturityDate)}
+                />
+                <Meta
+                  label="Cuotas generadas"
+                  value={String(preview.metadata.installmentsCount)}
+                />
                 <Meta label="Tasa nominal" value={formatRateAsPercent(preview.metadata.nominalRate)} />
                 <Meta
                   label="Tasa efectiva por período"
@@ -275,6 +313,17 @@ export const LoanApplicationPaymentPlanModal = ({
                   value={formatMoney(preview.metadata.lastInstallmentAdjustment)}
                 />
               </div>
+              {hasAdjustedLastPayment ? (
+                <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-200">
+                  Último pago ajustado por calendario: {formatDate(lastInstallment?.dueDateAdjusted)}.
+                  El vencimiento contractual se mantiene en{' '}
+                  {formatDate(preview.metadata.maturityDate)}.
+                </p>
+              ) : null}
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Las fechas de cobro pueden ajustarse por días no hábiles sin modificar el
+                vencimiento contractual.
+              </p>
 
               {preview.disbursement ? (
                 <>
@@ -292,8 +341,8 @@ export const LoanApplicationPaymentPlanModal = ({
                     <thead>
                       <tr>
                         <th>#</th>
-                        <th>Vence</th>
-                        <th>Ajustada</th>
+                        <th>Fecha original</th>
+                        <th>Fecha de cobro</th>
                         <th className="text-right">Capital</th>
                         <th className="text-right">Interés</th>
                         <th className="text-right">Seguro</th>
@@ -304,8 +353,8 @@ export const LoanApplicationPaymentPlanModal = ({
                       {preview.installments.map((row) => (
                         <tr key={row.installmentNo}>
                           <td className="px-2 py-2">{row.installmentNo}</td>
-                          <td className="px-2 py-2">{row.dueDateOriginal}</td>
-                          <td className="px-2 py-2">{row.dueDateAdjusted}</td>
+                          <td className="px-2 py-2">{formatDate(row.dueDateOriginal)}</td>
+                          <td className="px-2 py-2">{formatDate(row.dueDateAdjusted)}</td>
                           <td className="px-2 py-2 text-right">{formatMoney(row.principal)}</td>
                           <td className="px-2 py-2 text-right">{formatMoney(row.interest)}</td>
                           <td className="px-2 py-2 text-right">

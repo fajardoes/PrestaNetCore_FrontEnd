@@ -4,6 +4,7 @@ interface DisbursementSummaryData {
   grossDisbursementAmount?: number | null
   totalDisbursementFees?: number | null
   totalDisbursementInsurance?: number | null
+  anticipatedInstallmentDeductionAmount?: number | null
   totalScheduledInsurance?: number | null
   netDisbursementAmount?: number | null
   disbursementJournalEntryId?: string | null
@@ -33,7 +34,7 @@ export const DisbursementSummaryCard = ({
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-7">
         <Metric label="Monto bruto" value={formatCurrency(data.grossDisbursementAmount)} />
         <Metric
           label="Comisiones descontadas"
@@ -44,10 +45,14 @@ export const DisbursementSummaryCard = ({
           value={formatCurrency(data.totalDisbursementInsurance)}
         />
         <Metric
+          label="Cuota anticipada retenida"
+          value={formatCurrency(data.anticipatedInstallmentDeductionAmount ?? 0)}
+        />
+        <Metric
           label="Seguro futuro programado"
           value={formatCurrency(data.totalScheduledInsurance)}
         />
-        <Metric label="Neto desembolsado" value={formatCurrency(data.netDisbursementAmount)} />
+        <Metric label="Neto a entregar" value={formatCurrency(data.netDisbursementAmount)} />
         <Metric
           label="Asiento de desembolso"
           value={

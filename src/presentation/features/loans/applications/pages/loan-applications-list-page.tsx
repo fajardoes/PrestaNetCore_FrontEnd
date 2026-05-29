@@ -179,10 +179,19 @@ export const LoanApplicationsListPage = () => {
     },
     {
       key: 'term',
-      header: 'Plazo',
-      className: 'min-w-[70px] text-right',
-      render: (item: LoanApplicationResponse) => item.requestedTerm,
-      getTitle: (item: LoanApplicationResponse) => String(item.requestedTerm),
+      header: 'Duración',
+      className: 'min-w-[125px]',
+      render: (item: LoanApplicationResponse) =>
+        `${item.requestedTerm} ${item.requestedTermUnitName}`,
+      getTitle: (item: LoanApplicationResponse) =>
+        `${item.requestedTerm} ${item.requestedTermUnitName}`,
+    },
+    {
+      key: 'paymentFrequency',
+      header: 'Frecuencia de pago',
+      className: 'min-w-[130px]',
+      render: (item: LoanApplicationResponse) => item.requestedPaymentFrequencyName,
+      getTitle: (item: LoanApplicationResponse) => item.requestedPaymentFrequencyName,
     },
     {
       key: 'status',

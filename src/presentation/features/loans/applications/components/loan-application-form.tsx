@@ -109,6 +109,7 @@ export const LoanApplicationForm = ({
     control,
     register,
     handleSubmit,
+    getValues,
     setValue,
     formState: { errors },
     reset,
@@ -433,7 +434,7 @@ export const LoanApplicationForm = ({
                         Monto: {formatMoney(productOption.meta.minAmount)} - {formatMoney(productOption.meta.maxAmount)}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Plazo: {productOption.meta.minTerm} - {productOption.meta.maxTerm}{' '}
+                        Duración permitida: {productOption.meta.minTerm} - {productOption.meta.maxTerm}{' '}
                         {resolvedTermUnitLabel}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -563,7 +564,7 @@ export const LoanApplicationForm = ({
 
         <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Frecuencia sugerida
+            Frecuencia predeterminada del producto
           </label>
           <input type="hidden" {...register('suggestedPaymentFrequencyId')} />
           <div className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
@@ -591,7 +592,7 @@ export const LoanApplicationForm = ({
 
         <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Frecuencia solicitada
+            Frecuencia de pago
           </label>
           <Controller
             control={control}
@@ -647,6 +648,10 @@ export const LoanApplicationForm = ({
               {errors.requestedPaymentFrequencyId.message}
             </p>
           ) : null}
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Define cada cuánto se realizará un pago; la duración del crédito se mantiene según
+            el plazo solicitado.
+          </p>
         </div>
 
         <div className="space-y-1">
@@ -669,7 +674,7 @@ export const LoanApplicationForm = ({
 
       <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Plazo solicitado ({resolvedTermUnitLabel})
+            Duración solicitada ({resolvedTermUnitLabel})
           </label>
           <input
             type="number"
@@ -680,6 +685,12 @@ export const LoanApplicationForm = ({
           />
           {errors.requestedTerm ? (
             <p className="text-xs text-red-600 dark:text-red-300">{errors.requestedTerm.message}</p>
+          ) : null}
+          {productOption?.meta ? (
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              La duración debe estar entre {productOption.meta.minTerm} y{' '}
+              {productOption.meta.maxTerm} {resolvedTermUnitLabel}.
+            </p>
           ) : null}
         </div>
 
@@ -774,6 +785,12 @@ export const LoanApplicationForm = ({
                 if (frequencyOption) {
                   setSuggestedFrequencyOption(frequencyOption)
                   setValue('suggestedPaymentFrequencyId', frequencyOption.value, { shouldValidate: true })
+                  if (!getValues('requestedPaymentFrequencyId')) {
+                    setRequestedFrequencyOption(frequencyOption)
+                    setValue('requestedPaymentFrequencyId', frequencyOption.value, {
+                      shouldValidate: true,
+                    })
+                  }
                   return
                 }
 
@@ -792,6 +809,16 @@ export const LoanApplicationForm = ({
                   meta: fallbackFrequency,
                 })
                 setValue('suggestedPaymentFrequencyId', fallbackFrequency.id, { shouldValidate: true })
+                if (!getValues('requestedPaymentFrequencyId')) {
+                  setRequestedFrequencyOption({
+                    value: fallbackFrequency.id,
+                    label: fallbackFrequency.name,
+                    meta: fallbackFrequency,
+                  })
+                  setValue('requestedPaymentFrequencyId', fallbackFrequency.id, {
+                    shouldValidate: true,
+                  })
+                }
               })
             })
             .finally(() => {

@@ -19,6 +19,7 @@ import { DailyClosingRunsPage } from '@/presentation/features/loans/daily-closin
 import { LoanDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-detail-page'
 import { LoanInstallmentDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-installment-detail-page'
 import { LoansHomePage } from '@/presentation/features/loans/loans-query/pages/loans-home-page'
+import { AnticipatedInstallmentSettingsPage } from '@/presentation/features/loans/anticipated-installment-settings/pages/anticipated-installment-settings-page'
 
 export const LoansRoutes = () => (
   <Fragment>
@@ -26,6 +27,7 @@ export const LoansRoutes = () => (
     <Route path="/loans/products/new" element={<LoanProductFormPage />} />
     <Route path="/loans/products/:id" element={<LoanProductFormPage />} />
     <Route path="/loans/products/catalogs" element={<LoanCatalogsHomePage />} />
+    <Route path="/loans/anticipated-installment-settings" element={<AnticipatedInstallmentSettingsPage />} />
     <Route
       path="/loans/products/catalogs/:catalogKey"
       element={<LoanCatalogPage />}

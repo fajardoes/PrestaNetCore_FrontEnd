@@ -65,7 +65,7 @@ export const LoanApplicationProductPickerModal = ({
                     <th className="text-left">Producto</th>
                     <th className="text-left">Moneda</th>
                     <th className="text-right">Monto</th>
-                    <th className="text-right">Plazo</th>
+                    <th className="text-right">Duración permitida</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -30,11 +30,10 @@ export const DailyClosingRunActionModal = ({
   const [closeBusinessDayOnSuccess, setCloseBusinessDayOnSuccess] = useState(false)
 
   useEffect(() => {
-    if (!open) {
-      setNotes('')
-      setCloseBusinessDayOnSuccess(false)
-    }
-  }, [open])
+    if (!open) return
+    setNotes('')
+    setCloseBusinessDayOnSuccess(actionKind !== 'dry-run')
+  }, [actionKind, open])
 
   const isDryRun = actionKind === 'dry-run'
   const isReprocess = actionKind === 'reprocess'
@@ -80,6 +79,11 @@ export const DailyClosingRunActionModal = ({
           <div className="rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-100">
             La simulacion registra run, detalles y eventos de calculo, pero no aplica
             devengos, cargos diferidos, mora, snapshots ni cambios de estado.
+          </div>
+        ) : isReprocess ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+            Esta accion enviara allowReprocess=true para volver a ejecutar el cierre
+            de la fecha operativa vigente.
           </div>
         ) : (
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-100">

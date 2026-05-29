@@ -63,11 +63,14 @@ export const LoanApplicationRequestedDataCard = ({
         <Info label="Producto" value={`${application.loanProductCode} - ${application.loanProductName}`} />
         <Info label="Promotor" value={application.promoterClientFullName} />
         <Info label="Capital" value={formatMoney(application.requestedPrincipal)} />
-        <Info label="Plazo" value={String(application.requestedTerm)} />
-        <Info label="Frecuencia" value={application.requestedPaymentFrequencyName} />
+        <Info
+          label="Duración solicitada"
+          value={`${application.requestedTerm} ${application.requestedTermUnitName}`}
+        />
+        <Info label="Frecuencia negociada" value={application.requestedPaymentFrequencyName} />
         <Info label="Préstamo desembolsado" value={application.approvedLoanNo || '—'} />
         <Info
-          label="Frecuencia sugerida"
+          label="Frecuencia predeterminada del producto"
           value={application.suggestedPaymentFrequencyName || '—'}
         />
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">

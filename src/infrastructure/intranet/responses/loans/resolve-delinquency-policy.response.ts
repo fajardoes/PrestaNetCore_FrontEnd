@@ -6,8 +6,17 @@ export interface ResolveDelinquencyPolicyResponseDto {
   policyName: string
   graceDays: number
   penaltyRateAnnual: number
+  rateBaseId?: string | null
+  rateBaseCode?: string | null
+  rateBaseName?: string | null
   rateBase: number
+  calculationBaseId?: string | null
+  calculationBaseCode?: string | null
+  calculationBaseName?: string | null
   calculationBase: string
+  roundingModeId?: string | null
+  roundingModeCode?: string | null
+  roundingModeName?: string | null
   roundingMode: string
   roundingDecimals: number
   includeSaturday: boolean

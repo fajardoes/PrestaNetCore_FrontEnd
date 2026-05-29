@@ -11,6 +11,9 @@ import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/lo
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
 import {
   formatInterestCalculationMethod,
+  formatDate,
+  formatPaymentFrequencyCode,
+  formatTermUnitCode,
   getInstallmentComponentAmount,
   formatMoney,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
@@ -68,7 +71,7 @@ export const LoanApplicationSchedulePreviewCard = ({
       >
         <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Capital (ajuste)
+            Capital a simular
           </label>
           <input
             type="number"
@@ -84,7 +87,7 @@ export const LoanApplicationSchedulePreviewCard = ({
 
         <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Plazo (ajuste)
+            Duración a simular (unidad contractual)
           </label>
           <input
             type="number"
@@ -100,7 +103,7 @@ export const LoanApplicationSchedulePreviewCard = ({
 
         <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Frecuencia (ajuste)
+            Frecuencia de cuotas
           </label>
           <Controller
             control={control}
@@ -173,6 +176,22 @@ export const LoanApplicationSchedulePreviewCard = ({
       {preview ? (
         <div className="mt-4 space-y-3">
           <div className="grid grid-cols-2 gap-3 text-xs md:grid-cols-4">
+            <Meta
+              label="Duración contractual"
+              value={`${preview.metadata.contractualTerm} ${formatTermUnitCode(preview.metadata.termUnitCode)}`}
+            />
+            <Meta
+              label="Frecuencia de pago"
+              value={formatPaymentFrequencyCode(preview.metadata.paymentFrequencyCode)}
+            />
+            <Meta
+              label="Vencimiento contractual"
+              value={formatDate(preview.metadata.maturityDate)}
+            />
+            <Meta
+              label="Cuotas generadas"
+              value={String(preview.metadata.installmentsCount)}
+            />
             <Meta label="Tasa nominal" value={formatRateAsPercent(preview.metadata.nominalRate)} />
             <Meta
               label="Tasa efectiva por período"
@@ -187,6 +206,10 @@ export const LoanApplicationSchedulePreviewCard = ({
               value={formatMoney(preview.metadata.lastInstallmentAdjustment)}
             />
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Las fechas de cobro pueden ajustarse por días no hábiles sin modificar el
+            vencimiento contractual.
+          </p>
 
           <TableContainer mode="legacy-compact" variant="strong">
             <div className="overflow-x-auto">
@@ -194,8 +217,8 @@ export const LoanApplicationSchedulePreviewCard = ({
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Vence</th>
-                    <th>Ajustada</th>
+                    <th>Fecha original</th>
+                    <th>Fecha de cobro</th>
                     <th className="text-right">Capital</th>
                     <th className="text-right">Interés</th>
                     <th className="text-right">Seguro</th>
@@ -206,8 +229,8 @@ export const LoanApplicationSchedulePreviewCard = ({
                   {preview.installments.map((row) => (
                     <tr key={row.installmentNo}>
                       <td className="px-2 py-2">{row.installmentNo}</td>
-                      <td className="px-2 py-2">{row.dueDateOriginal}</td>
-                      <td className="px-2 py-2">{row.dueDateAdjusted}</td>
+                      <td className="px-2 py-2">{formatDate(row.dueDateOriginal)}</td>
+                      <td className="px-2 py-2">{formatDate(row.dueDateAdjusted)}</td>
                       <td className="px-2 py-2 text-right">{formatMoney(row.principal)}</td>
                       <td className="px-2 py-2 text-right">{formatMoney(row.interest)}</td>
                       <td className="px-2 py-2 text-right">

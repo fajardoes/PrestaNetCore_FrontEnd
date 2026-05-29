@@ -42,6 +42,7 @@ export const DisburseLoanModal = ({
       cancelLabel="Cancelar"
       panelClassName="max-w-4xl"
       isProcessing={isProcessing}
+      confirmDisabled={isPreviewLoading}
       onCancel={onCancel}
       onConfirm={() => {
         void onConfirm(notes.trim() ? notes.trim() : null)

@@ -41,6 +41,20 @@ export const DailyClosingStatusCards = ({
       badgeClass: getRunStatusBadgeClass(status?.currentRunStatus),
     },
     {
+      label: 'Cierre en ejecucion',
+      value: status ? (status.hasRunningRun ? 'Si' : 'No') : '-',
+      hint: status?.hasRunningRun
+        ? 'Bloquea cierre, reproceso y simulacion'
+        : 'Sin bloqueo por ejecucion activa',
+    },
+    {
+      label: 'Cierre completado',
+      value: status ? (status.hasCompletedRunForBusinessDate ? 'Si' : 'No') : '-',
+      hint: status?.hasCompletedRunForBusinessDate
+        ? 'Disponible solo con reproceso'
+        : 'Disponible para cierre normal',
+    },
+    {
       label: 'Pagos REGISTERED pendientes',
       value: formatNumber(status?.pendingRegisteredPayments),
       hint: 'Advertencia informativa; no se efectivizan desde este cierre',

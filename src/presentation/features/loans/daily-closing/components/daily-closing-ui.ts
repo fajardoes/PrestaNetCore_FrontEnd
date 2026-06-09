@@ -9,6 +9,7 @@ export const DAILY_CLOSING_RUN_STATUS_OPTIONS: Array<
   SelectOption<DailyClosingRunStatus>
 > = [
   { value: 'RUNNING', label: 'En ejecucion', meta: 'RUNNING' },
+  { value: 'FINALIZING', label: 'Finalizando', meta: 'FINALIZING' },
   { value: 'COMPLETED', label: 'Completado', meta: 'COMPLETED' },
   {
     value: 'COMPLETED_WITH_ERRORS',
@@ -16,6 +17,8 @@ export const DAILY_CLOSING_RUN_STATUS_OPTIONS: Array<
     meta: 'COMPLETED_WITH_ERRORS',
   },
   { value: 'FAILED', label: 'Fallido', meta: 'FAILED' },
+  { value: 'CANCELLED', label: 'Cancelado', meta: 'CANCELLED' },
+  { value: 'ABANDONED', label: 'Abandonado', meta: 'ABANDONED' },
   { value: 'COMPENSATED', label: 'Compensado', meta: 'COMPENSATED' },
   {
     value: 'DRY_RUN_COMPLETED',
@@ -83,14 +86,18 @@ export const translateProcessingStatus = (status: DailyClosingProcessingStatus) 
 export const getRunStatusBadgeClass = (status?: DailyClosingRunStatus | null) => {
   switch (status) {
     case 'COMPLETED':
-      return 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-100'
+      return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-100'
     case 'COMPLETED_WITH_ERRORS':
     case 'DRY_RUN_COMPLETED_WITH_ERRORS':
       return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100'
     case 'FAILED':
+    case 'CANCELLED':
       return 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-100'
     case 'RUNNING':
       return 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-100'
+    case 'FINALIZING':
+    case 'ABANDONED':
+      return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100'
     case 'DRY_RUN_COMPLETED':
       return 'border-cyan-200 bg-cyan-50 text-cyan-800 dark:border-cyan-500/30 dark:bg-cyan-500/10 dark:text-cyan-100'
     case 'COMPENSATED':

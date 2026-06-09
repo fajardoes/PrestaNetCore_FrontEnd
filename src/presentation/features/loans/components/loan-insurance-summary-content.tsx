@@ -59,19 +59,34 @@ export const LoanInsuranceSummaryContent = ({
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <InsuranceMetric
-          label="Cobrado al desembolso"
+          label={
+            <>
+              Cobrado al
+              <span className="block">desembolso</span>
+            </>
+          }
           value={formatCurrency(totalDisbursementInsurance)}
           accent="blue"
         />
         <InsuranceMetric
-          label="Año 1 cobrado"
+          label={
+            <>
+              Año 1
+              <span className="block">cobrado</span>
+            </>
+          }
           value={formatCurrency(insuranceSummary.firstYearInsuranceAmount)}
           accent="blue"
         />
         <InsuranceMetric
-          label="Futuro programado"
+          label={
+            <>
+              Futuro
+              <span className="block">programado</span>
+            </>
+          }
           value={formatCurrency(insuranceSummary.futureScheduledInsuranceAmount)}
           accent="amber"
         />
@@ -127,7 +142,7 @@ const InsuranceMetric = ({
   value,
   accent = 'slate',
 }: {
-  label: string
+  label: ReactNode
   value: string
   accent?: InsuranceMetricAccent
 }) => (

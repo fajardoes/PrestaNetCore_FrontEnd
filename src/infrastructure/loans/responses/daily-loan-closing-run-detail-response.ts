@@ -1,4 +1,4 @@
-export type DailyClosingProcessCode =
+export type KnownDailyClosingProcessCode =
   | 'INTEREST_ACCRUAL'
   | 'DEFERRED_FEE_RECOGNITION'
   | 'INSTALLMENT_STATUS_REFRESH'
@@ -6,11 +6,19 @@ export type DailyClosingProcessCode =
   | 'SNAPSHOT'
   | 'FINAL_VALIDATION'
 
-export type DailyClosingProcessingStatus =
+export type DailyClosingProcessCode =
+  | KnownDailyClosingProcessCode
+  | (string & {})
+
+export type KnownDailyClosingProcessingStatus =
   | 'PENDING'
   | 'PROCESSED'
   | 'SKIPPED'
   | 'FAILED'
+
+export type DailyClosingProcessingStatus =
+  | KnownDailyClosingProcessingStatus
+  | (string & {})
 
 export interface DailyLoanClosingRunDetailResponse {
   id: string

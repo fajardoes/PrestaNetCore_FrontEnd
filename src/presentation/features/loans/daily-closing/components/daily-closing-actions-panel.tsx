@@ -1,7 +1,16 @@
-import { History, PlayCircle, RefreshCcw, RotateCcw, ShieldCheck } from 'lucide-react'
+import {
+  Activity,
+  History,
+  PlayCircle,
+  RefreshCcw,
+  RotateCcw,
+  ShieldCheck,
+  Wrench,
+} from 'lucide-react'
 import type { DailyLoanClosingStatusResponse } from '@/infrastructure/loans/responses/daily-loan-closing-status-response'
+import { resolveDailyClosingActions } from './daily-closing-actions'
 
-type DailyClosingActionKind = 'dry-run' | 'run' | 'reprocess'
+type DailyClosingActionKind = 'dry-run' | 'run' | 'reprocess' | 'recover'
 
 interface DailyClosingActionsPanelProps {
   status: DailyLoanClosingStatusResponse | null
@@ -20,8 +29,10 @@ export const DailyClosingActionsPanel = ({
   onOpenAction,
   onViewHistory,
 }: DailyClosingActionsPanelProps) => {
-  const disabledReason = getExecutionDisabledReason(status)
-  const executionDisabled = Boolean(disabledReason) || isLoading
+  const actions = status
+    ? resolveDailyClosingActions(status, canRun)
+    : null
+  const disabledReason = actions?.blockReason ?? (!status ? 'No se ha cargado el estado operativo.' : null)
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
@@ -58,59 +69,67 @@ export const DailyClosingActionsPanel = ({
             <History className="h-4 w-4" />
             Ver historial
           </button>
-          {canRun ? (
+          {actions?.canRecover ? (
+            <button
+              type="button"
+              className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              onClick={() => onOpenAction('recover')}
+              disabled={isLoading}
+            >
+              <Wrench className="h-4 w-4" />
+              Recuperar ejecucion
+            </button>
+          ) : null}
+          {status?.hasRunningRun && !status.recoveryRequired ? (
+            <button
+              type="button"
+              className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm"
+              onClick={() => onOpenAction('run')}
+            >
+              <Activity className="h-4 w-4" />
+              Monitorear ejecucion
+            </button>
+          ) : null}
+          {actions?.canDryRun || actions?.canDryRunReprocess ? (
             <>
               <button
                 type="button"
                 className="btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={() => onOpenAction('dry-run')}
-                disabled={executionDisabled}
-                title={disabledReason ?? 'Simular cierre'}
+                disabled={isLoading}
               >
                 <PlayCircle className="h-4 w-4" />
-                Simular cierre
+                {actions.canDryRunReprocess ? 'Simular reproceso' : 'Simular cierre'}
               </button>
-              {status?.hasCompletedRunForBusinessDate ? (
+              {actions.canReprocess ? (
                 <button
                   type="button"
                   className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => onOpenAction('reprocess')}
-                  disabled={executionDisabled}
-                  title={disabledReason ?? 'Reprocesar cierre'}
+                  disabled={isLoading}
                 >
                   <RotateCcw className="h-4 w-4" />
                   Reprocesar cierre
                 </button>
-              ) : (
+              ) : actions.canRun ? (
                 <button
                   type="button"
                   className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => onOpenAction('run')}
-                  disabled={executionDisabled}
-                  title={disabledReason ?? 'Ejecutar cierre'}
+                  disabled={isLoading}
                 >
                   <ShieldCheck className="h-4 w-4" />
-                  Ejecutar cierre
+                  {status?.currentRunStatus === 'ABANDONED'
+                    ? 'Reprocesar cierre'
+                    : 'Ejecutar cierre'}
                 </button>
-              )}
+              ) : null}
             </>
           ) : null}
         </div>
       </div>
     </div>
   )
-}
-
-const getExecutionDisabledReason = (
-  status: DailyLoanClosingStatusResponse | null,
-) => {
-  if (!status) return 'No se ha cargado el estado operativo.'
-  if (status.hasRunningRun) return 'Ya existe un cierre en ejecucion.'
-  if (!status.isDayOpen) return 'El dia operativo esta cerrado.'
-  if (status.postingContextStatus !== 'OK') {
-    return 'El periodo contable no esta disponible para posteo automatico.'
-  }
-  return null
 }
 
 export type { DailyClosingActionKind }

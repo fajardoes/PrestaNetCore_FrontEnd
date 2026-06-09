@@ -408,6 +408,7 @@ export const LoanDetailPage = () => {
                       <th className="text-right">Capital</th>
                       <th className="text-right">Interés</th>
                       <th className="text-right">Seguro</th>
+                      <th className="text-right">Mora pendiente</th>
                       <th className="text-right">Total</th>
                       <th className="text-right">Pagado</th>
                       <th>Estado</th>
@@ -417,19 +418,19 @@ export const LoanDetailPage = () => {
                   <tbody>
                     {isLoadingInstallments ? (
                       <tr>
-                        <td colSpan={10} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
+                        <td colSpan={11} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
                           Cargando cuotas...
                         </td>
                       </tr>
                     ) : installmentsError ? (
                       <tr>
-                        <td colSpan={10} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
+                        <td colSpan={11} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
                           {installmentsError}
                         </td>
                       </tr>
                     ) : !installments.length ? (
                       <tr>
-                        <td colSpan={10} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
+                        <td colSpan={11} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
                           Este préstamo no tiene cuotas registradas.
                         </td>
                       </tr>
@@ -445,6 +446,13 @@ export const LoanDetailPage = () => {
                           <td className="text-right">{formatMoney(item.interestProjected)}</td>
                           <td className="text-right">
                             {formatMoney(getInstallmentComponentAmount(item.components, 'INSURANCE'))}
+                          </td>
+                          <td className="text-right">
+                            {formatMoney(
+                              item.components.find(
+                                (component) => component.financialComponentCode === 'PENALTY',
+                              )?.outstandingAmount ?? 0,
+                            )}
                           </td>
                           <td className="text-right">{formatMoney(item.totalProjected)}</td>
                           <td className="text-right">{formatMoney(item.totalPaid)}</td>

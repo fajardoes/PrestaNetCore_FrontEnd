@@ -1,17 +1,15 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { DailyLoanClosingRunResponse } from '@/infrastructure/loans/responses/daily-loan-closing-run-response'
-import type { DailyLoanClosingStatusResponse } from '@/infrastructure/loans/responses/daily-loan-closing-status-response'
 import { DailyClosingAccessRestricted } from '@/presentation/features/loans/daily-closing/components/daily-closing-access-restricted'
 import {
   DailyClosingActionsPanel,
   type DailyClosingActionKind,
 } from '@/presentation/features/loans/daily-closing/components/daily-closing-actions-panel'
-import { DailyClosingRunActionModal } from '@/presentation/features/loans/daily-closing/components/daily-closing-run-action-modal'
-import { DailyClosingRunResultSummary } from '@/presentation/features/loans/daily-closing/components/daily-closing-run-result-summary'
 import { DailyClosingStatusCards } from '@/presentation/features/loans/daily-closing/components/daily-closing-status-cards'
-import { translateRunStatus } from '@/presentation/features/loans/daily-closing/components/daily-closing-ui'
-import { useDailyClosingRunMutation } from '@/presentation/features/loans/daily-closing/hooks/use-daily-closing-run-mutation'
+import {
+  formatDateTime,
+  translateRunStatus,
+} from '@/presentation/features/loans/daily-closing/components/daily-closing-ui'
 import { useDailyClosingStatus } from '@/presentation/features/loans/daily-closing/hooks/use-daily-closing-status'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 
@@ -21,45 +19,14 @@ export const DailyClosingDashboardPage = () => {
   const canRead = hasPermission('loans.daily_closing.read')
   const canRun = hasPermission('loans.daily_closing.run')
   const statusQuery = useDailyClosingStatus(canRead)
-  const mutation = useDailyClosingRunMutation()
-  const [actionKind, setActionKind] = useState<DailyClosingActionKind | null>(null)
-  const [lastResult, setLastResult] = useState<DailyLoanClosingRunResponse | null>(null)
 
-  const handleConfirmAction = async (payload: {
-    notes: string | null
-    closeBusinessDayOnSuccess: boolean
-  }) => {
-    const refreshedStatus = await statusQuery.refresh()
-    const blockReason = getExecutionBlockReason(refreshedStatus)
-    if (blockReason) {
-      mutation.setError(blockReason)
-      return
-    }
-    if (actionKind === 'run' && refreshedStatus?.hasCompletedRunForBusinessDate) {
-      mutation.setError(
-        'Ya existe un cierre completado para la fecha vigente. Use la accion Reprocesar.',
-      )
-      return
-    }
-
-    const result = await mutation.run({
-      businessDate: refreshedStatus?.businessDate ?? null,
-      allowReprocess:
-        actionKind === 'reprocess' ||
-        (actionKind === 'dry-run' &&
-          Boolean(refreshedStatus?.hasCompletedRunForBusinessDate)),
-      dryRun: actionKind === 'dry-run',
-      closeBusinessDayOnSuccess:
-        actionKind === 'dry-run' ? false : payload.closeBusinessDayOnSuccess,
-      notes: payload.notes,
-    })
-
-    if (!result) return
-
-    setLastResult(result)
-    setActionKind(null)
-    await statusQuery.refresh()
-  }
+  useEffect(() => {
+    if (!canRead || !statusQuery.status?.hasRunningRun) return
+    const intervalId = window.setInterval(() => {
+      void statusQuery.refresh()
+    }, 7000)
+    return () => window.clearInterval(intervalId)
+  }, [canRead, statusQuery.refresh, statusQuery.status?.hasRunningRun])
 
   if (!isLoadingPermissions && !canRead) {
     return <DailyClosingAccessRestricted />
@@ -92,7 +59,7 @@ export const DailyClosingDashboardPage = () => {
         <div className="space-y-3">
           {status.pendingRegisteredPayments > 0 ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
-              Hay {status.pendingRegisteredPayments} pagos REGISTERED pendientes. El cierre no
+              Hay {status.pendingRegisteredPayments} pagos registrados pendientes. El cierre no
               los efectiviza; ese flujo sigue siendo administrativo separado.
             </div>
           ) : null}
@@ -118,51 +85,35 @@ export const DailyClosingDashboardPage = () => {
               antes de intentar un nuevo cierre.
             </div>
           ) : null}
+          {status.currentRunHeartbeatAt ? (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
+              Ultimo heartbeat: {formatDateTime(status.currentRunHeartbeatAt)}
+              {status.currentRunLeaseExpiresAt
+                ? ` · Lease hasta ${formatDateTime(status.currentRunLeaseExpiresAt)}`
+                : ''}
+            </div>
+          ) : null}
+          {status.recoveryRequired ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-100">
+              La ejecucion activa requiere recuperacion. No inicie otro cierre hasta
+              resolverla.
+            </div>
+          ) : null}
         </div>
       ) : null}
 
       <DailyClosingActionsPanel
         status={status}
         canRun={canRun}
-        isLoading={statusQuery.isLoading || mutation.isLoading}
+        isLoading={statusQuery.isLoading}
         onRefresh={() => {
           void statusQuery.refresh()
         }}
-        onOpenAction={(kind) => {
-          mutation.setError(null)
-          setActionKind(kind)
-        }}
+        onOpenAction={(kind: DailyClosingActionKind) =>
+          navigate(`/loans/daily-closing/execute?action=${kind}`)
+        }
         onViewHistory={() => navigate('/loans/daily-closing/runs')}
-      />
-
-      <DailyClosingRunResultSummary result={lastResult} />
-
-      <DailyClosingRunActionModal
-        open={Boolean(actionKind)}
-        actionKind={actionKind}
-        status={status}
-        isProcessing={mutation.isLoading}
-        error={mutation.error}
-        onCancel={() => {
-          mutation.setError(null)
-          setActionKind(null)
-        }}
-        onConfirm={(payload) => {
-          void handleConfirmAction(payload)
-        }}
       />
     </div>
   )
-}
-
-const getExecutionBlockReason = (
-  status: DailyLoanClosingStatusResponse | null,
-) => {
-  if (!status) return 'No se pudo refrescar el estado operativo.'
-  if (status.hasRunningRun) return 'Ya existe un cierre en ejecucion.'
-  if (!status.isDayOpen) return 'El dia operativo esta cerrado.'
-  if (status.postingContextStatus !== 'OK') {
-    return 'El periodo contable no esta disponible para posteo automatico.'
-  }
-  return null
 }

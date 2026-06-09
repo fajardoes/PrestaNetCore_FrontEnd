@@ -55,7 +55,7 @@ export const DailyClosingStatusCards = ({
         : 'Disponible para cierre normal',
     },
     {
-      label: 'Pagos REGISTERED pendientes',
+      label: 'Pagos registrados pendientes',
       value: formatNumber(status?.pendingRegisteredPayments),
       hint: 'Advertencia informativa; no se efectivizan desde este cierre',
     },

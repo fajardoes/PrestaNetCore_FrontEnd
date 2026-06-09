@@ -14,6 +14,7 @@ import { LoanApplicationDetailPage } from '@/presentation/features/loans/applica
 import { LoanApplicationEditPage } from '@/presentation/features/loans/applications/pages/loan-application-edit-page'
 import { LoanApplicationFinancialProfilePage } from '@/presentation/features/loans/applications/pages/loan-application-financial-profile-page'
 import { DailyClosingDashboardPage } from '@/presentation/features/loans/daily-closing/pages/daily-closing-dashboard-page'
+import { DailyClosingExecutionPage } from '@/presentation/features/loans/daily-closing/pages/daily-closing-execution-page'
 import { DailyClosingRunDetailPage } from '@/presentation/features/loans/daily-closing/pages/daily-closing-run-detail-page'
 import { DailyClosingRunsPage } from '@/presentation/features/loans/daily-closing/pages/daily-closing-runs-page'
 import { LoanDetailPage } from '@/presentation/features/loans/loans-query/pages/loan-detail-page'
@@ -64,6 +65,10 @@ export const LoansRoutes = () => (
       element={<LoanApplicationEditPage />}
     />
     <Route path="/loans/daily-closing" element={<DailyClosingDashboardPage />} />
+    <Route
+      path="/loans/daily-closing/execute"
+      element={<DailyClosingExecutionPage />}
+    />
     <Route path="/loans/daily-closing/runs" element={<DailyClosingRunsPage />} />
     <Route
       path="/loans/daily-closing/runs/:id"

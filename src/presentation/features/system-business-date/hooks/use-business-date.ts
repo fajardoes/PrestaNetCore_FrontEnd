@@ -3,6 +3,10 @@ import { getBusinessDateAction } from '@/core/actions/system/get-business-date-a
 import { setBusinessDateAction } from '@/core/actions/system/set-business-date-action'
 import { setBusinessDayStatusAction } from '@/core/actions/system/set-business-day-status-action'
 import type { BusinessDateStateDto } from '@/infrastructure/interfaces/system/business-date-state.dto'
+import {
+  notifyBusinessDateChanged,
+  subscribeToBusinessDateChanges,
+} from '@/presentation/features/system-business-date/business-date-events'
 
 export const useBusinessDate = () => {
   const [state, setState] = useState<BusinessDateStateDto | null>(null)
@@ -24,6 +28,9 @@ export const useBusinessDate = () => {
 
   useEffect(() => {
     void refresh()
+    return subscribeToBusinessDateChanges(() => {
+      void refresh()
+    })
   }, [refresh])
 
   const updateBusinessDate = useCallback(async (date: string) => {
@@ -37,6 +44,7 @@ export const useBusinessDate = () => {
     }
     setState(result.data)
     await refresh()
+    notifyBusinessDateChanged()
     return true
   }, [refresh])
 
@@ -51,6 +59,7 @@ export const useBusinessDate = () => {
     }
     setState(result.data)
     await refresh()
+    notifyBusinessDateChanged()
     return true
   }, [refresh])
 

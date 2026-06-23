@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { listBankPaymentProofsAction } from '@/core/actions/payments/list-bank-payment-proofs.action'
+import { listCashCollectionPaymentsAction } from '@/core/actions/payments/list-cash-collection-payments.action'
 import { listPaymentsAction } from '@/core/actions/payments/list-payments.action'
 import type { ListPaymentsRequest } from '@/infrastructure/payments/requests/list-payments-request'
+import type { PaymentListResponse } from '@/infrastructure/payments/responses/payment-list-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
+import type { ApiResult } from '@/core/helpers/api-result'
 
 interface UsePaymentsListState {
   items: PaymentResponse[]
@@ -13,10 +17,21 @@ interface UsePaymentsListState {
 }
 
 const DEFAULT_PAGE_SIZE = 25
+export type PaymentsListSource = 'legacy' | 'cash-collections' | 'bank-proofs'
+
+const listBySource = (
+  source: PaymentsListSource,
+  params: ListPaymentsRequest,
+): Promise<ApiResult<PaymentListResponse>> => {
+  if (source === 'cash-collections') return listCashCollectionPaymentsAction(params)
+  if (source === 'bank-proofs') return listBankPaymentProofsAction(params)
+  return listPaymentsAction(params)
+}
 
 export const usePaymentsList = (
   enabled = true,
   initialFilters?: Omit<ListPaymentsRequest, 'page' | 'pageSize'>,
+  source: PaymentsListSource = 'legacy',
 ) => {
   const [filters, setFilters] = useState<ListPaymentsRequest>({
     ...initialFilters,
@@ -47,7 +62,7 @@ export const usePaymentsList = (
       }
 
       setState((prev) => ({ ...prev, isLoading: true, error: null }))
-      const result = await listPaymentsAction(nextFilters)
+      const result = await listBySource(source, nextFilters)
       if (!result.success) {
         setState((prev) => ({
           ...prev,
@@ -68,7 +83,7 @@ export const usePaymentsList = (
         error: null,
       })
     },
-    [enabled],
+    [enabled, source],
   )
 
   useEffect(() => {

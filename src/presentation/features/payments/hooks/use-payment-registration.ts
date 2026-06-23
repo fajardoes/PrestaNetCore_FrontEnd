@@ -1,6 +1,12 @@
 import { useCallback, useState } from 'react'
+import { registerBankPaymentProofAction } from '@/core/actions/payments/register-bank-payment-proof.action'
+import { registerCashCollectionPaymentAction } from '@/core/actions/payments/register-cash-collection-payment.action'
 import { registerPaymentAction } from '@/core/actions/payments/register-payment.action'
-import type { RegisterPaymentRequest } from '@/infrastructure/payments/requests/register-payment-request'
+import type {
+  RegisterBankPaymentProofRequest,
+  RegisterCashCollectionPaymentRequest,
+  RegisterPaymentRequest,
+} from '@/infrastructure/payments/requests/register-payment-request'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 
 export const usePaymentRegistration = () => {
@@ -24,6 +30,41 @@ export const usePaymentRegistration = () => {
     return result
   }, [])
 
+  const submitCashCollection = useCallback(
+    async (payload: RegisterCashCollectionPaymentRequest) => {
+      setIsSubmitting(true)
+      setError(null)
+      const result = await registerCashCollectionPaymentAction(payload)
+      setIsSubmitting(false)
+
+      if (!result.success) {
+        setLastPayment(null)
+        setError(result.error)
+        return result
+      }
+
+      setLastPayment(result.data)
+      return result
+    },
+    [],
+  )
+
+  const submitBankProof = useCallback(async (payload: RegisterBankPaymentProofRequest) => {
+    setIsSubmitting(true)
+    setError(null)
+    const result = await registerBankPaymentProofAction(payload)
+    setIsSubmitting(false)
+
+    if (!result.success) {
+      setLastPayment(null)
+      setError(result.error)
+      return result
+    }
+
+    setLastPayment(result.data)
+    return result
+  }, [])
+
   return {
     isSubmitting,
     error,
@@ -31,5 +72,7 @@ export const usePaymentRegistration = () => {
     setError,
     setLastPayment,
     submit,
+    submitCashCollection,
+    submitBankProof,
   }
 }

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReversePaymentRequest } from '@/infrastructure/payments/requests/reverse-payment-request'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
-import { DatePicker } from '@/presentation/share/components/date-picker'
 import { formatCurrency, formatDate, translatePaymentStatus } from './payment-ui'
 
 interface ReversePaymentModalProps {
@@ -16,13 +15,6 @@ interface ReversePaymentModalProps {
   onSubmit: (payload: ReversePaymentRequest) => Promise<boolean>
 }
 
-const toDate = (value?: string | null) => {
-  if (!value) return undefined
-  const [year, month, day] = value.split('-').map(Number)
-  if (!year || !month || !day) return undefined
-  return new Date(year, month - 1, day)
-}
-
 export const ReversePaymentModal = ({
   open,
   payment,
@@ -33,35 +25,36 @@ export const ReversePaymentModal = ({
   onClose,
   onSubmit,
 }: ReversePaymentModalProps) => {
-  const [reversalDate, setReversalDate] = useState('')
   const [reason, setReason] = useState('')
   const [validationError, setValidationError] = useState<string | null>(null)
+  const reversalDate = businessDate || payment?.businessDate || ''
 
   useEffect(() => {
     if (!open) return
-    setReversalDate(businessDate || payment?.businessDate || '')
     setReason('')
     setValidationError(null)
-  }, [businessDate, open, payment?.businessDate])
-
-  const maxDate = useMemo(
-    () => toDate(businessDate || payment?.businessDate),
-    [businessDate, payment?.businessDate],
-  )
+  }, [open])
 
   const warning = useMemo(() => {
+    const flow = payment?.paymentFlowCode?.trim().toUpperCase()
     const status = payment?.statusCode?.trim().toUpperCase()
+    if (flow === 'BANK_PROOF' && status === 'EFFECTIVIZED') {
+      return 'Se revertirán las aplicaciones del pago, el asiento de registro y el asiento de efectivización bancaria. La exposición no se modificará.'
+    }
+    if (flow === 'BANK_PROOF' && status === 'REGISTERED') {
+      return 'Se revertirán las aplicaciones del pago y el asiento de registro. La exposición no se modificará.'
+    }
+    if (flow === 'CASH_COLLECTION' && status === 'SETTLED') {
+      return 'Se revertirá el cronograma y el asiento de registro. La exposición no se liberará porque ya fue liberada en la liquidación.'
+    }
     if (status === 'EFFECTIVIZED') {
       return 'Se revertirá el cronograma, el asiento de efectivización y el asiento de registro. La exposición no se modificará porque ya fue liberada.'
     }
     return 'Se revertirá el cronograma, el asiento de registro y se liberará exposición pendiente.'
-  }, [payment?.statusCode])
+  }, [payment?.paymentFlowCode, payment?.statusCode])
 
   const validate = () => {
-    if (!reversalDate) return 'Selecciona la fecha de reversa.'
-    if (businessDate && reversalDate > businessDate) {
-      return 'La fecha de reversa no puede ser mayor que la fecha operativa.'
-    }
+    if (!reversalDate) return 'No hay fecha operativa disponible para ejecutar la reversa.'
     if (!reason.trim()) return 'Ingresa el motivo de la reversa.'
     if (reason.trim().length > 500) return 'El motivo no puede superar 500 caracteres.'
     return null
@@ -87,7 +80,7 @@ export const ReversePaymentModal = ({
     <ConfirmModal
       open={open}
       title="Reversar pago"
-      description="Confirma esta acción sensible. El backend generará los movimientos de reversa correspondientes."
+      description="Esta acción reversará las aplicaciones del pago y su impacto contable. El pago quedará en estado REVERSED y no será eliminado."
       confirmLabel="Reversar"
       cancelLabel="Cancelar"
       panelClassName="max-w-3xl"
@@ -123,15 +116,12 @@ export const ReversePaymentModal = ({
             </p>
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Fecha de reversa
-            </label>
-            <DatePicker
-              value={reversalDate}
-              onChange={setReversalDate}
-              maxDate={maxDate}
-              disabled={isSubmitting}
-            />
+            </p>
+            <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+              {formatDate(reversalDate)}
+            </p>
           </div>
           <div className="space-y-1 md:col-span-2">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">

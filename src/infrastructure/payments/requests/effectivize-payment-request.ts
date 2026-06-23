@@ -5,3 +5,11 @@ export interface EffectivizePaymentRequest {
   bankDepositDate?: string | null
   notes?: string | null
 }
+
+export interface ApproveBankPaymentProofRequest {
+  bankGlAccountId: string
+  effectivizationDate: string
+  verifiedBankDepositDate?: string | null
+  verifiedBankReferenceNumber?: string | null
+  reviewNotes?: string | null
+}

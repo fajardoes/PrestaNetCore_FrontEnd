@@ -141,7 +141,7 @@ export const LoanDetailPage = () => {
           <QueryMetricCard
             label="Capital"
             value={formatCurrency(loan.principal)}
-            hint={`Solicitud vinculada: ${loan.applicationId}`}
+            hint={loan.loanProductName?.trim() || 'Producto no disponible'}
             accent="blue"
           />
           <QueryMetricCard
@@ -172,7 +172,6 @@ export const LoanDetailPage = () => {
         >
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <QueryDetailField label="No. de préstamo" value={loan.loanNo?.trim() || '—'} />
-            <QueryDetailField label="ID del préstamo" value={loan.id} />
             <QueryDetailField
               label="Cliente"
               value={
@@ -210,8 +209,6 @@ export const LoanDetailPage = () => {
               label="Vencimiento contractual"
               value={formatDate(loan.maturityDate)}
             />
-            <QueryDetailField label="ID cliente" value={loan.clientId} />
-            <QueryDetailField label="ID producto" value={loan.loanProductId} />
           </div>
         </QuerySectionCard>
 

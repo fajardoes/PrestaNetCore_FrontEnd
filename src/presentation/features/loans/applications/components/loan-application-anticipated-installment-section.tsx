@@ -35,12 +35,14 @@ interface Props {
   isSaving: boolean
   error: string | null
   canManage: boolean
-  canCancel: boolean
+  suggestedAmount: number | null
   onPreview: (amount: number) => Promise<ApiResult<AnticipatedInstallmentLimitPreviewResponse>>
   onSave: (payload: UpsertAnticipatedInstallmentRequest) => Promise<ApiResult<AnticipatedInstallmentResponse>>
   onCancel: (payload: CancelAnticipatedInstallmentRequest) => Promise<ApiResult<AnticipatedInstallmentResponse>>
   onRefreshActions: () => Promise<void>
 }
+
+type UpsertMode = 'create' | 'edit' | 'reactivate'
 
 export const LoanApplicationAnticipatedInstallmentSection = ({
   data,
@@ -49,16 +51,24 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
   isSaving,
   error,
   canManage,
-  canCancel,
+  suggestedAmount,
   onPreview,
   onSave,
   onCancel,
   onRefreshActions,
 }: Props) => {
-  const [editOpen, setEditOpen] = useState(false)
+  const [upsertMode, setUpsertMode] = useState<UpsertMode | null>(null)
   const [cancelOpen, setCancelOpen] = useState(false)
   const [preview, setPreview] = useState<AnticipatedInstallmentLimitPreviewResponse | null>(null)
   const [operationError, setOperationError] = useState<string | null>(null)
+  const isUpsertOpen = upsertMode !== null
+  const statusCode = data?.statusCode?.trim().toUpperCase()
+  const isPending = statusCode === 'PENDING'
+  const isCancelled = statusCode === 'CANCELLED'
+  const canCreate = !data && canManage
+  const canEdit = Boolean(data && isPending && data.canModify)
+  const canCancelPending = Boolean(data && isPending && data.canCancel)
+  const canReactivate = Boolean(data && isCancelled && canManage)
   const upsertForm = useForm<AnticipatedInstallmentUpsertValues>({
     resolver: yupResolver(anticipatedInstallmentUpsertSchema),
     defaultValues: { amount: 0, reason: null, notes: null },
@@ -69,15 +79,15 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
   })
 
   useEffect(() => {
-    if (!editOpen) return
+    if (!isUpsertOpen) return
     upsertForm.reset({
-      amount: data?.currentAmount ?? 0,
+      amount: data?.currentAmount ?? suggestedAmount ?? 0,
       reason: null,
       notes: data?.notes ?? null,
     })
     setPreview(null)
     setOperationError(null)
-  }, [data, editOpen, upsertForm])
+  }, [data, isUpsertOpen, suggestedAmount, upsertForm])
 
   useEffect(() => {
     if (cancelOpen) {
@@ -88,6 +98,11 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
 
   const submitUpsert = upsertForm.handleSubmit(async (values) => {
     setOperationError(null)
+    const reason = values.reason?.trim() || null
+    if (upsertMode === 'reactivate' && !reason) {
+      upsertForm.setError('reason', { message: 'Debes ingresar un motivo.' })
+      return
+    }
     const previewResult = await onPreview(values.amount)
     if (!previewResult.success) {
       setOperationError(previewResult.error)
@@ -98,16 +113,16 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
     if (!previewResult.data.isAllowed) return
     const result = await onSave({
       amount: values.amount,
-      reason: values.reason?.trim() || null,
+      reason,
       notes: values.notes?.trim() || null,
-      idempotencyKey: null,
+      idempotencyKey: createIdempotencyKey(),
     })
     if (!result.success) {
       setOperationError(result.error)
       if (result.status === 403) await onRefreshActions()
       return
     }
-    setEditOpen(false)
+    setUpsertMode(null)
     await onRefreshActions()
   })
 
@@ -123,6 +138,26 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
     await onRefreshActions()
   })
 
+  const openUpsert = (mode: UpsertMode) => {
+    setUpsertMode(mode)
+  }
+
+  const closeUpsert = () => {
+    setUpsertMode(null)
+  }
+
+  const upsertTitle = upsertMode === 'reactivate'
+    ? 'Reactivar cuota anticipada'
+    : data
+      ? 'Editar cuota anticipada'
+      : 'Registrar cuota anticipada'
+  const upsertDescription = upsertMode === 'reactivate'
+    ? 'La cuota volverá a quedar pendiente y será considerada nuevamente en preview/desembolso.'
+    : 'El límite permitido se consulta antes de registrar el monto.'
+  const upsertConfirmLabel = upsertMode === 'reactivate' ? 'Validar y reactivar' : 'Validar y guardar'
+  const amountLabel = upsertMode === 'reactivate' ? 'Nuevo monto *' : 'Monto *'
+  const reasonLabel = upsertMode === 'reactivate' ? 'Motivo *' : 'Motivo'
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -133,12 +168,22 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
           </p>
         </div>
         <div className="flex gap-2">
-          {canManage && (!data || data.canModify) ? (
-            <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={() => setEditOpen(true)}>
-              {data ? 'Editar monto' : 'Registrar monto'}
+          {canCreate ? (
+            <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={() => openUpsert('create')}>
+              Registrar monto
             </button>
           ) : null}
-          {canCancel && data?.canCancel ? (
+          {canEdit ? (
+            <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={() => openUpsert('edit')}>
+              Editar monto
+            </button>
+          ) : null}
+          {canReactivate ? (
+            <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={() => openUpsert('reactivate')}>
+              Reactivar cuota anticipada
+            </button>
+          ) : null}
+          {canCancelPending ? (
             <button type="button" className="btn-secondary px-3 py-2 text-sm" onClick={() => setCancelOpen(true)}>
               Cancelar cuota
             </button>
@@ -160,6 +205,16 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
               {anticipatedInstallmentStatusLabel(data.statusCode, data.statusName)}
             </span>
           </div>
+          {isPending ? (
+            <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+              Cuota anticipada pendiente.
+            </p>
+          ) : null}
+          {isCancelled ? (
+            <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+              Cuota anticipada cancelada. Puede reactivarse antes del desembolso si tiene permisos.
+            </p>
+          ) : null}
           <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
             <Metric label="Monto original" value={formatCurrency(data.originalAmount)} />
             <Metric label="Monto actual" value={formatCurrency(data.currentAmount)} />
@@ -193,12 +248,12 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
         </div>
       ) : null}
 
-      <ConfirmModal open={editOpen} title={data ? 'Editar cuota anticipada' : 'Registrar cuota anticipada'} description="El límite permitido se consulta antes de registrar el monto." confirmLabel="Validar y guardar" isProcessing={isSaving} onCancel={() => setEditOpen(false)} onConfirm={() => void submitUpsert()}>
+      <ConfirmModal open={isUpsertOpen} title={upsertTitle} description={upsertDescription} confirmLabel={upsertConfirmLabel} isProcessing={isSaving} onCancel={closeUpsert} onConfirm={() => void submitUpsert()}>
         <form className="space-y-3" onSubmit={submitUpsert}>
-          <Field label="Monto *" error={upsertForm.formState.errors.amount?.message}>
+          <Field label={amountLabel} error={upsertForm.formState.errors.amount?.message}>
             <input type="number" step="0.01" className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" {...upsertForm.register('amount')} />
           </Field>
-          <Field label="Motivo" error={upsertForm.formState.errors.reason?.message}>
+          <Field label={reasonLabel} error={upsertForm.formState.errors.reason?.message}>
             <textarea rows={2} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" {...upsertForm.register('reason')} />
           </Field>
           <Field label="Notas" error={upsertForm.formState.errors.notes?.message}>
@@ -214,7 +269,7 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
         </form>
       </ConfirmModal>
 
-      <ConfirmModal open={cancelOpen} title="Cancelar cuota anticipada" description="La cuota permanecerá en el historial como cancelada. Debes registrar el motivo." confirmLabel="Cancelar cuota" isProcessing={isSaving} onCancel={() => setCancelOpen(false)} onConfirm={() => void submitCancellation()}>
+      <ConfirmModal open={cancelOpen} title="Cancelar cuota anticipada" description="La cuota quedará cancelada y no será descontada en el desembolso mientras permanezca en estado cancelado." confirmLabel="Cancelar cuota" isProcessing={isSaving} onCancel={() => setCancelOpen(false)} onConfirm={() => void submitCancellation()}>
         <form onSubmit={submitCancellation}>
           <Field label="Motivo *" error={cancelForm.formState.errors.reason?.message}>
             <textarea rows={3} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100" {...cancelForm.register('reason')} />
@@ -224,6 +279,13 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
       </ConfirmModal>
     </section>
   )
+}
+
+const createIdempotencyKey = () => {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID()
+  }
+  return `frontend-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
 const Metric = ({ label, value }: { label: string; value: string }) => (

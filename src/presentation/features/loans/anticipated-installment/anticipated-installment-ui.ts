@@ -31,6 +31,7 @@ export const anticipatedInstallmentEventLabel = (code: string) => {
   const labels: Record<string, string> = {
     CREATED: 'Registrada',
     UPDATED: 'Actualizada',
+    REACTIVATED: 'Reactivada',
     CANCELLED: 'Cancelada',
     ACCOUNTED_ON_DISBURSEMENT: 'Contabilizada al desembolso',
     PARTIALLY_APPLIED: 'Aplicación parcial',

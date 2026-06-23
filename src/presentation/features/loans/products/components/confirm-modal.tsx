@@ -9,6 +9,7 @@ interface ConfirmModalProps {
   panelClassName?: string
   isProcessing?: boolean
   confirmDisabled?: boolean
+  showConfirm?: boolean
   children?: ReactNode
   onConfirm: () => void
   onCancel: () => void
@@ -23,6 +24,7 @@ export const ConfirmModal = ({
   panelClassName,
   isProcessing,
   confirmDisabled,
+  showConfirm = true,
   children,
   onConfirm,
   onCancel,
@@ -54,14 +56,16 @@ export const ConfirmModal = ({
           >
             {cancelLabel}
           </button>
-          <button
-            type="button"
-            className="btn-primary px-4 py-2 text-sm"
-            onClick={onConfirm}
-            disabled={isProcessing || confirmDisabled}
-          >
-            {isProcessing ? 'Procesando...' : confirmLabel}
-          </button>
+          {showConfirm ? (
+            <button
+              type="button"
+              className="btn-primary px-4 py-2 text-sm"
+              onClick={onConfirm}
+              disabled={isProcessing || confirmDisabled}
+            >
+              {isProcessing ? 'Procesando...' : confirmLabel}
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

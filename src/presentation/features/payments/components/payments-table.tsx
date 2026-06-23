@@ -1,4 +1,4 @@
-import { CheckCircle2, Eye, RotateCcw } from 'lucide-react'
+import { CheckCircle2, Eye, Printer, RotateCcw, XCircle } from 'lucide-react'
 import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
@@ -10,6 +10,7 @@ import {
   translatePaymentStatus,
   translatePaymentType,
 } from './payment-ui'
+import { isPaymentReceiptPrintable } from './payment-ui'
 
 interface PaymentsTableProps {
   items: PaymentResponse[]
@@ -22,7 +23,10 @@ interface PaymentsTableProps {
   onPageChange: (page: number) => void
   onView: (payment: PaymentResponse) => void
   onEffectivize?: (payment: PaymentResponse) => void
+  onSettle?: (payment: PaymentResponse) => void
+  onReject?: (payment: PaymentResponse) => void
   onReverse?: (payment: PaymentResponse) => void
+  onPrintReceipt?: (payment: PaymentResponse) => void
 }
 
 const formatShortValue = (value?: string | null) => value?.trim() || '—'
@@ -38,9 +42,78 @@ export const PaymentsTable = ({
   onPageChange,
   onView,
   onEffectivize,
+  onSettle,
+  onReject,
   onReverse,
+  onPrintReceipt,
 }: PaymentsTableProps) => {
   const columns = [
+    {
+      key: 'actions',
+      header: 'Acciones',
+      render: (item: PaymentResponse) => (
+        <span className="inline-flex items-center gap-1">
+          <button
+            type="button"
+            className="btn-table-action w-7 px-0"
+            title="Ver detalle"
+            onClick={() => onView(item)}
+          >
+            <Eye className="mx-auto h-3.5 w-3.5" />
+          </button>
+          {isActionEnabled(actionsByPaymentId?.[item.id], 'settle') ? (
+            <button
+              type="button"
+              className="btn-table-action w-7 px-0"
+              title={getActionTitle(actionsByPaymentId?.[item.id], 'settle', 'Liquidar')}
+              onClick={() => onSettle?.(item)}
+            >
+              <CheckCircle2 className="mx-auto h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {isActionEnabled(actionsByPaymentId?.[item.id], 'effectivize') ? (
+            <button
+              type="button"
+              className="btn-table-action w-7 px-0"
+              title={getActionTitle(actionsByPaymentId?.[item.id], 'effectivize', 'Aprobar')}
+              onClick={() => onEffectivize?.(item)}
+            >
+              <CheckCircle2 className="mx-auto h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {isActionEnabled(actionsByPaymentId?.[item.id], 'reject') ? (
+            <button
+              type="button"
+              className="btn-table-action w-7 px-0"
+              title={getActionTitle(actionsByPaymentId?.[item.id], 'reject', 'Rechazar')}
+              onClick={() => onReject?.(item)}
+            >
+              <XCircle className="mx-auto h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {isActionEnabled(actionsByPaymentId?.[item.id], 'reverse') ? (
+            <button
+              type="button"
+              className="btn-table-action w-7 px-0"
+              title={getActionTitle(actionsByPaymentId?.[item.id], 'reverse', 'Reversar')}
+              onClick={() => onReverse?.(item)}
+            >
+              <RotateCcw className="mx-auto h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {isPaymentReceiptPrintable(item) ? (
+            <button
+              type="button"
+              className="btn-table-action w-7 px-0"
+              title="Imprimir recibo"
+              onClick={() => onPrintReceipt?.(item)}
+            >
+              <Printer className="mx-auto h-3.5 w-3.5" />
+            </button>
+          ) : null}
+        </span>
+      ),
+    },
     {
       key: 'receipt',
       header: 'Recibo interno',
@@ -150,40 +223,6 @@ export const PaymentsTable = ({
       getTitle: (item: PaymentResponse) =>
         formatShortValue(item.effectivizationJournalEntryNumber),
     },
-    {
-      key: 'actions',
-      header: 'Acciones',
-      render: (item: PaymentResponse) => (
-        <span className="inline-flex items-center gap-1">
-          <button
-            type="button"
-            className="btn-table-action w-7 px-0"
-            title="Ver detalle"
-            onClick={() => onView(item)}
-          >
-            <Eye className="mx-auto h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            className="btn-table-action w-7 px-0 disabled:cursor-not-allowed disabled:opacity-50"
-            title={getActionTitle(actionsByPaymentId?.[item.id], 'effectivize')}
-            disabled={!isActionEnabled(actionsByPaymentId?.[item.id], 'effectivize')}
-            onClick={() => onEffectivize?.(item)}
-          >
-            <CheckCircle2 className="mx-auto h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            className="btn-table-action w-7 px-0 disabled:cursor-not-allowed disabled:opacity-50"
-            title={getActionTitle(actionsByPaymentId?.[item.id], 'reverse')}
-            disabled={!isActionEnabled(actionsByPaymentId?.[item.id], 'reverse')}
-            onClick={() => onReverse?.(item)}
-          >
-            <RotateCcw className="mx-auto h-3.5 w-3.5" />
-          </button>
-        </span>
-      ),
-    },
   ]
 
   return (
@@ -218,15 +257,16 @@ export const PaymentsTable = ({
 
 const isActionEnabled = (
   actions: PaymentActionsResponse | undefined,
-  code: 'effectivize' | 'reverse',
+  code: string,
 ) => actions?.allowedActions.find((action) => action.code === code)?.enabled ?? false
 
 const getActionTitle = (
   actions: PaymentActionsResponse | undefined,
-  code: 'effectivize' | 'reverse',
+  code: string,
+  fallbackLabel: string,
 ) => {
   const action = actions?.allowedActions.find((item) => item.code === code)
-  if (!action) return code === 'effectivize' ? 'Efectivizar no disponible' : 'Reversar no disponible'
+  if (!action) return `${fallbackLabel} no disponible`
   if (!action.enabled) return action.reason || `${action.label} no disponible`
   return action.label
 }

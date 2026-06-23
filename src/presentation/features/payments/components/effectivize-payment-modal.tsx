@@ -60,11 +60,21 @@ export const EffectivizePaymentModal = ({
     if (!open) return
     setBankAccount(null)
     setEffectivizationDate(businessDate || payment?.businessDate || '')
-    setBankReferenceNumber('')
-    setBankDepositDate('')
+    setBankReferenceNumber(
+      payment?.reportedBankReferenceNumber || payment?.bankReferenceNumber || '',
+    )
+    setBankDepositDate(payment?.reportedBankDepositDate || payment?.bankDepositDate || '')
     setNotes('')
     setValidationError(null)
-  }, [businessDate, open, payment?.businessDate])
+  }, [
+    businessDate,
+    open,
+    payment?.bankDepositDate,
+    payment?.bankReferenceNumber,
+    payment?.businessDate,
+    payment?.reportedBankDepositDate,
+    payment?.reportedBankReferenceNumber,
+  ])
 
   const loadAccountOptions = useCallback(
     async (inputValue: string) => {
@@ -90,6 +100,9 @@ export const EffectivizePaymentModal = ({
     if (bankReferenceNumber.trim().length > 100) {
       return 'La referencia bancaria no puede superar 100 caracteres.'
     }
+    if (businessDate && bankDepositDate && bankDepositDate > businessDate) {
+      return 'La fecha de depósito no puede ser mayor que la fecha operativa.'
+    }
     return null
   }
 
@@ -112,13 +125,18 @@ export const EffectivizePaymentModal = ({
   }
 
   if (!payment) return null
+  const isBankProof = payment.paymentFlowCode?.trim().toUpperCase() === 'BANK_PROOF'
 
   return (
     <ConfirmModal
       open={open}
-      title="Efectivizar pago"
-      description="Confirma el depósito administrativo y selecciona la cuenta de banco que recibirá el traslado contable."
-      confirmLabel="Efectivizar"
+      title={isBankProof ? 'Aprobar abono bancario' : 'Efectivizar pago'}
+      description={
+        isBankProof
+          ? 'Confirma la conciliación contra banco. El backend generará el recibo interno, aplicará el pago y contabilizará la transitoria bancaria.'
+          : 'Confirma el depósito administrativo y selecciona la cuenta de banco que recibirá el traslado contable.'
+      }
+      confirmLabel={isBankProof ? 'Aprobar' : 'Efectivizar'}
       cancelLabel="Cancelar"
       panelClassName="max-w-3xl"
       isProcessing={isSubmitting}
@@ -185,7 +203,7 @@ export const EffectivizePaymentModal = ({
 
           <div className="space-y-1">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              Referencia bancaria
+              {isBankProof ? 'Referencia bancaria verificada' : 'Referencia bancaria'}
             </label>
             <input
               value={bankReferenceNumber}
@@ -198,12 +216,12 @@ export const EffectivizePaymentModal = ({
 
           <div className="space-y-1">
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              Fecha de depósito
+              {isBankProof ? 'Fecha de depósito verificada' : 'Fecha de depósito'}
             </label>
             <DatePicker
               value={bankDepositDate}
               onChange={setBankDepositDate}
-              allowFutureDates
+              maxDate={maxDate}
               disabled={isSubmitting}
             />
           </div>

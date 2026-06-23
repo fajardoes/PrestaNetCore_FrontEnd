@@ -7,6 +7,7 @@ import {
   FileSpreadsheet,
   Pencil,
   Printer,
+  ReceiptText,
   Send,
   XCircle,
 } from 'lucide-react'
@@ -30,11 +31,14 @@ interface LoanApplicationHeaderCardProps {
   canPreview: boolean
   canPrint: boolean
   canGenerateScoring?: boolean
+  canGenerateSettlement?: boolean
   isProcessingWorkflow?: boolean
   isPrinting?: boolean
+  isSettlementLoading?: boolean
   onOpenFinancialProfile: () => void
   onOpenPaymentPlan: () => void
   onPrint: () => void
+  onGenerateSettlement: () => void
   onGenerateScoring: () => void
   onSubmit: () => void
   onApprove: () => void
@@ -56,11 +60,14 @@ export const LoanApplicationHeaderCard = ({
   canPreview,
   canPrint,
   canGenerateScoring = false,
+  canGenerateSettlement = false,
   isProcessingWorkflow = false,
   isPrinting = false,
+  isSettlementLoading = false,
   onOpenFinancialProfile,
   onOpenPaymentPlan,
   onPrint,
+  onGenerateSettlement,
   onGenerateScoring,
   onSubmit,
   onApprove,
@@ -155,6 +162,17 @@ export const LoanApplicationHeaderCard = ({
                 >
                   <Printer className="h-4 w-4" />
                   {isPrinting ? 'Generando...' : 'Imprimir'}
+                </button>
+              ) : null}
+              {canGenerateSettlement ? (
+                <button
+                  type="button"
+                  className={secondaryActionClassName}
+                  onClick={onGenerateSettlement}
+                  disabled={isProcessingWorkflow || isSettlementLoading}
+                >
+                  <ReceiptText className="h-4 w-4" />
+                  {isSettlementLoading ? 'Generando liquidación...' : 'Generar liquidación'}
                 </button>
               ) : null}
               {canGenerateScoring ? (

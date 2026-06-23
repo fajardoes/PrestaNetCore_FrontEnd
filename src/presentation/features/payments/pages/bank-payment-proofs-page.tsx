@@ -1,42 +1,48 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPaymentActionsAction } from '@/core/actions/payments/get-payment-actions.action'
-import type { CollectionChannelResponse } from '@/infrastructure/collection-channels/responses/collection-channel-response'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
 import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
-import { useBusinessDate } from '@/presentation/features/system-business-date/hooks/use-business-date'
+import { EffectivizePaymentModal } from '@/presentation/features/payments/components/effectivize-payment-modal'
+import { PaymentsTable } from '@/presentation/features/payments/components/payments-table'
+import { RejectBankPaymentProofModal } from '@/presentation/features/payments/components/reject-bank-payment-proof-modal'
 import { ReversePaymentModal } from '@/presentation/features/payments/components/reverse-payment-modal'
-import { SettleCashPaymentModal } from '@/presentation/features/payments/components/settle-cash-payment-modal'
+import { BANK_PAYMENT_TYPE_OPTIONS } from '@/presentation/features/payments/components/payment-ui'
 import { usePaymentMutations } from '@/presentation/features/payments/hooks/use-payment-mutations'
 import { usePaymentReceiptReport } from '@/presentation/features/payments/hooks/use-payment-receipt-report'
 import { usePaymentSupportData } from '@/presentation/features/payments/hooks/use-payment-support-data'
 import { usePaymentsList } from '@/presentation/features/payments/hooks/use-payments-list'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
+import { useBusinessDate } from '@/presentation/features/system-business-date/hooks/use-business-date'
 import { useNotifications } from '@/providers/NotificationProvider'
-import { DatePicker } from '@/presentation/share/components/date-picker'
 import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/components/async-select'
+import { DatePicker } from '@/presentation/share/components/date-picker'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import SelectField from '@/presentation/share/components/select'
-import { PaymentsTable } from '@/presentation/features/payments/components/payments-table'
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50]
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Todos' },
   { value: 'REGISTERED', label: 'Registrado' },
-  { value: 'SETTLED', label: 'Liquidado' },
+  { value: 'PENDING_REVIEW', label: 'Pendiente de revisión' },
+  { value: 'EFFECTIVIZED', label: 'Aprobado' },
+  { value: 'REJECTED', label: 'Rechazado' },
   { value: 'REVERSED', label: 'Reversado' },
 ]
 
-export const PaymentsListPage = () => {
+const PAYMENT_TYPE_FILTER_OPTIONS = [{ value: '', label: 'Todos' }, ...BANK_PAYMENT_TYPE_OPTIONS]
+
+export const BankPaymentProofsPage = () => {
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const { hasPermission, isLoading: isLoadingPermissions } = useUserPermissions()
-  const canReadAll = hasPermission('cash_collections.payments.read_all')
-  const canRead = hasPermission('cash_collections.payments.read') || canReadAll
-  const payments = usePaymentsList(canRead, undefined, 'cash-collections')
+  const canReadAll = hasPermission('bank_payment_proofs.read_all')
+  const canRead = hasPermission('bank_payment_proofs.read') || canReadAll
+  const payments = usePaymentsList(canRead, undefined, 'bank-proofs')
   const supportData = usePaymentSupportData()
   const businessDate = useBusinessDate()
   const mutations = usePaymentMutations()
@@ -46,20 +52,17 @@ export const PaymentsListPage = () => {
   const [loanId, setLoanId] = useState<string | undefined>(undefined)
   const [clientOption, setClientOption] =
     useState<AsyncSelectOption<ClientListItem> | null>(null)
-  const [channelId, setChannelId] = useState('')
   const [registeredByOption, setRegisteredByOption] =
     useState<AsyncSelectOption<SecurityUser> | null>(null)
   const [statusCode, setStatusCode] = useState('')
+  const [paymentTypeCode, setPaymentTypeCode] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [rowActions, setRowActions] = useState<Record<string, PaymentActionsResponse>>({})
   const [selectedPayment, setSelectedPayment] = useState<PaymentResponse | null>(null)
-  const [settleOpen, setSettleOpen] = useState(false)
+  const [approveOpen, setApproveOpen] = useState(false)
+  const [rejectOpen, setRejectOpen] = useState(false)
   const [reverseOpen, setReverseOpen] = useState(false)
-
-  useEffect(() => {
-    void supportData.loadChannels()
-  }, [supportData.loadChannels])
 
   useEffect(() => {
     let ignore = false
@@ -68,7 +71,6 @@ export const PaymentsListPage = () => {
         setRowActions({})
         return
       }
-
       const entries = await Promise.all(
         payments.items.map(async (payment) => {
           const result = await getPaymentActionsAction(payment.id)
@@ -87,19 +89,6 @@ export const PaymentsListPage = () => {
       ignore = true
     }
   }, [canRead, payments.items])
-
-  const channelOptions = useMemo(
-    () =>
-      [
-        { value: '', label: 'Todos' },
-        ...supportData.channels.map((channel) => ({
-          value: channel.id,
-          label: channel.name,
-          meta: channel,
-        })),
-      ] as Array<{ value: string; label: string; meta?: CollectionChannelResponse }>,
-    [supportData.channels],
-  )
 
   const loadClientOptions = async (inputValue: string) => {
     const results = await supportData.searchClients(inputValue)
@@ -138,9 +127,9 @@ export const PaymentsListPage = () => {
     payments.applyFilters({
       loanId: nextLoanId,
       clientId: clientOption?.value || undefined,
-      collectionChannelId: channelId || undefined,
       registeredByUserId: canReadAll ? registeredByOption?.value || undefined : undefined,
       statusCode: statusCode || undefined,
+      paymentTypeCode: paymentTypeCode || undefined,
       from: from || undefined,
       to: to || undefined,
     })
@@ -150,17 +139,17 @@ export const PaymentsListPage = () => {
     setLoanCode('')
     setLoanId(undefined)
     setClientOption(null)
-    setChannelId('')
     setRegisteredByOption(null)
     setStatusCode('')
+    setPaymentTypeCode('')
     setFrom('')
     setTo('')
     payments.applyFilters({
       loanId: undefined,
       clientId: undefined,
-      collectionChannelId: undefined,
       registeredByUserId: undefined,
       statusCode: undefined,
+      paymentTypeCode: undefined,
       from: undefined,
       to: undefined,
     })
@@ -168,7 +157,7 @@ export const PaymentsListPage = () => {
 
   const getActionDisabledReason = (
     payment: PaymentResponse,
-    code: 'settle' | 'reverse',
+    code: 'effectivize' | 'reject' | 'reverse',
   ) => {
     const action = rowActions[payment.id]?.allowedActions.find((item) => item.code === code)
     if (action?.enabled) return null
@@ -180,23 +169,11 @@ export const PaymentsListPage = () => {
     setSelectedPayment(null)
   }
 
-  const handleSettle = async (payment: PaymentResponse) => {
-    mutations.setError(null)
-    setSelectedPayment(payment)
-    setSettleOpen(true)
-  }
-
-  const handleReverse = async (payment: PaymentResponse) => {
-    mutations.setError(null)
-    setSelectedPayment(payment)
-    setReverseOpen(true)
-  }
-
   if (!isLoadingPermissions && !canRead) {
     return (
       <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
         <p className="font-semibold">Acceso restringido</p>
-        <p className="text-sm">Tu usuario no tiene permiso para consultar pagos.</p>
+        <p className="text-sm">Tu usuario no tiene permiso para consultar abonos bancarios.</p>
       </div>
     )
   }
@@ -206,18 +183,18 @@ export const PaymentsListPage = () => {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
-            Pagos en efectivo
+            Abonos bancarios
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Consulta efectivo cobrado por cobradores, liquidación por caja y reversas.
+            Gestiona comprobantes pendientes de revisión, aprobación bancaria y reversas.
           </p>
         </div>
         <button
           type="button"
           className="btn-primary px-4 py-2 text-sm"
-          onClick={() => navigate('/cash-collections/payments/new')}
+          onClick={() => navigate('/bank-payment-proofs/new')}
         >
-          Registrar efectivo
+          Registrar comprobante
         </button>
       </div>
 
@@ -241,10 +218,7 @@ export const PaymentsListPage = () => {
         }
       >
         <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Cliente
-            </label>
+          <FilterLabel label="Cliente">
             <AsyncSelect<ClientListItem>
               value={clientOption}
               onChange={(option) => setClientOption(option)}
@@ -252,32 +226,13 @@ export const PaymentsListPage = () => {
               defaultOptions
               isClearable
               isLoading={supportData.isLoadingClients}
-              inputId="payments-filter-client"
-              instanceId="payments-filter-client"
+              inputId="bank-proofs-filter-client"
+              instanceId="bank-proofs-filter-client"
               placeholder="Buscar cliente"
             />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Canal
-            </label>
-            <SelectField
-              inputId="payments-filter-channel"
-              instanceId="payments-filter-channel"
-              value={channelOptions.find((option) => option.value === channelId) ?? null}
-              onChange={(option) => setChannelId(option?.value ?? '')}
-              options={channelOptions}
-              placeholder="Todos"
-              isLoading={supportData.isLoadingChannels}
-            />
-          </div>
-
+          </FilterLabel>
           {canReadAll ? (
-            <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Usuario registrador
-              </label>
+            <FilterLabel label="Usuario registrador">
               <AsyncSelect<SecurityUser>
                 value={registeredByOption}
                 onChange={(option) => setRegisteredByOption(option)}
@@ -285,40 +240,41 @@ export const PaymentsListPage = () => {
                 defaultOptions
                 isClearable
                 isLoading={supportData.isLoadingUsers}
-                inputId="payments-filter-user"
-                instanceId="payments-filter-user"
+                inputId="bank-proofs-filter-user"
+                instanceId="bank-proofs-filter-user"
                 placeholder="Buscar usuario"
               />
-            </div>
+            </FilterLabel>
           ) : null}
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Estado
-            </label>
+          <FilterLabel label="Estado">
             <SelectField
-              inputId="payments-filter-status"
-              instanceId="payments-filter-status"
+              inputId="bank-proofs-filter-status"
+              instanceId="bank-proofs-filter-status"
               value={STATUS_OPTIONS.find((option) => option.value === statusCode) ?? null}
               onChange={(option) => setStatusCode(option?.value ?? '')}
               options={STATUS_OPTIONS}
               placeholder="Todos"
             />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Desde
-            </label>
+          </FilterLabel>
+          <FilterLabel label="Tipo">
+            <SelectField
+              inputId="bank-proofs-filter-type"
+              instanceId="bank-proofs-filter-type"
+              value={
+                PAYMENT_TYPE_FILTER_OPTIONS.find((option) => option.value === paymentTypeCode) ??
+                null
+              }
+              onChange={(option) => setPaymentTypeCode(option?.value ?? '')}
+              options={PAYMENT_TYPE_FILTER_OPTIONS}
+              placeholder="Todos"
+            />
+          </FilterLabel>
+          <FilterLabel label="Desde">
             <DatePicker value={from} onChange={setFrom} />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Hasta
-            </label>
+          </FilterLabel>
+          <FilterLabel label="Hasta">
             <DatePicker value={to} onChange={setTo} />
-          </div>
+          </FilterLabel>
         </div>
       </ListFiltersBar>
 
@@ -329,7 +285,7 @@ export const PaymentsListPage = () => {
       ) : null}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
-        <span>{payments.totalCount} pagos en efectivo encontrados</span>
+        <span>{payments.totalCount} abonos bancarios encontrados</span>
         <div className="flex items-center gap-2">
           <span>Registros por página</span>
           <select
@@ -354,42 +310,93 @@ export const PaymentsListPage = () => {
         pageSize={payments.pageSize}
         totalPages={payments.totalPages}
         onPageChange={payments.setPage}
-        onView={(payment) => navigate(`/cash-collections/payments/${payment.id}`)}
+        onView={(payment) => navigate(`/bank-payment-proofs/${payment.id}`)}
         actionsByPaymentId={rowActions}
-        onSettle={handleSettle}
-        onReverse={handleReverse}
+        onEffectivize={(payment) => {
+          mutations.setError(null)
+          setSelectedPayment(payment)
+          setApproveOpen(true)
+        }}
+        onReject={(payment) => {
+          mutations.setError(null)
+          setSelectedPayment(payment)
+          setRejectOpen(true)
+        }}
+        onReverse={(payment) => {
+          mutations.setError(null)
+          setSelectedPayment(payment)
+          setReverseOpen(true)
+        }}
         onPrintReceipt={async (payment) => {
           const result = await receiptReport.openReceipt(payment.id)
           if (!result.success) notify(result.error, 'error')
         }}
       />
 
-      <SettleCashPaymentModal
-        open={settleOpen}
+      <EffectivizePaymentModal
+        open={approveOpen}
         payment={selectedPayment}
+        businessDate={businessDate.state?.businessDate}
         isSubmitting={mutations.isSubmitting}
         backendError={mutations.error}
         disabledReason={
-          selectedPayment ? getActionDisabledReason(selectedPayment, 'settle') : null
+          selectedPayment ? getActionDisabledReason(selectedPayment, 'effectivize') : null
         }
         onClose={() => {
           mutations.setError(null)
-          setSettleOpen(false)
+          setApproveOpen(false)
         }}
-        onConfirm={async () => {
+        onSubmit={async (payload) => {
           if (!selectedPayment) return false
-          const disabledReason = getActionDisabledReason(selectedPayment, 'settle')
+          const disabledReason = getActionDisabledReason(selectedPayment, 'effectivize')
           if (disabledReason) {
             notify(disabledReason, 'warning')
             return false
           }
-          const result = await mutations.settleCash(selectedPayment.id)
+          const result = await mutations.approveBankProof(selectedPayment.id, {
+            bankGlAccountId: payload.bankGlAccountId,
+            effectivizationDate: payload.effectivizationDate,
+            verifiedBankDepositDate: payload.bankDepositDate,
+            verifiedBankReferenceNumber: payload.bankReferenceNumber,
+            reviewNotes: payload.notes,
+          })
           if (!result.success) {
             notify(result.error, 'error')
             if (result.status === 409) await payments.refresh()
             return false
           }
-          notify('Pago en efectivo liquidado correctamente.', 'success')
+          notify('Abono bancario aprobado correctamente.', 'success')
+          await refreshAfterMutation()
+          return true
+        }}
+      />
+
+      <RejectBankPaymentProofModal
+        open={rejectOpen}
+        payment={selectedPayment}
+        isSubmitting={mutations.isSubmitting}
+        backendError={mutations.error}
+        disabledReason={
+          selectedPayment ? getActionDisabledReason(selectedPayment, 'reject') : null
+        }
+        onClose={() => {
+          mutations.setError(null)
+          setRejectOpen(false)
+        }}
+        onSubmit={async (payload) => {
+          if (!selectedPayment) return false
+          const disabledReason = getActionDisabledReason(selectedPayment, 'reject')
+          if (disabledReason) {
+            notify(disabledReason, 'warning')
+            return false
+          }
+          const result = await mutations.rejectBankProof(selectedPayment.id, payload)
+          if (!result.success) {
+            notify(result.error, 'error')
+            if (result.status === 409) await payments.refresh()
+            return false
+          }
+          notify('Abono bancario rechazado correctamente.', 'success')
           await refreshAfterMutation()
           return true
         }}
@@ -415,13 +422,13 @@ export const PaymentsListPage = () => {
             notify(disabledReason, 'warning')
             return false
           }
-          const result = await mutations.reverseCash(selectedPayment.id, payload)
+          const result = await mutations.reverseBankProof(selectedPayment.id, payload)
           if (!result.success) {
             notify(result.error, 'error')
             if (result.status === 409) await payments.refresh()
             return false
           }
-          notify('Pago reversado correctamente.', 'success')
+          notify('Abono bancario reversado correctamente.', 'success')
           await refreshAfterMutation()
           return true
         }}
@@ -429,3 +436,12 @@ export const PaymentsListPage = () => {
     </div>
   )
 }
+
+const FilterLabel = ({ label, children }: { label: string; children: ReactNode }) => (
+  <div className="space-y-1">
+    <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+      {label}
+    </label>
+    {children}
+  </div>
+)

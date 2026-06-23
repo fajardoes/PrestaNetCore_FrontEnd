@@ -1,4 +1,4 @@
-import { CheckCircle2, RotateCcw } from 'lucide-react'
+import { CheckCircle2, Printer, RotateCcw, XCircle } from 'lucide-react'
 import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 import type { PaymentReversalResponse } from '@/infrastructure/payments/responses/payment-reversal-response'
@@ -8,8 +8,10 @@ import {
   formatDate,
   formatPaymentComponentLabel,
   getPaymentStatusBadgeClass,
+  isPaymentReceiptPrintable,
   sumPaymentAllocations,
   translatePaymentApplicationStatus,
+  translatePaymentFlow,
   translatePaymentStatus,
   translatePaymentType,
 } from './payment-ui'
@@ -23,7 +25,10 @@ interface PaymentDetailViewProps {
   title?: string
   description?: string
   onEffectivize?: () => void
+  onSettle?: () => void
+  onReject?: () => void
   onReverse?: () => void
+  onPrintReceipt?: () => void
 }
 
 const InfoCard = ({ label, value }: { label: string; value: string }) => (
@@ -44,10 +49,17 @@ export const PaymentDetailView = ({
   title = 'Detalle del pago',
   description = 'Consulta el comprobante interno y la distribución aplicada por cuota y componente.',
   onEffectivize,
+  onSettle,
+  onReject,
   onReverse,
+  onPrintReceipt,
 }: PaymentDetailViewProps) => {
   const effectivizeAction = actions?.allowedActions.find((action) => action.code === 'effectivize')
+  const settleAction = actions?.allowedActions.find((action) => action.code === 'settle')
+  const rejectAction = actions?.allowedActions.find((action) => action.code === 'reject')
   const reverseAction = actions?.allowedActions.find((action) => action.code === 'reverse')
+  const isBankProof = payment.paymentFlowCode?.trim().toUpperCase() === 'BANK_PROOF'
+  const isCashCollection = payment.paymentFlowCode?.trim().toUpperCase() === 'CASH_COLLECTION'
 
   return (
   <div className="space-y-6">
@@ -74,6 +86,7 @@ export const PaymentDetailView = ({
           label="Recibo interno"
           value={payment.internalReceiptNumber?.trim() || '—'}
         />
+        <InfoCard label="Flujo" value={translatePaymentFlow(payment.paymentFlowCode, payment.paymentFlowName)} />
         <InfoCard label="Préstamo" value={payment.loanNo?.trim() || '—'} />
         <InfoCard label="Cliente" value={payment.clientFullName?.trim() || '—'} />
         <InfoCard label="Monto" value={formatCurrency(payment.amount)} />
@@ -137,8 +150,16 @@ export const PaymentDetailView = ({
           value={payment.bankReferenceNumber?.trim() || '—'}
         />
         <InfoCard
+          label="Referencia reportada"
+          value={payment.reportedBankReferenceNumber?.trim() || '—'}
+        />
+        <InfoCard
           label="Fecha de depósito"
           value={formatDate(payment.bankDepositDate)}
+        />
+        <InfoCard
+          label="Fecha reportada"
+          value={formatDate(payment.reportedBankDepositDate)}
         />
         <InfoCard
           label="Asiento de efectivización"
@@ -166,16 +187,41 @@ export const PaymentDetailView = ({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={!effectivizeAction?.enabled}
-            title={!effectivizeAction?.enabled ? effectivizeAction?.reason || 'No disponible' : 'Efectivizar'}
-            onClick={onEffectivize}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Efectivizar
-          </button>
+          {isCashCollection ? (
+            <button
+              type="button"
+              className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!settleAction?.enabled}
+              title={!settleAction?.enabled ? settleAction?.reason || 'No disponible' : 'Liquidar'}
+              onClick={onSettle}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Liquidar
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!effectivizeAction?.enabled}
+              title={!effectivizeAction?.enabled ? effectivizeAction?.reason || 'No disponible' : 'Efectivizar'}
+              onClick={onEffectivize}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {isBankProof ? 'Aprobar' : 'Efectivizar'}
+            </button>
+          )}
+          {isBankProof ? (
+            <button
+              type="button"
+              className="btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!rejectAction?.enabled}
+              title={!rejectAction?.enabled ? rejectAction?.reason || 'No disponible' : 'Rechazar'}
+              onClick={onReject}
+            >
+              <XCircle className="h-4 w-4" />
+              Rechazar
+            </button>
+          ) : null}
           <button
             type="button"
             className="btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
@@ -186,6 +232,16 @@ export const PaymentDetailView = ({
             <RotateCcw className="h-4 w-4" />
             Reversar
           </button>
+          {isPaymentReceiptPrintable(payment) ? (
+            <button
+              type="button"
+              className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm"
+              onClick={onPrintReceipt}
+            >
+              <Printer className="h-4 w-4" />
+              Imprimir recibo
+            </button>
+          ) : null}
         </div>
       </div>
 

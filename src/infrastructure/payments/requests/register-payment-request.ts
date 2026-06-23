@@ -6,9 +6,29 @@ export type PaymentTypeCode =
 
 export interface RegisterPaymentRequest {
   loanId: string
-  paymentTypeCode: PaymentTypeCode
+  amount: number
+  paymentTypeCode?: PaymentTypeCode
+  referenceNumber?: string | null
+  externalReceiptNumber?: string | null
+  notes?: string | null
+}
+
+export interface RegisterCashCollectionPaymentRequest {
+  loanId: string
   amount: number
   referenceNumber?: string | null
+  externalReceiptNumber?: string | null
+  notes?: string | null
+}
+
+export interface RegisterBankPaymentProofRequest {
+  loanId: string
+  paymentTypeCode: Exclude<PaymentTypeCode, 'CASH'>
+  amount: number
+  bankReferenceNumber: string
+  bankDepositDate: string
+  bankGlAccountId?: string | null
+  bankDepositProofUrl?: string | null
   externalReceiptNumber?: string | null
   notes?: string | null
 }

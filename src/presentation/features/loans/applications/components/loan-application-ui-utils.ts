@@ -130,6 +130,7 @@ export const formatFinancialComponentCode = (
   const normalized = (value ?? '').trim().toUpperCase()
   if (normalized === 'PRINCIPAL') return 'Capital'
   if (normalized === 'INTEREST') return 'Interés'
+  if (normalized === 'PENALTY') return 'Mora'
   if (normalized === 'INSURANCE') return 'Seguro'
   if (normalized === 'FEE') return 'Comisión'
   return fallbackName?.trim() || value?.trim() || '—'

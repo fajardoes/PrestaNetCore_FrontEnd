@@ -18,12 +18,14 @@ import { DisbursementSummaryCard } from '@/presentation/features/loans/component
 import { useLoanApplication } from '@/presentation/features/loans/applications/hooks/use-loan-application'
 import { useLoanApplicationApprovedLoan } from '@/presentation/features/loans/applications/hooks/use-loan-application-approved-loan'
 import { useLoanApplicationReport } from '@/presentation/features/loans/applications/hooks/use-loan-application-report'
+import { useLoanSettlementReport } from '@/presentation/features/loans/applications/hooks/use-loan-settlement-report'
 import { useLoanApplicationScoring } from '@/presentation/features/loans/applications/hooks/use-loan-application-scoring'
 import { useLoanApplicationScoringHistory } from '@/presentation/features/loans/applications/hooks/use-loan-application-scoring-history'
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { useLoanApplicationAnticipatedInstallment } from '@/presentation/features/loans/applications/hooks/use-loan-application-anticipated-installment'
 import { MessageModal } from '@/presentation/share/components/message-modal'
+import { FilePreviewModal } from '@/presentation/share/components/file-preview-modal'
 import type { LoanApplicationAllowedAction } from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
 import type { LoanApplicationFeeResponse } from '@/infrastructure/loans/responses/loan-application-fee-response'
@@ -82,6 +84,7 @@ export const LoanApplicationDetailPage = () => {
   } = useLoanApplicationApprovedLoan()
   const { report, isLoading: isReportLoading, loadReport, clearReport } =
     useLoanApplicationReport()
+  const settlementReport = useLoanSettlementReport()
   const {
     scoring,
     isLoading: isScoringLoading,
@@ -124,7 +127,7 @@ export const LoanApplicationDetailPage = () => {
   const canViewAnticipatedInstallment = allowedActions.includes('view_anticipated_installment')
   const anticipatedInstallment = useLoanApplicationAnticipatedInstallment(
     id,
-    canViewAnticipatedInstallment,
+    Boolean(id),
   )
 
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null)
@@ -144,6 +147,7 @@ export const LoanApplicationDetailPage = () => {
     useState<string | null>(null)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [disburseModalOpen, setDisburseModalOpen] = useState(false)
+  const [settlementPreviewOpen, setSettlementPreviewOpen] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -276,6 +280,8 @@ export const LoanApplicationDetailPage = () => {
   const canSubmit = hasAction('submit')
   const canApprove = hasAction('approve')
   const canDisburse = hasAction('disburse')
+  const canGenerateSettlement =
+    applicationStatusCode === 'DISBURSED' || Boolean(application.disbursedOperationalDate)
   const canReject = hasAction('reject')
   const canCancel = hasAction('cancel')
   const canReturnToDraft = hasAction('return_to_draft')
@@ -284,7 +290,9 @@ export const LoanApplicationDetailPage = () => {
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
   const canManageAnticipatedInstallment = hasAction('manage_anticipated_installment')
-  const canCancelAnticipatedInstallment = hasAction('cancel_anticipated_installment')
+  const shouldShowAnticipatedInstallment =
+    canViewAnticipatedInstallment || anticipatedInstallment.data !== null
+  const firstInstallmentSuggestedAmount = preview?.installments[0]?.total ?? null
   const totalDisbursementInsurance =
     loanDetail?.totalDisbursementInsurance ?? application.totalDisbursementInsurance ?? 0
   const disbursementDetail = {
@@ -336,6 +344,11 @@ export const LoanApplicationDetailPage = () => {
 
   const refreshApplicationState = async () => {
     await Promise.all([loadById(id), loadFeesByApplicationId(id)])
+  }
+
+  const openSettlementPreview = async () => {
+    setSettlementPreviewOpen(true)
+    await settlementReport.openPreview(id)
   }
 
   const refreshDisbursementPreview = async () => {
@@ -415,8 +428,10 @@ export const LoanApplicationDetailPage = () => {
         canPreview={canPreview}
         canPrint={canPrint}
         canGenerateScoring={canGenerateScoring}
+        canGenerateSettlement={canGenerateSettlement}
         isProcessingWorkflow={isWorkflowRunning}
         isPrinting={isReportLoading}
+        isSettlementLoading={settlementReport.isLoading}
         onOpenFinancialProfile={() =>
           navigate(`/loans/applications/${application.id}/financial-profile`, {
             state: { returnTo: `/loans/applications/${application.id}` },
@@ -428,6 +443,9 @@ export const LoanApplicationDetailPage = () => {
         }}
         onPrint={() => {
           void openPrintPreview()
+        }}
+        onGenerateSettlement={() => {
+          void openSettlementPreview()
         }}
         onGenerateScoring={() => openConfirmModal('generate_scoring')}
         onSubmit={() => openConfirmModal('submit')}
@@ -446,7 +464,7 @@ export const LoanApplicationDetailPage = () => {
 
       <LoanApplicationRequestedDataCard application={application} />
 
-      {canViewAnticipatedInstallment ? (
+      {shouldShowAnticipatedInstallment ? (
         <LoanApplicationAnticipatedInstallmentSection
           data={anticipatedInstallment.data}
           history={anticipatedInstallment.history}
@@ -454,7 +472,7 @@ export const LoanApplicationDetailPage = () => {
           isSaving={anticipatedInstallment.isSaving}
           error={anticipatedInstallment.error}
           canManage={canManageAnticipatedInstallment}
-          canCancel={canCancelAnticipatedInstallment}
+          suggestedAmount={firstInstallmentSuggestedAmount}
           onPreview={anticipatedInstallment.previewLimit}
           onSave={anticipatedInstallment.save}
           onCancel={anticipatedInstallment.cancel}
@@ -827,18 +845,22 @@ export const LoanApplicationDetailPage = () => {
         previewDisbursement={preview?.disbursement ?? null}
         isPreviewLoading={isPreviewLoading}
         isProcessing={isWorkflowRunning}
+        isSettlementLoading={settlementReport.isLoading}
+        onGenerateSettlement={() => {
+          void openSettlementPreview()
+        }}
         onCancel={() => setDisburseModalOpen(false)}
         onConfirm={async (notes) => {
           const result = await disburse(id, { notes })
           if (result.success) {
             setApplication(result.data)
-            setDisburseModalOpen(false)
             setPreview(null)
             await Promise.all([refreshApplicationState(), anticipatedInstallment.refresh()])
             setFeedback({
               tone: 'success',
               title: 'Solicitud desembolsada',
-              description: 'La operación se ejecutó correctamente.',
+              description:
+                'La operación se ejecutó correctamente. Ya puedes generar la liquidación desde el botón independiente.',
             })
             return
           }
@@ -903,6 +925,21 @@ export const LoanApplicationDetailPage = () => {
           setFeedback(null)
           callback?.()
         }}
+      />
+
+      <FilePreviewModal
+        open={settlementPreviewOpen}
+        fileName={settlementReport.preview?.fileName}
+        fileUrl={settlementReport.preview?.objectUrl}
+        contentType={settlementReport.preview?.contentType}
+        isLoading={settlementReport.isLoading}
+        error={settlementReport.error}
+        isDownloading={settlementReport.isDownloading}
+        onClose={() => {
+          setSettlementPreviewOpen(false)
+          settlementReport.closePreview()
+        }}
+        onDownload={settlementReport.preview ? settlementReport.download : undefined}
       />
 
       {report ? (

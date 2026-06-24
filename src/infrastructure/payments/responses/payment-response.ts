@@ -32,6 +32,12 @@ export interface PaymentResponse {
   reversalJournalEntryId?: string | null
   effectivizationDate?: string | null
   effectivizationBusinessDate?: string | null
+  reportedBankEntityId?: string | null
+  reportedBankEntityCode?: string | null
+  reportedBankEntityName?: string | null
+  approvedBankEntityId?: string | null
+  approvedBankEntityCode?: string | null
+  approvedBankEntityName?: string | null
   bankGlAccountId?: string | null
   bankGlAccountCode?: string | null
   bankGlAccountName?: string | null

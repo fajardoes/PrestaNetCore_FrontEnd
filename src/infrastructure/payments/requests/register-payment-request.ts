@@ -23,11 +23,10 @@ export interface RegisterCashCollectionPaymentRequest {
 
 export interface RegisterBankPaymentProofRequest {
   loanId: string
-  paymentTypeCode: Exclude<PaymentTypeCode, 'CASH'>
+  bankEntityId?: string | null
   amount: number
   bankReferenceNumber: string
   bankDepositDate: string
-  bankGlAccountId?: string | null
   bankDepositProofUrl?: string | null
   externalReceiptNumber?: string | null
   notes?: string | null

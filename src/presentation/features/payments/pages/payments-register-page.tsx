@@ -22,7 +22,6 @@ import { useUserPermissions } from '@/presentation/features/security/hooks/use-u
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 
 const defaultValues: PaymentRegistrationFormValues = {
-  paymentTypeCode: 'CASH',
   amount: 0,
   referenceNumber: '',
   externalReceiptNumber: '',

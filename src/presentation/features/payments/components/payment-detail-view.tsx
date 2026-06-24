@@ -4,6 +4,7 @@ import type { PaymentResponse } from '@/infrastructure/payments/responses/paymen
 import type { PaymentReversalResponse } from '@/infrastructure/payments/responses/payment-reversal-response'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import {
+  formatBankEntityDisplay,
   formatCurrency,
   formatDate,
   formatPaymentComponentLabel,
@@ -137,6 +138,28 @@ export const PaymentDetailView = ({
           label="Fecha operativa de efectivización"
           value={formatDate(payment.effectivizationBusinessDate)}
         />
+        {isBankProof ? (
+          <InfoCard
+            label="Banco reportado"
+            value={
+              payment.reportedBankEntityId
+                ? formatBankEntityDisplay(
+                    payment.reportedBankEntityCode,
+                    payment.reportedBankEntityName,
+                  )
+                : 'Banco no especificado por capturista'
+            }
+          />
+        ) : null}
+        {isBankProof ? (
+          <InfoCard
+            label="Banco confirmado"
+            value={formatBankEntityDisplay(
+              payment.approvedBankEntityCode,
+              payment.approvedBankEntityName,
+            )}
+          />
+        ) : null}
         <InfoCard
           label="Cuenta banco"
           value={

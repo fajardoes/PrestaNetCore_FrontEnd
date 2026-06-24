@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getPaymentActionsAction } from '@/core/actions/payments/get-payment-actions.action'
+import type { BankEntityResponse } from '@/infrastructure/payments/responses/bank-entity-response'
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
 import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
@@ -10,7 +11,6 @@ import { EffectivizePaymentModal } from '@/presentation/features/payments/compon
 import { PaymentsTable } from '@/presentation/features/payments/components/payments-table'
 import { RejectBankPaymentProofModal } from '@/presentation/features/payments/components/reject-bank-payment-proof-modal'
 import { ReversePaymentModal } from '@/presentation/features/payments/components/reverse-payment-modal'
-import { BANK_PAYMENT_TYPE_OPTIONS } from '@/presentation/features/payments/components/payment-ui'
 import { usePaymentMutations } from '@/presentation/features/payments/hooks/use-payment-mutations'
 import { usePaymentReceiptReport } from '@/presentation/features/payments/hooks/use-payment-receipt-report'
 import { usePaymentSupportData } from '@/presentation/features/payments/hooks/use-payment-support-data'
@@ -34,14 +34,13 @@ const STATUS_OPTIONS = [
   { value: 'REVERSED', label: 'Reversado' },
 ]
 
-const PAYMENT_TYPE_FILTER_OPTIONS = [{ value: '', label: 'Todos' }, ...BANK_PAYMENT_TYPE_OPTIONS]
-
 export const BankPaymentProofsPage = () => {
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const { hasPermission, isLoading: isLoadingPermissions } = useUserPermissions()
   const canReadAll = hasPermission('bank_payment_proofs.read_all')
   const canRead = hasPermission('bank_payment_proofs.read') || canReadAll
+  const canReadBankEntities = hasPermission('bank_entities.read') || hasPermission('bank_entities.manage')
   const payments = usePaymentsList(canRead, undefined, 'bank-proofs')
   const supportData = usePaymentSupportData()
   const businessDate = useBusinessDate()
@@ -54,8 +53,9 @@ export const BankPaymentProofsPage = () => {
     useState<AsyncSelectOption<ClientListItem> | null>(null)
   const [registeredByOption, setRegisteredByOption] =
     useState<AsyncSelectOption<SecurityUser> | null>(null)
+  const [bankEntityOption, setBankEntityOption] =
+    useState<AsyncSelectOption<BankEntityResponse> | null>(null)
   const [statusCode, setStatusCode] = useState('')
-  const [paymentTypeCode, setPaymentTypeCode] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [rowActions, setRowActions] = useState<Record<string, PaymentActionsResponse>>({})
@@ -108,6 +108,15 @@ export const BankPaymentProofsPage = () => {
     }))
   }
 
+  const loadBankEntityOptions = async (inputValue: string) => {
+    const results = await supportData.searchBankEntities(inputValue)
+    return results.map((entity) => ({
+      value: entity.id,
+      label: `${entity.code} - ${entity.name}`,
+      meta: entity,
+    }))
+  }
+
   const handleSearch = async () => {
     let nextLoanId = loanId
     if (loanCode.trim()) {
@@ -127,9 +136,9 @@ export const BankPaymentProofsPage = () => {
     payments.applyFilters({
       loanId: nextLoanId,
       clientId: clientOption?.value || undefined,
+      bankEntityId: bankEntityOption?.value || undefined,
       registeredByUserId: canReadAll ? registeredByOption?.value || undefined : undefined,
       statusCode: statusCode || undefined,
-      paymentTypeCode: paymentTypeCode || undefined,
       from: from || undefined,
       to: to || undefined,
     })
@@ -140,16 +149,16 @@ export const BankPaymentProofsPage = () => {
     setLoanId(undefined)
     setClientOption(null)
     setRegisteredByOption(null)
+    setBankEntityOption(null)
     setStatusCode('')
-    setPaymentTypeCode('')
     setFrom('')
     setTo('')
     payments.applyFilters({
       loanId: undefined,
       clientId: undefined,
+      bankEntityId: undefined,
       registeredByUserId: undefined,
       statusCode: undefined,
-      paymentTypeCode: undefined,
       from: undefined,
       to: undefined,
     })
@@ -189,13 +198,24 @@ export const BankPaymentProofsPage = () => {
             Gestiona comprobantes pendientes de revisión, aprobación bancaria y reversas.
           </p>
         </div>
-        <button
-          type="button"
-          className="btn-primary px-4 py-2 text-sm"
-          onClick={() => navigate('/bank-payment-proofs/new')}
-        >
-          Registrar comprobante
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="btn-primary px-4 py-2 text-sm"
+            onClick={() => navigate('/bank-payment-proofs/new')}
+          >
+            Registrar comprobante
+          </button>
+          {canReadBankEntities ? (
+            <button
+              type="button"
+              className="btn-secondary px-4 py-2 text-sm"
+              onClick={() => navigate('/bank-payment-proofs/catalogs/bank-entities')}
+            >
+              Entidades bancarias
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <ListFiltersBar
@@ -256,17 +276,17 @@ export const BankPaymentProofsPage = () => {
               placeholder="Todos"
             />
           </FilterLabel>
-          <FilterLabel label="Tipo">
-            <SelectField
-              inputId="bank-proofs-filter-type"
-              instanceId="bank-proofs-filter-type"
-              value={
-                PAYMENT_TYPE_FILTER_OPTIONS.find((option) => option.value === paymentTypeCode) ??
-                null
-              }
-              onChange={(option) => setPaymentTypeCode(option?.value ?? '')}
-              options={PAYMENT_TYPE_FILTER_OPTIONS}
-              placeholder="Todos"
+          <FilterLabel label="Entidad bancaria">
+            <AsyncSelect<BankEntityResponse>
+              value={bankEntityOption}
+              onChange={(option) => setBankEntityOption(option)}
+              loadOptions={loadBankEntityOptions}
+              defaultOptions
+              isClearable
+              isLoading={supportData.isLoadingBankEntities}
+              inputId="bank-proofs-filter-bank-entity"
+              instanceId="bank-proofs-filter-bank-entity"
+              placeholder="Buscar banco"
             />
           </FilterLabel>
           <FilterLabel label="Desde">
@@ -312,6 +332,7 @@ export const BankPaymentProofsPage = () => {
         onPageChange={payments.setPage}
         onView={(payment) => navigate(`/bank-payment-proofs/${payment.id}`)}
         actionsByPaymentId={rowActions}
+        showBankColumns
         onEffectivize={(payment) => {
           mutations.setError(null)
           setSelectedPayment(payment)
@@ -354,7 +375,7 @@ export const BankPaymentProofsPage = () => {
             return false
           }
           const result = await mutations.approveBankProof(selectedPayment.id, {
-            bankGlAccountId: payload.bankGlAccountId,
+            bankEntityId: payload.bankEntityId || '',
             effectivizationDate: payload.effectivizationDate,
             verifiedBankDepositDate: payload.bankDepositDate,
             verifiedBankReferenceNumber: payload.bankReferenceNumber,

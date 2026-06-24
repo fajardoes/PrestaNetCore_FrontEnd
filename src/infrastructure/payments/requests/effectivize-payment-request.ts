@@ -7,9 +7,12 @@ export interface EffectivizePaymentRequest {
 }
 
 export interface ApproveBankPaymentProofRequest {
-  bankGlAccountId: string
+  bankEntityId: string
   effectivizationDate: string
   verifiedBankDepositDate?: string | null
   verifiedBankReferenceNumber?: string | null
   reviewNotes?: string | null
+  notes?: string | null
+  bankDepositDate?: string | null
+  bankReferenceNumber?: string | null
 }

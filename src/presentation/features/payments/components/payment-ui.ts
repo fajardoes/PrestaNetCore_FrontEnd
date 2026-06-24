@@ -173,6 +173,18 @@ export const buildPriorityReorderPayload = (
 export const sumPaymentAllocations = (payment?: PaymentResponse | null) =>
   (payment?.allocations ?? []).reduce((sum, allocation) => sum + allocation.amount, 0)
 
+export const formatBankEntityDisplay = (
+  code?: string | null,
+  name?: string | null,
+  fallback = '—',
+) => {
+  const normalizedCode = code?.trim() || ''
+  const normalizedName = name?.trim() || ''
+  if (!normalizedCode && !normalizedName) return fallback
+  if (normalizedCode && normalizedName) return `${normalizedCode} - ${normalizedName}`
+  return normalizedCode || normalizedName || fallback
+}
+
 export const isPaymentReceiptPrintable = (payment?: PaymentResponse | null) => {
   const flow = payment?.paymentFlowCode?.trim().toUpperCase()
   const status = payment?.statusCode?.trim().toUpperCase()

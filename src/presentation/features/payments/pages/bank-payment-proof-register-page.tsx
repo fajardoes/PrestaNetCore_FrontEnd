@@ -2,31 +2,23 @@ import { useEffect, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { LoanClientSearchItemResponse } from '@/infrastructure/loans/responses/loan-client-search-response'
 import type { PaymentLookupLoanResponse } from '@/infrastructure/payments/responses/payment-lookup-response'
-import type { PaymentTypeCode } from '@/infrastructure/payments/requests/register-payment-request'
 import { useNotifications } from '@/providers/NotificationProvider'
 import { LoanClientPickerModal } from '@/presentation/features/loans/loans-query/components/loan-client-picker-modal'
 import {
   PaymentLookupLoanSelector,
   PaymentLookupLoanSummaryCard,
 } from '@/presentation/features/payments/components/payment-lookup-summary'
-import {
-  BANK_PAYMENT_TYPE_OPTIONS,
-  formatDate,
-} from '@/presentation/features/payments/components/payment-ui'
+import { formatDate } from '@/presentation/features/payments/components/payment-ui'
+import { useBankEntityCatalog } from '@/presentation/features/payments/hooks/use-bank-entity-catalog'
 import { usePaymentLookup } from '@/presentation/features/payments/hooks/use-payment-lookup'
 import { usePaymentRegistration } from '@/presentation/features/payments/hooks/use-payment-registration'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import { useBusinessDate } from '@/presentation/features/system-business-date/hooks/use-business-date'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { DatePicker } from '@/presentation/share/components/date-picker'
-import SelectField from '@/presentation/share/components/select'
-
-type BankProofTypeCode = Exclude<PaymentTypeCode, 'CASH'>
-
-const bankTypeOptions = BANK_PAYMENT_TYPE_OPTIONS.map((item) => ({
-  value: item.value,
-  label: item.label,
-}))
+import { MessageModal } from '@/presentation/share/components/message-modal'
+import SelectField, { type SelectOption } from '@/presentation/share/components/select'
+import type { BankEntityResponse } from '@/infrastructure/payments/responses/bank-entity-response'
 
 const COLLECTABLE_LOAN_STATUSES = new Set(['ACTIVE', 'DELINQUENT', 'MATURED'])
 
@@ -57,6 +49,11 @@ export const BankPaymentProofRegisterPage = () => {
     clearLookup,
   } = usePaymentLookup()
   const paymentRegistration = usePaymentRegistration()
+  const {
+    loadBankEntities,
+    isLoading: isLoadingBankEntities,
+    error: bankEntitiesError,
+  } = useBankEntityCatalog()
 
   const [loanCode, setLoanCode] = useState('')
   const [clientPickerOpen, setClientPickerOpen] = useState(false)
@@ -64,32 +61,61 @@ export const BankPaymentProofRegisterPage = () => {
   const [clientSearchPage, setClientSearchPage] = useState(1)
   const [selectedClient, setSelectedClient] = useState<LoanClientSearchItemResponse | null>(null)
   const [selectedLoan, setSelectedLoan] = useState<PaymentLookupLoanResponse | null>(null)
-  const [paymentTypeCode, setPaymentTypeCode] =
-    useState<BankProofTypeCode>('BANK_TRANSFER_PROOF')
   const [amount, setAmount] = useState('')
   const [bankReferenceNumber, setBankReferenceNumber] = useState('')
   const [bankDepositDate, setBankDepositDate] = useState('')
   const [bankDepositProofUrl, setBankDepositProofUrl] = useState('')
   const [externalReceiptNumber, setExternalReceiptNumber] = useState('')
   const [notes, setNotes] = useState('')
+  const [bankEntityOption, setBankEntityOption] =
+    useState<SelectOption<BankEntityResponse> | null>(null)
+  const [bankEntityOptions, setBankEntityOptions] = useState<SelectOption<BankEntityResponse>[]>([])
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [successOpen, setSuccessOpen] = useState(false)
 
   const isLoanEligible = selectedLoan
     ? COLLECTABLE_LOAN_STATUSES.has(selectedLoan.statusCode?.trim().toUpperCase() ?? '')
     : false
   const isDayOpen = businessDateState?.isDayOpen ?? false
+  const submitBlockReason = isLoadingPermissions
+    ? 'Se están cargando los permisos del usuario.'
+    : isLoadingBusinessDate
+      ? 'Se está validando la fecha operativa del sistema.'
+      : !selectedLoan
+        ? lookup && lookup.loans.length > 1
+          ? 'Debes seleccionar un préstamo de la lista antes de registrar el abono.'
+          : 'Debes resolver un préstamo antes de registrar el abono.'
+        : !isLoanEligible
+          ? 'Solo se pueden registrar abonos sobre préstamos vigentes, morosos o vencidos.'
+          : !isDayOpen
+            ? 'El día operativo está cerrado.'
+            : null
   const shouldBlockSubmit =
-    !selectedLoan ||
-    !isLoanEligible ||
-    !isDayOpen ||
-    paymentRegistration.isSubmitting ||
-    isLoadingPermissions ||
-    isLoadingBusinessDate
+    Boolean(submitBlockReason) || paymentRegistration.isSubmitting
 
   useEffect(() => {
     if (!clientPickerOpen) return
     void searchClients(clientSearch, clientSearchPage)
   }, [clientPickerOpen, clientSearch, clientSearchPage, searchClients])
+
+  useEffect(() => {
+    let ignore = false
+    const fetchBankEntities = async () => {
+      const entities = await loadBankEntities({ isActive: true })
+      if (ignore) return
+      setBankEntityOptions(
+        entities.map((entity) => ({
+          value: entity.id,
+          label: `${entity.code} - ${entity.name}`,
+          meta: entity,
+        })),
+      )
+    }
+    void fetchBankEntities()
+    return () => {
+      ignore = true
+    }
+  }, [loadBankEntities])
 
   const handleResolveLoan = async () => {
     const normalizedLoanCode = loanCode.trim()
@@ -139,6 +165,21 @@ export const BankPaymentProofRegisterPage = () => {
     return null
   }
 
+  const clearScreen = () => {
+    setLoanCode('')
+    setSelectedClient(null)
+    setSelectedLoan(null)
+    setAmount('')
+    setBankReferenceNumber('')
+    setBankDepositDate('')
+    setBankDepositProofUrl('')
+    setExternalReceiptNumber('')
+    setNotes('')
+    setBankEntityOption(null)
+    setValidationError(null)
+    clearLookup()
+  }
+
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const message = validate()
@@ -150,7 +191,7 @@ export const BankPaymentProofRegisterPage = () => {
 
     const result = await paymentRegistration.submitBankProof({
       loanId: selectedLoan.id,
-      paymentTypeCode,
+      bankEntityId: bankEntityOption?.value || null,
       amount: Number(amount),
       bankReferenceNumber: bankReferenceNumber.trim(),
       bankDepositDate,
@@ -164,15 +205,8 @@ export const BankPaymentProofRegisterPage = () => {
       return
     }
 
-    notify('Abono bancario registrado para revisión.', 'success')
-    setAmount('')
-    setBankReferenceNumber('')
-    setBankDepositDate('')
-    setBankDepositProofUrl('')
-    setExternalReceiptNumber('')
-    setNotes('')
     setValidationError(null)
-    setLoanCode(result.data.loanNo?.trim() || '')
+    setSuccessOpen(true)
   }
 
   if (!isLoadingPermissions && !canRegister) {
@@ -332,19 +366,6 @@ export const BankPaymentProofRegisterPage = () => {
         </h2>
         <form className="mt-4 space-y-4" onSubmit={(event) => void submit(event)} noValidate>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Tipo de abono">
-              <SelectField
-                inputId="bank-proof-type"
-                instanceId="bank-proof-type"
-                value={bankTypeOptions.find((option) => option.value === paymentTypeCode) ?? null}
-                onChange={(option) => {
-                  const next = option?.value
-                  if (next && next !== 'CASH') setPaymentTypeCode(next as BankProofTypeCode)
-                }}
-                options={bankTypeOptions}
-                isDisabled={paymentRegistration.isSubmitting}
-              />
-            </Field>
             <Field label="Monto">
               <input
                 type="number"
@@ -373,6 +394,25 @@ export const BankPaymentProofRegisterPage = () => {
                 maxDate={toDate(businessDateState?.businessDate)}
                 disabled={paymentRegistration.isSubmitting}
               />
+            </Field>
+            <Field label="Entidad bancaria">
+              <SelectField<BankEntityResponse>
+                value={bankEntityOption}
+                onChange={(option) => setBankEntityOption(option)}
+                options={bankEntityOptions}
+                isClearable
+                isDisabled={paymentRegistration.isSubmitting || isLoadingBankEntities}
+                isLoading={isLoadingBankEntities}
+                inputId="bank-proof-bank-entity"
+                instanceId="bank-proof-bank-entity"
+                placeholder="Selecciona el banco reportado por el cliente"
+                noOptionsMessage="No hay entidades bancarias activas."
+              />
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                {bankEntityOption
+                  ? 'El banco seleccionado se enviará para revisión.'
+                  : 'Banco no especificado.'}
+              </p>
             </Field>
             <Field label="Metadata o URL del comprobante">
               <input
@@ -413,12 +453,23 @@ export const BankPaymentProofRegisterPage = () => {
               {validationError || paymentRegistration.error}
             </div>
           ) : null}
+          {!validationError && !paymentRegistration.error && bankEntitiesError ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+              {bankEntitiesError}
+            </div>
+          ) : null}
+          {!validationError && !paymentRegistration.error && !bankEntitiesError && submitBlockReason ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+              {submitBlockReason}
+            </div>
+          ) : null}
 
           <div className="flex justify-end">
             <button
               type="submit"
               className="btn-primary px-5 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
               disabled={shouldBlockSubmit}
+              title={submitBlockReason ?? undefined}
             >
               {paymentRegistration.isSubmitting ? 'Registrando abono...' : 'Registrar abono'}
             </button>
@@ -444,6 +495,17 @@ export const BankPaymentProofRegisterPage = () => {
           void handleSelectClient(client)
         }}
         onClose={() => setClientPickerOpen(false)}
+      />
+      <MessageModal
+        open={successOpen}
+        title="Abono registrado"
+        description="El abono bancario fue registrado correctamente y quedó pendiente de revisión."
+        tone="success"
+        acknowledgeLabel="OK"
+        onAcknowledge={() => {
+          setSuccessOpen(false)
+          clearScreen()
+        }}
       />
     </div>
   )

@@ -4,6 +4,7 @@ import type { PaymentResponse } from '@/infrastructure/payments/responses/paymen
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 import {
+  formatBankEntityDisplay,
   formatCurrency,
   formatDate,
   getPaymentStatusBadgeClass,
@@ -20,6 +21,7 @@ interface PaymentsTableProps {
   pageSize: number
   totalPages: number
   actionsByPaymentId?: Record<string, PaymentActionsResponse>
+  showBankColumns?: boolean
   onPageChange: (page: number) => void
   onView: (payment: PaymentResponse) => void
   onEffectivize?: (payment: PaymentResponse) => void
@@ -39,6 +41,7 @@ export const PaymentsTable = ({
   pageSize,
   totalPages,
   actionsByPaymentId,
+  showBankColumns,
   onPageChange,
   onView,
   onEffectivize,
@@ -115,6 +118,20 @@ export const PaymentsTable = ({
       ),
     },
     {
+      key: 'status',
+      header: 'Estado',
+      className: 'whitespace-nowrap',
+      render: (item: PaymentResponse) => (
+        <span
+          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getPaymentStatusBadgeClass(item.statusCode)}`}
+        >
+          {translatePaymentStatus(item.statusCode, item.statusName)}
+        </span>
+      ),
+      getTitle: (item: PaymentResponse) =>
+        translatePaymentStatus(item.statusCode, item.statusName),
+    },
+    {
       key: 'receipt',
       header: 'Recibo interno',
       className: 'whitespace-nowrap',
@@ -182,20 +199,58 @@ export const PaymentsTable = ({
       getTitle: (item: PaymentResponse) =>
         translatePaymentType(item.paymentTypeCode, item.paymentTypeName),
     },
-    {
-      key: 'status',
-      header: 'Estado',
-      className: 'whitespace-nowrap',
-      render: (item: PaymentResponse) => (
-        <span
-          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getPaymentStatusBadgeClass(item.statusCode)}`}
-        >
-          {translatePaymentStatus(item.statusCode, item.statusName)}
-        </span>
-      ),
-      getTitle: (item: PaymentResponse) =>
-        translatePaymentStatus(item.statusCode, item.statusName),
-    },
+    ...(showBankColumns
+      ? [
+          {
+            key: 'reportedBank',
+            header: 'Banco reportado',
+            className: 'w-[150px]',
+            render: (item: PaymentResponse) => (
+              <span className="block w-[130px] whitespace-normal break-words">
+                {formatBankEntityDisplay(
+                  item.reportedBankEntityCode,
+                  item.reportedBankEntityName,
+                  'No especificado',
+                )}
+              </span>
+            ),
+            getTitle: (item: PaymentResponse) =>
+              formatBankEntityDisplay(
+                item.reportedBankEntityCode,
+                item.reportedBankEntityName,
+                'No especificado',
+              ),
+          },
+          {
+            key: 'approvedBank',
+            header: 'Banco confirmado',
+            className: 'w-[150px]',
+            render: (item: PaymentResponse) => (
+              <span className="block w-[130px] whitespace-normal break-words">
+                {formatBankEntityDisplay(item.approvedBankEntityCode, item.approvedBankEntityName)}
+              </span>
+            ),
+            getTitle: (item: PaymentResponse) =>
+              formatBankEntityDisplay(item.approvedBankEntityCode, item.approvedBankEntityName),
+          },
+          {
+            key: 'bankAccount',
+            header: 'Cuenta banco',
+            className: 'w-[170px]',
+            render: (item: PaymentResponse) => (
+              <span className="block w-[150px] whitespace-normal break-words">
+                {item.bankGlAccountCode || item.bankGlAccountName
+                  ? `${item.bankGlAccountCode ?? ''} ${item.bankGlAccountName ?? ''}`.trim()
+                  : '—'}
+              </span>
+            ),
+            getTitle: (item: PaymentResponse) =>
+              item.bankGlAccountCode || item.bankGlAccountName
+                ? `${item.bankGlAccountCode ?? ''} ${item.bankGlAccountName ?? ''}`.trim()
+                : '—',
+          },
+        ]
+      : []),
     {
       key: 'amount',
       header: 'Monto',

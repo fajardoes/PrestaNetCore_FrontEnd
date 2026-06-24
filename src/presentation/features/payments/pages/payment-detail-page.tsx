@@ -200,7 +200,7 @@ export const PaymentDetailPage = () => {
           const isBankProof = payment.paymentFlowCode?.trim().toUpperCase() === 'BANK_PROOF'
           const result = isBankProof
             ? await mutations.approveBankProof(payment.id, {
-                bankGlAccountId: payload.bankGlAccountId,
+                bankEntityId: payload.bankEntityId || '',
                 effectivizationDate: payload.effectivizationDate,
                 verifiedBankDepositDate: payload.bankDepositDate,
                 verifiedBankReferenceNumber: payload.bankReferenceNumber,

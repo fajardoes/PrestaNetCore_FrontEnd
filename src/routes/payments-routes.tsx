@@ -1,5 +1,6 @@
 import { Fragment } from 'react'
 import { Navigate, Route } from 'react-router-dom'
+import { BankEntitiesPage } from '@/presentation/features/payments/pages/bank-entities-page'
 import { BankPaymentProofRegisterPage } from '@/presentation/features/payments/pages/bank-payment-proof-register-page'
 import { BankPaymentProofsPage } from '@/presentation/features/payments/pages/bank-payment-proofs-page'
 import { PaymentComponentPrioritiesPage } from '@/presentation/features/payments/pages/payment-component-priorities-page'
@@ -16,6 +17,10 @@ export const PaymentsRoutes = () => (
     <Route path="/cash-collections/payments/:id" element={<PaymentDetailPage />} />
     <Route path="/bank-payment-proofs" element={<BankPaymentProofsPage />} />
     <Route path="/bank-payment-proofs/new" element={<BankPaymentProofRegisterPage />} />
+    <Route
+      path="/bank-payment-proofs/catalogs/bank-entities"
+      element={<BankEntitiesPage />}
+    />
     <Route path="/bank-payment-proofs/:id" element={<PaymentDetailPage />} />
     <Route
       path="/payments/component-priorities"

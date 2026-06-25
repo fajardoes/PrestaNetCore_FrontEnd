@@ -71,7 +71,32 @@ export const RejectBankPaymentProofModal = ({
             label="Estado"
             value={translatePaymentStatus(payment.statusCode, payment.statusName)}
           />
+          <Summary
+            label="Referencia reportada"
+            value={payment.reportedBankReferenceNumber?.trim() || '—'}
+          />
+          <Summary
+            label="Fecha reportada"
+            value={payment.reportedBankDepositDate?.trim() || '—'}
+          />
         </div>
+        {payment.bankDepositProofDocument ? (
+          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+            <p className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+              Comprobante adjunto
+            </p>
+            <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-50">
+              {payment.bankDepositProofDocument.originalFileName || 'Comprobante'}
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {payment.bankDepositProofDocument.contentType || 'Tipo no identificado'} · {formatFileSize(payment.bankDepositProofDocument.fileSizeBytes)}
+            </p>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+            Este abono no tiene comprobante adjunto. Documenta el motivo del rechazo con claridad.
+          </div>
+        )}
         <div className="space-y-1">
           <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
             Motivo
@@ -105,3 +130,17 @@ const Summary = ({ label, value }: { label: string; value: string }) => (
     </p>
   </div>
 )
+
+const formatFileSize = (value?: number | string | null) => {
+  const bytes =
+    typeof value === 'string'
+      ? Number(value)
+      : typeof value === 'number'
+        ? value
+        : Number.NaN
+
+  if (!Number.isFinite(bytes) || bytes < 0) return '—'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
+}

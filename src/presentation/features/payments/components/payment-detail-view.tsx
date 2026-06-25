@@ -3,6 +3,7 @@ import type { PaymentActionsResponse } from '@/infrastructure/payments/responses
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 import type { PaymentReversalResponse } from '@/infrastructure/payments/responses/payment-reversal-response'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { BankPaymentProofDocumentPanel } from './bank-payment-proof-document-panel'
 import {
   formatBankEntityDisplay,
   formatCurrency,
@@ -30,6 +31,12 @@ interface PaymentDetailViewProps {
   onReject?: () => void
   onReverse?: () => void
   onPrintReceipt?: () => void
+  bankProofReviewed?: boolean
+  isPreviewingBankProof?: boolean
+  isDownloadingBankProof?: boolean
+  bankProofDocumentError?: string | null
+  onPreviewBankProof?: () => void
+  onDownloadBankProof?: () => void
 }
 
 const InfoCard = ({ label, value }: { label: string; value: string }) => (
@@ -54,6 +61,12 @@ export const PaymentDetailView = ({
   onReject,
   onReverse,
   onPrintReceipt,
+  bankProofReviewed,
+  isPreviewingBankProof,
+  isDownloadingBankProof,
+  bankProofDocumentError,
+  onPreviewBankProof,
+  onDownloadBankProof,
 }: PaymentDetailViewProps) => {
   const effectivizeAction = actions?.allowedActions.find((action) => action.code === 'effectivize')
   const settleAction = actions?.allowedActions.find((action) => action.code === 'settle')
@@ -124,6 +137,18 @@ export const PaymentDetailView = ({
         </div>
       ) : null}
     </section>
+
+    {isBankProof ? (
+      <BankPaymentProofDocumentPanel
+        document={payment.bankDepositProofDocument}
+        isReviewed={bankProofReviewed}
+        isPreviewing={isPreviewingBankProof}
+        isDownloading={isDownloadingBankProof}
+        error={bankProofDocumentError}
+        onPreview={onPreviewBankProof ?? (() => undefined)}
+        onDownload={onDownloadBankProof ?? (() => undefined)}
+      />
+    ) : null}
 
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">

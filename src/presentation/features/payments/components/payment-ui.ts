@@ -129,7 +129,7 @@ export const getPaymentStatusBadgeClass = (value?: string | null) => {
     return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-100'
   }
   if (normalized === 'PENDING_REVIEW') {
-    return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-100'
+    return 'border-indigo-200 bg-indigo-50 text-indigo-800 dark:border-indigo-900/60 dark:bg-indigo-500/10 dark:text-indigo-100'
   }
   if (normalized === 'EFFECTIVIZED') {
     return 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100'

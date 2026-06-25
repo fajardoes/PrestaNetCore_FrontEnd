@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { FormEvent, ReactNode } from 'react'
+import type { ChangeEvent, FormEvent, ReactNode } from 'react'
+import { FileText, Upload } from 'lucide-react'
 import type { LoanClientSearchItemResponse } from '@/infrastructure/loans/responses/loan-client-search-response'
 import type { PaymentLookupLoanResponse } from '@/infrastructure/payments/responses/payment-lookup-response'
 import { useNotifications } from '@/providers/NotificationProvider'
@@ -64,7 +65,8 @@ export const BankPaymentProofRegisterPage = () => {
   const [amount, setAmount] = useState('')
   const [bankReferenceNumber, setBankReferenceNumber] = useState('')
   const [bankDepositDate, setBankDepositDate] = useState('')
-  const [bankDepositProofUrl, setBankDepositProofUrl] = useState('')
+  const [proofFile, setProofFile] = useState<File | null>(null)
+  const [proofFileInputKey, setProofFileInputKey] = useState(0)
   const [externalReceiptNumber, setExternalReceiptNumber] = useState('')
   const [notes, setNotes] = useState('')
   const [bankEntityOption, setBankEntityOption] =
@@ -158,6 +160,7 @@ export const BankPaymentProofRegisterPage = () => {
     if (businessDateState?.businessDate && bankDepositDate > businessDateState.businessDate) {
       return 'La fecha de depósito no puede ser mayor que la fecha operativa.'
     }
+    if (!proofFile) return 'Adjunta el archivo del comprobante bancario.'
     if (externalReceiptNumber.trim().length > 80) {
       return 'El comprobante externo no puede superar 80 caracteres.'
     }
@@ -172,7 +175,8 @@ export const BankPaymentProofRegisterPage = () => {
     setAmount('')
     setBankReferenceNumber('')
     setBankDepositDate('')
-    setBankDepositProofUrl('')
+    setProofFile(null)
+    setProofFileInputKey((current) => current + 1)
     setExternalReceiptNumber('')
     setNotes('')
     setBankEntityOption(null)
@@ -187,7 +191,7 @@ export const BankPaymentProofRegisterPage = () => {
       setValidationError(message)
       return
     }
-    if (!selectedLoan) return
+    if (!selectedLoan || !proofFile) return
 
     const result = await paymentRegistration.submitBankProof({
       loanId: selectedLoan.id,
@@ -195,7 +199,7 @@ export const BankPaymentProofRegisterPage = () => {
       amount: Number(amount),
       bankReferenceNumber: bankReferenceNumber.trim(),
       bankDepositDate,
-      bankDepositProofUrl: bankDepositProofUrl.trim() || null,
+      proofFile,
       externalReceiptNumber: externalReceiptNumber.trim() || null,
       notes: notes.trim() || null,
     })
@@ -207,6 +211,10 @@ export const BankPaymentProofRegisterPage = () => {
 
     setValidationError(null)
     setSuccessOpen(true)
+  }
+
+  const handleProofFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setProofFile(event.target.files?.[0] ?? null)
   }
 
   if (!isLoadingPermissions && !canRegister) {
@@ -414,14 +422,64 @@ export const BankPaymentProofRegisterPage = () => {
                   : 'Banco no especificado.'}
               </p>
             </Field>
-            <Field label="Metadata o URL del comprobante">
-              <input
-                type="text"
-                value={bankDepositProofUrl}
-                onChange={(event) => setBankDepositProofUrl(event.target.value)}
-                disabled={paymentRegistration.isSubmitting}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
+            <Field label="Archivo del comprobante">
+              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 p-4 transition hover:border-primary/70 hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-900/70 dark:hover:border-primary/70 dark:hover:bg-primary/10">
+                <input
+                  key={proofFileInputKey}
+                  id="bank-proof-file"
+                  type="file"
+                  onChange={handleProofFileChange}
+                  disabled={paymentRegistration.isSubmitting}
+                  className="sr-only"
+                />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-primary ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-800">
+                      {proofFile ? (
+                        <FileText className="h-5 w-5" />
+                      ) : (
+                        <Upload className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+                        {proofFile ? 'Comprobante seleccionado' : 'Subir comprobante bancario'}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        {proofFile
+                          ? 'Puedes cambiar el archivo antes de registrar el abono.'
+                          : 'Haz clic en el botón para adjuntar el comprobante emitido por el banco.'}
+                      </p>
+                    </div>
+                  </div>
+                  <label
+                    htmlFor="bank-proof-file"
+                    className={`btn-secondary inline-flex cursor-pointer items-center justify-center gap-2 px-4 py-2 text-sm ${
+                      paymentRegistration.isSubmitting
+                        ? 'pointer-events-none cursor-not-allowed opacity-60'
+                        : ''
+                    }`}
+                  >
+                    <Upload className="h-4 w-4" />
+                    {proofFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
+                  </label>
+                </div>
+              </div>
+              {proofFile ? (
+                <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+                  <span className="font-medium text-slate-800 dark:text-slate-100">
+                    {proofFile.name}
+                  </span>
+                  <span className="mx-1">·</span>
+                  <span>{formatFileSize(proofFile.size)}</span>
+                  <span className="mx-1">·</span>
+                  <span>{proofFile.type || 'Tipo no identificado'}</span>
+                </div>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  El archivo es obligatorio para enviar el abono a revisión.
+                </p>
+              )}
             </Field>
             <Field label="Comprobante externo">
               <input
@@ -528,3 +586,10 @@ const Field = ({ label, children }: { label: string; children: ReactNode }) => (
     {children}
   </div>
 )
+
+const formatFileSize = (value: number) => {
+  if (!Number.isFinite(value) || value < 0) return '—'
+  if (value < 1024) return `${value} B`
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`
+  return `${(value / (1024 * 1024)).toFixed(2)} MB`
+}

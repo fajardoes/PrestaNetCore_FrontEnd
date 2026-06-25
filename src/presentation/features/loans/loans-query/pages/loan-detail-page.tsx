@@ -364,7 +364,7 @@ export const LoanDetailPage = () => {
           <DisbursementChargesTable charges={loan.disbursementCharges} />
 
           <QuerySectionCard
-            title="Cronograma de cuotas"
+            title="Plan de pagos"
             description="Seguimiento de vencimientos, montos proyectados y acceso al detalle de cada cuota."
             aside={
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
@@ -378,7 +378,7 @@ export const LoanDetailPage = () => {
                 label="Pendientes"
                 value={String(installmentSummary.pendingCount)}
                 hint="Cuotas con saldo por cobrar"
-                accent={installmentSummary.pendingCount > 0 ? 'amber' : 'slate'}
+                accent={installmentSummary.pendingCount > 0 ? 'blue' : 'slate'}
               />
               <QueryMetricCard
                 label="Liquidadas"

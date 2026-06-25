@@ -8,11 +8,13 @@ import { RejectBankPaymentProofModal } from '@/presentation/features/payments/co
 import { ReversePaymentModal } from '@/presentation/features/payments/components/reverse-payment-modal'
 import { SettleCashPaymentModal } from '@/presentation/features/payments/components/settle-cash-payment-modal'
 import { usePaymentActions } from '@/presentation/features/payments/hooks/use-payment-actions'
+import { useBankPaymentProofDocument } from '@/presentation/features/payments/hooks/use-bank-payment-proof-document'
 import { usePaymentDetail } from '@/presentation/features/payments/hooks/use-payment-detail'
 import { usePaymentMutations } from '@/presentation/features/payments/hooks/use-payment-mutations'
 import { usePaymentReceiptReport } from '@/presentation/features/payments/hooks/use-payment-receipt-report'
 import { useBusinessDate } from '@/presentation/features/system-business-date/hooks/use-business-date'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
+import { FilePreviewModal } from '@/presentation/share/components/file-preview-modal'
 import { useNotifications } from '@/providers/NotificationProvider'
 
 export const PaymentDetailPage = () => {
@@ -23,7 +25,9 @@ export const PaymentDetailPage = () => {
   const isBankRoute = location.pathname.startsWith('/bank-payment-proofs')
   const isCommonRoute = location.pathname.startsWith('/payments/')
   const canReadBank =
-    hasPermission('bank_payment_proofs.read') || hasPermission('bank_payment_proofs.read_all')
+    hasPermission('bank_payment_proofs.read') ||
+    hasPermission('bank_payment_proofs.manage_all') ||
+    hasPermission('bank_payment_proofs.read_all')
   const canReadCash =
     hasPermission('cash_collections.payments.read') ||
     hasPermission('cash_collections.payments.read_all')
@@ -41,9 +45,17 @@ export const PaymentDetailPage = () => {
   const paymentActions = usePaymentActions(id, canRead)
   const businessDate = useBusinessDate()
   const mutations = usePaymentMutations()
+  const bankProofDocument = useBankPaymentProofDocument()
   const receiptReport = usePaymentReceiptReport()
   const [reversal, setReversal] = useState<PaymentReversalResponse | null>(null)
   const [reversalError, setReversalError] = useState<string | null>(null)
+  const [bankProofReviewed, setBankProofReviewed] = useState(false)
+  const [previewDocument, setPreviewDocument] = useState<{
+    fileName: string
+    contentType: string
+    objectUrl: string
+    downloadUrl: string
+  } | null>(null)
   const [effectivizeOpen, setEffectivizeOpen] = useState(false)
   const [settleOpen, setSettleOpen] = useState(false)
   const [rejectOpen, setRejectOpen] = useState(false)
@@ -75,6 +87,22 @@ export const PaymentDetailPage = () => {
   useEffect(() => {
     void loadReversal()
   }, [loadReversal])
+
+  useEffect(() => {
+    setBankProofReviewed(false)
+    setPreviewDocument((previous) => {
+      if (previous?.objectUrl) window.URL.revokeObjectURL(previous.objectUrl)
+      return null
+    })
+  }, [payment?.id])
+
+  useEffect(() => {
+    return () => {
+      if (previewDocument?.objectUrl) {
+        window.URL.revokeObjectURL(previewDocument.objectUrl)
+      }
+    }
+  }, [previewDocument])
 
   const refreshAll = async () => {
     await Promise.all([refresh(), paymentActions.refresh(), businessDate.refresh()])
@@ -150,6 +178,54 @@ export const PaymentDetailPage = () => {
           const result = await receiptReport.openReceipt(payment.id)
           if (!result.success) notify(result.error, 'error')
         }}
+        bankProofReviewed={bankProofReviewed}
+        isPreviewingBankProof={bankProofDocument.isPreviewing}
+        isDownloadingBankProof={bankProofDocument.isDownloading}
+        bankProofDocumentError={bankProofDocument.error}
+        onPreviewBankProof={async () => {
+          const document = payment.bankDepositProofDocument
+          if (!document?.downloadUrl) {
+            notify('El abono no tiene comprobante adjunto.', 'error')
+            return
+          }
+
+          const result = await bankProofDocument.preview(
+            document.downloadUrl,
+            document.originalFileName || 'comprobante',
+          )
+          if (!result.success) {
+            notify(result.error, 'error')
+            return
+          }
+
+          setPreviewDocument((previous) => {
+            if (previous?.objectUrl) window.URL.revokeObjectURL(previous.objectUrl)
+            return {
+              fileName: result.data.fileName,
+              contentType: result.data.contentType || document.contentType,
+              objectUrl: result.data.objectUrl,
+              downloadUrl: document.downloadUrl,
+            }
+          })
+          setBankProofReviewed(true)
+        }}
+        onDownloadBankProof={async () => {
+          const document = payment.bankDepositProofDocument
+          if (!document?.downloadUrl) {
+            notify('El abono no tiene comprobante adjunto.', 'error')
+            return
+          }
+
+          const result = await bankProofDocument.download(
+            document.downloadUrl,
+            document.originalFileName || 'comprobante',
+          )
+          if (!result.success) {
+            notify(result.error, 'error')
+            return
+          }
+          setBankProofReviewed(true)
+        }}
       />
 
       <SettleCashPaymentModal
@@ -187,6 +263,7 @@ export const PaymentDetailPage = () => {
         isSubmitting={mutations.isSubmitting}
         backendError={mutations.error}
         disabledReason={actionDisabledReason('effectivize')}
+        bankProofReviewed={bankProofReviewed}
         onClose={() => {
           mutations.setError(null)
           setEffectivizeOpen(false)
@@ -216,6 +293,37 @@ export const PaymentDetailPage = () => {
           await refreshAll()
           return true
         }}
+      />
+
+      <FilePreviewModal
+        open={Boolean(previewDocument)}
+        fileName={previewDocument?.fileName}
+        fileUrl={previewDocument?.objectUrl}
+        contentType={previewDocument?.contentType}
+        isLoading={bankProofDocument.isPreviewing}
+        error={null}
+        isDownloading={bankProofDocument.isDownloading}
+        onClose={() => {
+          setPreviewDocument((previous) => {
+            if (previous?.objectUrl) window.URL.revokeObjectURL(previous.objectUrl)
+            return null
+          })
+        }}
+        onDownload={
+          previewDocument
+            ? async () => {
+                const result = await bankProofDocument.download(
+                  previewDocument.downloadUrl,
+                  previewDocument.fileName,
+                )
+                if (!result.success) {
+                  notify(result.error, 'error')
+                  return
+                }
+                setBankProofReviewed(true)
+              }
+            : undefined
+        }
       />
 
       <RejectBankPaymentProofModal

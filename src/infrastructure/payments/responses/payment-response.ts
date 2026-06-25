@@ -1,5 +1,16 @@
 import type { PaymentAllocationResponse } from './payment-allocation-response'
 
+export interface BankDepositProofDocumentResponse {
+  id: string
+  module: string
+  documentType: string
+  referenceId: string
+  originalFileName: string
+  contentType: string
+  fileSizeBytes: number
+  downloadUrl: string
+}
+
 export interface PaymentResponse {
   id: string
   loanId: string
@@ -45,7 +56,7 @@ export interface PaymentResponse {
   bankReferenceNumber?: string | null
   reportedBankDepositDate?: string | null
   bankDepositDate?: string | null
-  bankDepositProofUrl?: string | null
+  bankDepositProofDocument?: BankDepositProofDocumentResponse | null
   effectivizationNotes?: string | null
   notes?: string | null
   allocations: PaymentAllocationResponse[]

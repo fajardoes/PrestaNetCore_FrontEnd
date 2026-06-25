@@ -27,7 +27,7 @@ export interface RegisterBankPaymentProofRequest {
   amount: number
   bankReferenceNumber: string
   bankDepositDate: string
-  bankDepositProofUrl?: string | null
+  proofFile: File
   externalReceiptNumber?: string | null
   notes?: string | null
 }

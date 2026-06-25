@@ -278,6 +278,10 @@ export const translateLoanApplicationStatus = (
   if (normalized === 'REJECTED') return 'Rechazada'
   if (normalized === 'CANCELLED') return 'Cancelada'
   if (normalized === 'DISBURSEMENT_REVERSED') return 'Desembolso revertido'
+  if (normalized === 'PENDING') return 'Pendiente'
+  if (normalized === 'PARTIAL' || normalized === 'PARTIALLY_PAID') return 'Parcial'
+  if (normalized === 'PAID' || normalized === 'SETTLED') return 'Pagada'
+  if (normalized === 'OVERDUE' || normalized === 'DELINQUENT') return 'Vencida'
   return statusName?.trim() || statusCode || '—'
 }
 
@@ -297,6 +301,18 @@ export const statusBadgeClass = (statusCode?: string | null) => {
   }
   if (normalized === 'ACTIVE') {
     return 'bg-sky-100 text-sky-800 ring-1 ring-sky-300 dark:bg-sky-500/20 dark:text-sky-100 dark:ring-sky-500/40'
+  }
+  if (normalized === 'PENDING') {
+    return 'bg-blue-100 text-blue-800 ring-1 ring-blue-300 dark:bg-blue-500/20 dark:text-blue-100 dark:ring-blue-500/40'
+  }
+  if (normalized === 'PARTIAL' || normalized === 'PARTIALLY_PAID') {
+    return 'bg-indigo-100 text-indigo-800 ring-1 ring-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-100 dark:ring-indigo-500/40'
+  }
+  if (normalized === 'PAID' || normalized === 'SETTLED') {
+    return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-100 dark:ring-emerald-500/40'
+  }
+  if (normalized === 'OVERDUE' || normalized === 'DELINQUENT') {
+    return 'bg-red-100 text-red-800 ring-1 ring-red-300 dark:bg-red-500/20 dark:text-red-100 dark:ring-red-500/40'
   }
   if (normalized === 'REJECTED') {
     return 'bg-rose-100 text-rose-800 ring-1 ring-rose-300 dark:bg-rose-500/20 dark:text-rose-100 dark:ring-rose-500/40'

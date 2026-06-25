@@ -31,6 +31,7 @@ interface EffectivizePaymentModalProps {
   isSubmitting?: boolean
   backendError?: string | null
   disabledReason?: string | null
+  bankProofReviewed?: boolean
   onClose: () => void
   onSubmit: (payload: EffectivizePaymentFormValues) => Promise<boolean>
 }
@@ -68,6 +69,7 @@ export const EffectivizePaymentModal = ({
   isSubmitting,
   backendError,
   disabledReason,
+  bankProofReviewed,
   onClose,
   onSubmit,
 }: EffectivizePaymentModalProps) => {
@@ -173,6 +175,12 @@ export const EffectivizePaymentModal = ({
 
   const validate = () => {
     if (isBankProof) {
+      if (!payment?.bankDepositProofDocument?.downloadUrl) {
+        return 'Este abono no tiene comprobante adjunto. No debe aprobarse sin revisión interna.'
+      }
+      if (!bankProofReviewed) {
+        return 'Abre o descarga el comprobante antes de aprobar el abono.'
+      }
       if (!bankEntity?.value) return 'Selecciona la entidad bancaria confirmada.'
     } else if (!bankAccount?.value) {
       return 'Selecciona la cuenta contable de banco.'
@@ -229,6 +237,13 @@ export const EffectivizePaymentModal = ({
   const reportedBankId = payment.reportedBankEntityId?.trim() || ''
   const confirmedBankId = bankEntity?.value?.trim() || payment.approvedBankEntityId?.trim() || ''
   const bankChanged = Boolean(reportedBankId && confirmedBankId && reportedBankId !== confirmedBankId)
+  const proofDisabledReason = isBankProof
+    ? !payment.bankDepositProofDocument?.downloadUrl
+      ? 'Este abono no tiene comprobante adjunto. No debe aprobarse sin revisión interna.'
+      : !bankProofReviewed
+        ? 'Abre o descarga el comprobante antes de aprobar el abono.'
+        : null
+    : null
 
   return (
     <ConfirmModal
@@ -243,7 +258,7 @@ export const EffectivizePaymentModal = ({
       cancelLabel="Cancelar"
       panelClassName="max-w-3xl"
       isProcessing={isSubmitting}
-      confirmDisabled={Boolean(disabledReason)}
+      confirmDisabled={Boolean(disabledReason || proofDisabledReason)}
       onCancel={onClose}
       onConfirm={() => void handleConfirm()}
     >
@@ -293,6 +308,13 @@ export const EffectivizePaymentModal = ({
               <Field
                 label="Fecha reportada"
                 value={formatDate(payment.reportedBankDepositDate)}
+              />
+              <Field
+                label="Comprobante"
+                value={
+                  payment.bankDepositProofDocument?.originalFileName?.trim() ||
+                  'Sin comprobante adjunto'
+                }
               />
               <div className="space-y-1 md:col-span-2">
                 <div className="flex items-center gap-2">
@@ -405,9 +427,15 @@ export const EffectivizePaymentModal = ({
           </div>
         </div>
 
-        {disabledReason || validationError || backendError || accountError || bankEntitiesError ? (
+        {disabledReason ||
+        proofDisabledReason ||
+        validationError ||
+        backendError ||
+        accountError ||
+        bankEntitiesError ? (
           <p className="text-sm text-red-600 dark:text-red-300">
             {disabledReason ||
+              proofDisabledReason ||
               validationError ||
               backendError ||
               accountError ||

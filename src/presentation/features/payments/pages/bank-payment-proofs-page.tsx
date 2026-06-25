@@ -7,9 +7,7 @@ import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
 import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
-import { EffectivizePaymentModal } from '@/presentation/features/payments/components/effectivize-payment-modal'
 import { PaymentsTable } from '@/presentation/features/payments/components/payments-table'
-import { RejectBankPaymentProofModal } from '@/presentation/features/payments/components/reject-bank-payment-proof-modal'
 import { ReversePaymentModal } from '@/presentation/features/payments/components/reverse-payment-modal'
 import { usePaymentMutations } from '@/presentation/features/payments/hooks/use-payment-mutations'
 import { usePaymentReceiptReport } from '@/presentation/features/payments/hooks/use-payment-receipt-report'
@@ -38,7 +36,8 @@ export const BankPaymentProofsPage = () => {
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const { hasPermission, isLoading: isLoadingPermissions } = useUserPermissions()
-  const canReadAll = hasPermission('bank_payment_proofs.read_all')
+  const canManageAll = hasPermission('bank_payment_proofs.manage_all')
+  const canReadAll = canManageAll || hasPermission('bank_payment_proofs.read_all')
   const canRead = hasPermission('bank_payment_proofs.read') || canReadAll
   const canReadBankEntities = hasPermission('bank_entities.read') || hasPermission('bank_entities.manage')
   const payments = usePaymentsList(canRead, undefined, 'bank-proofs')
@@ -60,8 +59,6 @@ export const BankPaymentProofsPage = () => {
   const [to, setTo] = useState('')
   const [rowActions, setRowActions] = useState<Record<string, PaymentActionsResponse>>({})
   const [selectedPayment, setSelectedPayment] = useState<PaymentResponse | null>(null)
-  const [approveOpen, setApproveOpen] = useState(false)
-  const [rejectOpen, setRejectOpen] = useState(false)
   const [reverseOpen, setReverseOpen] = useState(false)
 
   useEffect(() => {
@@ -334,14 +331,10 @@ export const BankPaymentProofsPage = () => {
         actionsByPaymentId={rowActions}
         showBankColumns
         onEffectivize={(payment) => {
-          mutations.setError(null)
-          setSelectedPayment(payment)
-          setApproveOpen(true)
+          navigate(`/bank-payment-proofs/${payment.id}`)
         }}
         onReject={(payment) => {
-          mutations.setError(null)
-          setSelectedPayment(payment)
-          setRejectOpen(true)
+          navigate(`/bank-payment-proofs/${payment.id}`)
         }}
         onReverse={(payment) => {
           mutations.setError(null)
@@ -351,75 +344,6 @@ export const BankPaymentProofsPage = () => {
         onPrintReceipt={async (payment) => {
           const result = await receiptReport.openReceipt(payment.id)
           if (!result.success) notify(result.error, 'error')
-        }}
-      />
-
-      <EffectivizePaymentModal
-        open={approveOpen}
-        payment={selectedPayment}
-        businessDate={businessDate.state?.businessDate}
-        isSubmitting={mutations.isSubmitting}
-        backendError={mutations.error}
-        disabledReason={
-          selectedPayment ? getActionDisabledReason(selectedPayment, 'effectivize') : null
-        }
-        onClose={() => {
-          mutations.setError(null)
-          setApproveOpen(false)
-        }}
-        onSubmit={async (payload) => {
-          if (!selectedPayment) return false
-          const disabledReason = getActionDisabledReason(selectedPayment, 'effectivize')
-          if (disabledReason) {
-            notify(disabledReason, 'warning')
-            return false
-          }
-          const result = await mutations.approveBankProof(selectedPayment.id, {
-            bankEntityId: payload.bankEntityId || '',
-            effectivizationDate: payload.effectivizationDate,
-            verifiedBankDepositDate: payload.bankDepositDate,
-            verifiedBankReferenceNumber: payload.bankReferenceNumber,
-            reviewNotes: payload.notes,
-          })
-          if (!result.success) {
-            notify(result.error, 'error')
-            if (result.status === 409) await payments.refresh()
-            return false
-          }
-          notify('Abono bancario aprobado correctamente.', 'success')
-          await refreshAfterMutation()
-          return true
-        }}
-      />
-
-      <RejectBankPaymentProofModal
-        open={rejectOpen}
-        payment={selectedPayment}
-        isSubmitting={mutations.isSubmitting}
-        backendError={mutations.error}
-        disabledReason={
-          selectedPayment ? getActionDisabledReason(selectedPayment, 'reject') : null
-        }
-        onClose={() => {
-          mutations.setError(null)
-          setRejectOpen(false)
-        }}
-        onSubmit={async (payload) => {
-          if (!selectedPayment) return false
-          const disabledReason = getActionDisabledReason(selectedPayment, 'reject')
-          if (disabledReason) {
-            notify(disabledReason, 'warning')
-            return false
-          }
-          const result = await mutations.rejectBankProof(selectedPayment.id, payload)
-          if (!result.success) {
-            notify(result.error, 'error')
-            if (result.status === 409) await payments.refresh()
-            return false
-          }
-          notify('Abono bancario rechazado correctamente.', 'success')
-          await refreshAfterMutation()
-          return true
         }}
       />
 

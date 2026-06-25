@@ -85,7 +85,19 @@ export const registerCashCollectionPayment = async (
 export const registerBankPaymentProof = async (
   payload: RegisterBankPaymentProofRequest,
 ): Promise<PaymentResponse> => {
-  const { data } = await httpClient.post<PaymentResponse>(bankProofsPath, payload)
+  const formData = new FormData()
+  formData.append('loanId', payload.loanId)
+  formData.append('amount', payload.amount.toString())
+  if (payload.bankEntityId) formData.append('bankEntityId', payload.bankEntityId)
+  formData.append('bankReferenceNumber', payload.bankReferenceNumber)
+  formData.append('bankDepositDate', payload.bankDepositDate)
+  formData.append('proofFile', payload.proofFile)
+  if (payload.externalReceiptNumber) {
+    formData.append('externalReceiptNumber', payload.externalReceiptNumber)
+  }
+  if (payload.notes) formData.append('notes', payload.notes)
+
+  const { data } = await httpClient.post<PaymentResponse>(bankProofsPath, formData)
   return data
 }
 

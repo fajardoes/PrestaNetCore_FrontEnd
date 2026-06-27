@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import type {
   DailyClosingProcessCode,
@@ -10,6 +10,7 @@ import {
   DAILY_CLOSING_PROCESSING_STATUS_OPTIONS,
   DAILY_CLOSING_PROCESS_OPTIONS,
   formatDateOnly,
+  formatDateTime,
   formatDuration,
   formatNumber,
   getRunStatusBadgeClass,
@@ -41,6 +42,16 @@ export const DailyClosingRunDetailPage = () => {
   const [processCode, setProcessCode] = useState('')
   const [loanNo, setLoanNo] = useState('')
   const [loanId, setLoanId] = useState('')
+  const isRunActive =
+    runQuery.run?.status === 'RUNNING' || runQuery.run?.status === 'FINALIZING'
+
+  useEffect(() => {
+    if (!isRunActive) return
+    const intervalId = window.setInterval(() => {
+      void Promise.all([runQuery.refresh(), details.refresh()])
+    }, 12000)
+    return () => window.clearInterval(intervalId)
+  }, [details.refresh, isRunActive, runQuery.refresh])
 
   const selectedProcessingStatus = useMemo(
     () =>
@@ -167,6 +178,8 @@ export const DailyClosingRunDetailPage = () => {
                 ['Eventos', formatNumber(run.generatedEvents)],
                 ['Snapshots', formatNumber(run.generatedSnapshots)],
                 ['Duracion', formatDuration(run.executionTimeMs)],
+                ['Ultimo heartbeat', formatDateTime(run.heartbeatAt)],
+                ['Lease registrado', formatDateTime(run.leaseExpiresAt)],
               ].map(([label, value]) => (
                 <div
                   key={label}
@@ -251,7 +264,7 @@ export const DailyClosingRunDetailPage = () => {
           </label>
           <label className="block">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-              LoanId tecnico
+              Id tecnico del prestamo
             </span>
             <input
               type="text"

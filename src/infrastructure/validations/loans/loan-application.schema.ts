@@ -11,10 +11,10 @@ export const loanApplicationSchema = yup.object({
     .required('El monto solicitado es obligatorio.'),
   requestedTerm: yup
     .number()
-    .typeError('El plazo solicitado debe ser numérico.')
-    .integer('El plazo solicitado debe ser entero.')
-    .moreThan(0, 'El plazo solicitado debe ser mayor a 0.')
-    .required('El plazo solicitado es obligatorio.'),
+    .typeError('La duración solicitada debe ser numérica.')
+    .integer('La duración solicitada debe ser entera.')
+    .moreThan(0, 'La duración solicitada debe ser mayor a 0.')
+    .required('La duración solicitada es obligatoria.'),
   requestedPaymentFrequencyId: yup
     .string()
     .trim()

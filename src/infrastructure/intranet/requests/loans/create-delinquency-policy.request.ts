@@ -6,11 +6,11 @@ export interface CreateDelinquencyPolicyRequestDto {
   description?: string | null
   graceDays: number
   penaltyRateAnnual: number
-  rateBase: number
-  calculationBase: string
-  roundingMode: string
+  rateBaseId: string
+  calculationBaseId: string
+  roundingModeId: string
   roundingDecimals: number
-  minimumPenaltyAmount: number
+  minimumPenaltyAmount?: number | null
   maximumPenaltyAmount?: number | null
   includeSaturday: boolean
   includeSunday: boolean

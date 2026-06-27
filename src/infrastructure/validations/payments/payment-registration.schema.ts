@@ -1,10 +1,6 @@
 import { z } from 'zod'
 
 export const paymentRegistrationSchema = z.object({
-  paymentTypeCode: z.enum(
-    ['CASH', 'BANK_DEPOSIT_PROOF', 'BANK_TRANSFER_PROOF', 'MOBILE_PAYMENT_PROOF'],
-    { required_error: 'Debes seleccionar el tipo de pago.' },
-  ),
   amount: z.coerce
     .number({ invalid_type_error: 'El monto es obligatorio.' })
     .positive('El monto debe ser mayor que cero.'),

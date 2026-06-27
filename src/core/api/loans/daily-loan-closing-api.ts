@@ -45,6 +45,15 @@ export const getDailyClosingRun = async (
   return data
 }
 
+export const recoverDailyClosingRun = async (
+  id: string,
+): Promise<DailyLoanClosingRunResponse> => {
+  const { data } = await httpClient.post<DailyLoanClosingRunResponse>(
+    `${basePath}/runs/${encodeURIComponent(id)}/recover`,
+  )
+  return data
+}
+
 export const searchDailyClosingRunDetails = async (
   runId: string,
   params: DailyClosingRunDetailFiltersRequest,

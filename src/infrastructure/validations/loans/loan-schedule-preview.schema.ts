@@ -16,8 +16,8 @@ export const loanSchedulePreviewSchema = yup.object({
     .optional(),
   termOverride: optionalNumber
     .nullable()
-    .integer('El plazo debe ser entero.')
-    .moreThan(0, 'El plazo debe ser mayor a 0.')
+    .integer('La duración debe ser entera.')
+    .moreThan(0, 'La duración debe ser mayor a 0.')
     .optional(),
   paymentFrequencyIdOverride: yup.string().trim().nullable().optional(),
   nominalRateOverride: optionalNumber

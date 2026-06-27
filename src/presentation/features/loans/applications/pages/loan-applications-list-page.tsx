@@ -119,6 +119,61 @@ export const LoanApplicationsListPage = () => {
 
   const columns = [
     {
+      key: 'actions',
+      header: 'Acciones',
+      className: 'min-w-[120px]',
+      render: (item: LoanApplicationResponse) => (
+        <span className="flex items-center justify-start gap-1">
+          {isLoadingActions && !allowedActionsById[item.id] ? (
+            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+              ...
+            </span>
+          ) : null}
+          <button
+            type="button"
+            className="btn-table-action w-7 px-0"
+            onClick={() => navigate(`/loans/applications/${item.id}`)}
+            title="Ver detalle de solicitud"
+            aria-label="Ver"
+          >
+            <Eye className="mx-auto h-4 w-4" />
+          </button>
+          {allowedActionsById[item.id]?.includes('update_draft') ? (
+            <button
+              type="button"
+              className="btn-table-action w-7 px-0"
+              onClick={() =>
+                navigate(`/loans/applications/${item.id}/edit`, {
+                  state: { returnTo: '/loans/applications' },
+                })
+              }
+              title="Editar solicitud"
+              aria-label="Editar"
+            >
+              <Pencil className="mx-auto h-4 w-4" />
+            </button>
+          ) : null}
+          {allowedActionsById[item.id]?.includes('print') ? (
+            <button
+              type="button"
+              className="btn-table-action w-7 px-0"
+              onClick={() =>
+                void openPrintPreview(
+                  item.id,
+                  item.applicationNo || item.id.slice(0, 8),
+                )
+              }
+              title="Imprimir solicitud"
+              aria-label="Imprimir"
+              disabled={isReportLoading}
+            >
+              <Printer className="mx-auto h-4 w-4" />
+            </button>
+          ) : null}
+        </span>
+      ),
+    },
+    {
       key: 'application',
       header: 'Solicitud / préstamo',
       className: 'min-w-[155px]',
@@ -179,10 +234,19 @@ export const LoanApplicationsListPage = () => {
     },
     {
       key: 'term',
-      header: 'Plazo',
-      className: 'min-w-[70px] text-right',
-      render: (item: LoanApplicationResponse) => item.requestedTerm,
-      getTitle: (item: LoanApplicationResponse) => String(item.requestedTerm),
+      header: 'Duración',
+      className: 'min-w-[125px]',
+      render: (item: LoanApplicationResponse) =>
+        `${item.requestedTerm} ${item.requestedTermUnitName}`,
+      getTitle: (item: LoanApplicationResponse) =>
+        `${item.requestedTerm} ${item.requestedTermUnitName}`,
+    },
+    {
+      key: 'paymentFrequency',
+      header: 'Frecuencia de pago',
+      className: 'min-w-[130px]',
+      render: (item: LoanApplicationResponse) => item.requestedPaymentFrequencyName,
+      getTitle: (item: LoanApplicationResponse) => item.requestedPaymentFrequencyName,
     },
     {
       key: 'status',
@@ -230,61 +294,6 @@ export const LoanApplicationsListPage = () => {
       className: 'min-w-[100px]',
       render: (item: LoanApplicationResponse) => formatDate(item.createdAt),
       getTitle: (item: LoanApplicationResponse) => formatDate(item.createdAt),
-    },
-    {
-      key: 'actions',
-      header: 'Acciones',
-      className: 'min-w-[120px]',
-      render: (item: LoanApplicationResponse) => (
-        <span className="flex items-center justify-end gap-1">
-          {isLoadingActions && !allowedActionsById[item.id] ? (
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              ...
-            </span>
-          ) : null}
-          <button
-            type="button"
-            className="btn-table-action w-7 px-0"
-            onClick={() => navigate(`/loans/applications/${item.id}`)}
-            title="Ver detalle de solicitud"
-            aria-label="Ver"
-          >
-            <Eye className="mx-auto h-4 w-4" />
-          </button>
-          {allowedActionsById[item.id]?.includes('update_draft') ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
-              onClick={() =>
-                navigate(`/loans/applications/${item.id}/edit`, {
-                  state: { returnTo: '/loans/applications' },
-                })
-              }
-              title="Editar solicitud"
-              aria-label="Editar"
-            >
-              <Pencil className="mx-auto h-4 w-4" />
-            </button>
-          ) : null}
-          {allowedActionsById[item.id]?.includes('print') ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
-              onClick={() =>
-                void openPrintPreview(
-                  item.id,
-                  item.applicationNo || item.id.slice(0, 8),
-                )
-              }
-              title="Imprimir solicitud"
-              aria-label="Imprimir"
-              disabled={isReportLoading}
-            >
-              <Printer className="mx-auto h-4 w-4" />
-            </button>
-          ) : null}
-        </span>
-      ),
     },
   ]
 

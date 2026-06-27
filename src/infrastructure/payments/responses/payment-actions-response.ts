@@ -1,4 +1,4 @@
-export type PaymentActionCode = 'effectivize' | 'reverse'
+export type PaymentActionCode = string
 
 export interface PaymentAction {
   code: PaymentActionCode

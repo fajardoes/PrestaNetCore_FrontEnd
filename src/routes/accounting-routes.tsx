@@ -1,13 +1,46 @@
-import { Fragment } from 'react'
+import { Fragment, lazy } from 'react'
 import { Route } from 'react-router-dom'
-import { ChartAccountsPage } from '@/presentation/features/accounting/pages/chart-accounts-page'
-import { CostCentersPage } from '@/presentation/features/accounting/pages/cost-centers-page'
-import { PeriodsPage } from '@/presentation/features/accounting/pages/periods-page'
-import { JournalPage } from '@/presentation/features/accounting/journal/pages/journal-page'
-import { LedgerPage } from '@/presentation/features/accounting/ledger/pages/ledger-page'
-import { TrialBalancePage } from '@/presentation/features/accounting/reports/trial-balance-page'
-import { BalanceSheetPage } from '@/presentation/features/accounting/reports/balance-sheet-page'
-import { IncomeStatementPage } from '@/presentation/features/accounting/reports/income-statement-page'
+
+const ChartAccountsPage = lazy(() =>
+  import('@/presentation/features/accounting/pages/chart-accounts-page').then((module) => ({
+    default: module.ChartAccountsPage,
+  })),
+)
+const CostCentersPage = lazy(() =>
+  import('@/presentation/features/accounting/pages/cost-centers-page').then((module) => ({
+    default: module.CostCentersPage,
+  })),
+)
+const PeriodsPage = lazy(() =>
+  import('@/presentation/features/accounting/pages/periods-page').then((module) => ({
+    default: module.PeriodsPage,
+  })),
+)
+const JournalPage = lazy(() =>
+  import('@/presentation/features/accounting/journal/pages/journal-page').then((module) => ({
+    default: module.JournalPage,
+  })),
+)
+const LedgerPage = lazy(() =>
+  import('@/presentation/features/accounting/ledger/pages/ledger-page').then((module) => ({
+    default: module.LedgerPage,
+  })),
+)
+const TrialBalancePage = lazy(() =>
+  import('@/presentation/features/accounting/reports/trial-balance-page').then((module) => ({
+    default: module.TrialBalancePage,
+  })),
+)
+const BalanceSheetPage = lazy(() =>
+  import('@/presentation/features/accounting/reports/balance-sheet-page').then((module) => ({
+    default: module.BalanceSheetPage,
+  })),
+)
+const IncomeStatementPage = lazy(() =>
+  import('@/presentation/features/accounting/reports/income-statement-page').then((module) => ({
+    default: module.IncomeStatementPage,
+  })),
+)
 
 export const AccountingRoutes = () => (
   <Fragment>

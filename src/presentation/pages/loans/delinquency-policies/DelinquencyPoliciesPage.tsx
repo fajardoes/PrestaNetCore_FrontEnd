@@ -115,7 +115,10 @@ export const DelinquencyPoliciesPage = () => {
                   Tasa anual
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Base
+                  Base de tasa
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Base de cálculo
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Acciones
@@ -127,7 +130,7 @@ export const DelinquencyPoliciesPage = () => {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                    colSpan={7}
+                    colSpan={8}
                   >
                     Cargando políticas...
                   </td>
@@ -136,7 +139,7 @@ export const DelinquencyPoliciesPage = () => {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
-                    colSpan={7}
+                    colSpan={8}
                   >
                     {error}
                   </td>
@@ -145,7 +148,7 @@ export const DelinquencyPoliciesPage = () => {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                    colSpan={7}
+                    colSpan={8}
                   >
                     No hay políticas con esos filtros.
                   </td>
@@ -172,7 +175,13 @@ export const DelinquencyPoliciesPage = () => {
                       {item.penaltyRateAnnual}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                      {item.rateBase}
+                      {item.rateBaseName || item.rateBaseCode || item.rateBase}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
+                      {item.calculationBaseName ||
+                        item.calculationBaseCode ||
+                        item.calculationBase ||
+                        'Sin dato'}
                     </td>
                     <td className="px-4 py-3 text-right text-sm">
                       <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">

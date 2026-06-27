@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useAuth } from '@/hooks/useAuth'
 import { CreateRoleModal } from '@/presentation/features/security/components/create-role-modal'
 import { useRolePermissionsAdmin } from '@/presentation/features/security/hooks/use-role-permissions-admin'
 import { MessageModal } from '@/presentation/share/components/message-modal'
@@ -75,6 +76,12 @@ interface FeedbackState {
 }
 
 export const RolePermissionsPage = () => {
+  const { user } = useAuth()
+  const isAdmin = useMemo(
+    () => user?.roles.some((role) => role.toLowerCase() === 'admin') ?? false,
+    [user?.roles],
+  )
+
   const {
     roles,
     catalog,
@@ -94,7 +101,7 @@ export const RolePermissionsPage = () => {
     createRole,
     save,
     loadRoleData,
-  } = useRolePermissionsAdmin()
+  } = useRolePermissionsAdmin({ enabled: isAdmin })
 
   const [isCreateRoleOpen, setIsCreateRoleOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -174,6 +181,18 @@ export const RolePermissionsPage = () => {
       (error ?? '').toLowerCase().includes('no autorizado'),
     )
   }, [createRoleError, roleDataError, rolesError, saveError])
+
+  if (!isAdmin) {
+    return (
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-amber-900 shadow-sm dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+        <p className="font-semibold">Acceso restringido</p>
+        <p className="text-sm">
+          Solo los usuarios con rol <span className="font-semibold">Admin</span>{' '}
+          pueden administrar permisos por rol.
+        </p>
+      </div>
+    )
+  }
 
   if (isUnauthorized && !isLoadingRoles && !isLoadingRoleData && !roles.length) {
     return (

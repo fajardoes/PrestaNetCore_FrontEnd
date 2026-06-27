@@ -1,8 +1,27 @@
-import { Fragment } from 'react'
+import { Fragment, lazy } from 'react'
 import { Route } from 'react-router-dom'
-import { CollectionChannelDetailPage } from '@/presentation/features/collection-channels/pages/collection-channel-detail-page'
-import { CollectionChannelsPage } from '@/presentation/features/collection-channels/pages/collection-channels-page'
-import { CollectionChannelTypesPage } from '@/presentation/features/collection-channels/pages/collection-channel-types-page'
+
+const CollectionChannelDetailPage = lazy(() =>
+  import('@/presentation/features/collection-channels/pages/collection-channel-detail-page').then(
+    (module) => ({
+      default: module.CollectionChannelDetailPage,
+    }),
+  ),
+)
+const CollectionChannelsPage = lazy(() =>
+  import('@/presentation/features/collection-channels/pages/collection-channels-page').then(
+    (module) => ({
+      default: module.CollectionChannelsPage,
+    }),
+  ),
+)
+const CollectionChannelTypesPage = lazy(() =>
+  import('@/presentation/features/collection-channels/pages/collection-channel-types-page').then(
+    (module) => ({
+      default: module.CollectionChannelTypesPage,
+    }),
+  ),
+)
 
 export const CollectionChannelsRoutes = () => (
   <Fragment>

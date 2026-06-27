@@ -24,7 +24,11 @@ export const useDailyClosingRunDetail = (id: string | undefined, enabled = true)
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
     const result = await getDailyClosingRunAction(id)
     if (!result.success) {
-      setState({ run: null, isLoading: false, error: result.error })
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: result.error,
+      }))
       return
     }
 

@@ -6,6 +6,7 @@ export interface LoanInstallmentComponentResponse {
   sourceRefId?: string | null
   amountProjected: number
   amountPaid: number
+  outstandingAmount: number
 }
 
 export interface LoanInstallmentResponse {

@@ -8,6 +8,7 @@ import { DisbursementSummaryCard } from '@/presentation/features/loans/component
 import { RecognitionPolicyBadges } from '@/presentation/features/loans/components/recognition-policy-badges'
 import { LoanDisbursementReversalEligibilityCard } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-eligibility-card'
 import { LoanDisbursementReversalModal } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-modal'
+import { LoanAnticipatedInstallmentSection } from '@/presentation/features/loans/loans-query/components/loan-anticipated-installment-section'
 import {
   QueryDetailField,
   QueryHeroCard,
@@ -16,6 +17,7 @@ import {
 } from '@/presentation/features/loans/loans-query/components/loan-query-ui'
 import { useLoanInstallments } from '@/presentation/features/loans/loans-query/hooks/use-loan-installments'
 import { useLoan } from '@/presentation/features/loans/loans-query/hooks/use-loan'
+import { useLoanAnticipatedInstallment } from '@/presentation/features/loans/loans-query/hooks/use-loan-anticipated-installment'
 import {
   formatCurrency,
   formatDate,
@@ -58,6 +60,10 @@ export const LoanDetailPage = () => {
 
   const canReadEligibility = hasPermission('loans.disbursement_reversal.read_eligibility')
   const canExecuteReversal = hasPermission('loans.disbursement_reversal.execute')
+  const canViewAnticipatedInstallment = allowedActions.includes('view_anticipated_installment')
+  const canApplyAnticipatedInstallment = allowedActions.includes('apply_anticipated_installment')
+  const canReverseAnticipatedInstallment = allowedActions.includes('reverse_anticipated_installment_application')
+  const anticipatedInstallment = useLoanAnticipatedInstallment(id, canViewAnticipatedInstallment)
   const isDisbursementAlreadyReversed =
     Boolean(loan?.isDisbursementReversed) ||
     (loan?.statusCode ?? '').trim().toUpperCase() === 'DISBURSEMENT_REVERSED'
@@ -135,7 +141,7 @@ export const LoanDetailPage = () => {
           <QueryMetricCard
             label="Capital"
             value={formatCurrency(loan.principal)}
-            hint={`Solicitud vinculada: ${loan.applicationId}`}
+            hint={loan.loanProductName?.trim() || 'Producto no disponible'}
             accent="blue"
           />
           <QueryMetricCard
@@ -153,7 +159,7 @@ export const LoanDetailPage = () => {
           <QueryMetricCard
             label="Tasa nominal"
             value={formatRateAsPercent(loan.nominalRate)}
-            hint={`${loan.term} períodos a ${loan.paymentFrequencyName}`}
+            hint={`Plazo contractual: ${loan.term} ${loan.termUnitName}`}
             accent="slate"
           />
         </div>
@@ -166,7 +172,6 @@ export const LoanDetailPage = () => {
         >
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             <QueryDetailField label="No. de préstamo" value={loan.loanNo?.trim() || '—'} />
-            <QueryDetailField label="ID del préstamo" value={loan.id} />
             <QueryDetailField
               label="Cliente"
               value={
@@ -195,9 +200,15 @@ export const LoanDetailPage = () => {
               label="Primera cuota"
               value={formatDate(loan.firstDueDate)}
             />
-            <QueryDetailField label="Vencimiento" value={formatDate(loan.maturityDate)} />
-            <QueryDetailField label="ID cliente" value={loan.clientId} />
-            <QueryDetailField label="ID producto" value={loan.loanProductId} />
+            <QueryDetailField
+              label="Plazo contractual"
+              value={`${loan.term} ${loan.termUnitName}`}
+            />
+            <QueryDetailField label="Frecuencia pactada" value={loan.paymentFrequencyName} />
+            <QueryDetailField
+              label="Vencimiento contractual"
+              value={formatDate(loan.maturityDate)}
+            />
           </div>
         </QuerySectionCard>
 
@@ -208,7 +219,7 @@ export const LoanDetailPage = () => {
           <div className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <QueryMetricCard
-                label="Cuotas registradas"
+                label="Número de cuotas"
                 value={String(loan.installmentsCount ?? installments.length)}
                 hint={`${installmentSummary.settledCount} liquidada(s)`}
                 accent="slate"
@@ -241,7 +252,7 @@ export const LoanDetailPage = () => {
             <div className="grid gap-3">
               <SignalRow
                 icon={<ClipboardList className="h-4 w-4" />}
-                label="Frecuencia de pago"
+                label="Frecuencia pactada"
                 value={loan.paymentFrequencyName}
               />
               <SignalRow
@@ -307,6 +318,25 @@ export const LoanDetailPage = () => {
 
       <DisbursementSummaryCard data={loan} />
 
+      {canViewAnticipatedInstallment ? (
+        <LoanAnticipatedInstallmentSection
+          detail={anticipatedInstallment.detail}
+          isLoading={anticipatedInstallment.isLoading}
+          isSaving={anticipatedInstallment.isSaving}
+          error={anticipatedInstallment.error}
+          canApply={canApplyAnticipatedInstallment}
+          canReverse={canReverseAnticipatedInstallment}
+          onApply={anticipatedInstallment.apply}
+          onReverse={anticipatedInstallment.reverse}
+          onRefreshActions={async () => {
+            await Promise.all([
+              loadLoan(id, { includeEligibility: canReadEligibility }),
+              loadInstallments(id),
+            ])
+          }}
+        />
+      ) : null}
+
       {!isDisbursementAlreadyReversed ? (
         <LoanDisbursementReversalEligibilityCard
           eligibility={eligibility}
@@ -334,7 +364,7 @@ export const LoanDetailPage = () => {
           <DisbursementChargesTable charges={loan.disbursementCharges} />
 
           <QuerySectionCard
-            title="Cronograma de cuotas"
+            title="Plan de pagos"
             description="Seguimiento de vencimientos, montos proyectados y acceso al detalle de cada cuota."
             aside={
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
@@ -348,7 +378,7 @@ export const LoanDetailPage = () => {
                 label="Pendientes"
                 value={String(installmentSummary.pendingCount)}
                 hint="Cuotas con saldo por cobrar"
-                accent={installmentSummary.pendingCount > 0 ? 'amber' : 'slate'}
+                accent={installmentSummary.pendingCount > 0 ? 'blue' : 'slate'}
               />
               <QueryMetricCard
                 label="Liquidadas"
@@ -375,6 +405,7 @@ export const LoanDetailPage = () => {
                       <th className="text-right">Capital</th>
                       <th className="text-right">Interés</th>
                       <th className="text-right">Seguro</th>
+                      <th className="text-right">Mora pendiente</th>
                       <th className="text-right">Total</th>
                       <th className="text-right">Pagado</th>
                       <th>Estado</th>
@@ -384,19 +415,19 @@ export const LoanDetailPage = () => {
                   <tbody>
                     {isLoadingInstallments ? (
                       <tr>
-                        <td colSpan={10} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
+                        <td colSpan={11} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
                           Cargando cuotas...
                         </td>
                       </tr>
                     ) : installmentsError ? (
                       <tr>
-                        <td colSpan={10} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
+                        <td colSpan={11} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
                           {installmentsError}
                         </td>
                       </tr>
                     ) : !installments.length ? (
                       <tr>
-                        <td colSpan={10} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
+                        <td colSpan={11} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
                           Este préstamo no tiene cuotas registradas.
                         </td>
                       </tr>
@@ -412,6 +443,13 @@ export const LoanDetailPage = () => {
                           <td className="text-right">{formatMoney(item.interestProjected)}</td>
                           <td className="text-right">
                             {formatMoney(getInstallmentComponentAmount(item.components, 'INSURANCE'))}
+                          </td>
+                          <td className="text-right">
+                            {formatMoney(
+                              item.components.find(
+                                (component) => component.financialComponentCode === 'PENALTY',
+                              )?.outstandingAmount ?? 0,
+                            )}
                           </td>
                           <td className="text-right">{formatMoney(item.totalProjected)}</td>
                           <td className="text-right">{formatMoney(item.totalPaid)}</td>
@@ -518,5 +556,8 @@ const SignalRow = ({
 const formatAllowedAction = (value: string) => {
   const normalized = value.trim().toLowerCase()
   if (normalized === 'reverse_disbursement') return 'Revertir desembolso'
+  if (normalized === 'view_anticipated_installment') return 'Ver cuota anticipada'
+  if (normalized === 'apply_anticipated_installment') return 'Aplicar cuota anticipada'
+  if (normalized === 'reverse_anticipated_installment_application') return 'Reversar aplicación de cuota anticipada'
   return value
 }

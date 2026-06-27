@@ -3,7 +3,10 @@ import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/respons
 import { ReportLayout } from '@/presentation/components/reports/report-layout'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 import {
+  formatDate,
   formatInterestCalculationMethod,
+  formatPaymentFrequencyCode,
+  formatTermUnitCode,
   getInstallmentComponentAmount,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 
@@ -43,6 +46,22 @@ export const LoanPaymentPlanReport = ({
       <Text style={styles.sectionTitle}>Resumen</Text>
       <View style={styles.grid}>
         <InfoItem
+          label="Duracion contractual"
+          value={`${preview.metadata.contractualTerm} ${formatTermUnitCode(preview.metadata.termUnitCode)}`}
+        />
+        <InfoItem
+          label="Frecuencia de pago"
+          value={formatPaymentFrequencyCode(preview.metadata.paymentFrequencyCode)}
+        />
+        <InfoItem
+          label="Vencimiento contractual"
+          value={formatDate(preview.metadata.maturityDate)}
+        />
+        <InfoItem
+          label="Cuotas generadas"
+          value={String(preview.metadata.installmentsCount)}
+        />
+        <InfoItem
           label="Tasa nominal"
           value={formatRateAsPercent(preview.metadata.nominalRate)}
         />
@@ -61,13 +80,26 @@ export const LoanPaymentPlanReport = ({
       </View>
     </View>
 
+    {preview.disbursement ? (
+      <View style={styles.section} wrap={false}>
+        <Text style={styles.sectionTitle}>Desembolso proyectado</Text>
+        <View style={styles.grid}>
+          <InfoItem label="Monto bruto" value={formatMoney(preview.disbursement.grossDisbursementAmount)} />
+          <InfoItem label="Comisiones de desembolso" value={formatMoney(preview.disbursement.totalDisbursementFees)} />
+          <InfoItem label="Seguro al desembolso" value={formatMoney(preview.disbursement.totalDisbursementInsurance)} />
+          <InfoItem label="Cuota anticipada retenida" value={formatMoney(preview.disbursement.anticipatedInstallmentDeductionAmount)} />
+          <InfoItem label="Neto a entregar" value={formatMoney(preview.disbursement.netDisbursementAmount)} />
+        </View>
+      </View>
+    ) : null}
+
     <View style={styles.section}>
       <Text style={styles.sectionTitle}>Detalle de cuotas</Text>
       <View style={styles.table}>
         <View style={[styles.tableRow, styles.tableHeader]}>
           <Text style={[styles.cell, styles.headerCell, styles.smallCell]}>#</Text>
-          <Text style={[styles.cell, styles.headerCell]}>Vence</Text>
-          <Text style={[styles.cell, styles.headerCell]}>Ajustada</Text>
+          <Text style={[styles.cell, styles.headerCell]}>Fecha original</Text>
+          <Text style={[styles.cell, styles.headerCell]}>Fecha cobro</Text>
           <Text style={[styles.cell, styles.headerCell, styles.amountCell]}>Capital</Text>
           <Text style={[styles.cell, styles.headerCell, styles.amountCell]}>Interes</Text>
           <Text style={[styles.cell, styles.headerCell, styles.amountCell]}>Seguro</Text>
@@ -76,8 +108,8 @@ export const LoanPaymentPlanReport = ({
         {preview.installments.map((row) => (
           <View key={row.installmentNo} style={styles.tableRow}>
             <Text style={[styles.cell, styles.smallCell]}>{String(row.installmentNo)}</Text>
-            <Text style={styles.cell}>{row.dueDateOriginal}</Text>
-            <Text style={styles.cell}>{row.dueDateAdjusted}</Text>
+            <Text style={styles.cell}>{formatDate(row.dueDateOriginal)}</Text>
+            <Text style={styles.cell}>{formatDate(row.dueDateAdjusted)}</Text>
             <Text style={[styles.cell, styles.amountCell]}>{formatMoney(row.principal)}</Text>
             <Text style={[styles.cell, styles.amountCell]}>{formatMoney(row.interest)}</Text>
             <Text style={[styles.cell, styles.amountCell]}>

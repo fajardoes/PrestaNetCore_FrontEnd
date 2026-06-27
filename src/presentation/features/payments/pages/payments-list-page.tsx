@@ -7,10 +7,10 @@ import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
 import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 import { useBusinessDate } from '@/presentation/features/system-business-date/hooks/use-business-date'
-import { EffectivizePaymentModal } from '@/presentation/features/payments/components/effectivize-payment-modal'
 import { ReversePaymentModal } from '@/presentation/features/payments/components/reverse-payment-modal'
-import { PAYMENT_TYPE_OPTIONS } from '@/presentation/features/payments/components/payment-ui'
+import { SettleCashPaymentModal } from '@/presentation/features/payments/components/settle-cash-payment-modal'
 import { usePaymentMutations } from '@/presentation/features/payments/hooks/use-payment-mutations'
+import { usePaymentReceiptReport } from '@/presentation/features/payments/hooks/use-payment-receipt-report'
 import { usePaymentSupportData } from '@/presentation/features/payments/hooks/use-payment-support-data'
 import { usePaymentsList } from '@/presentation/features/payments/hooks/use-payments-list'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
@@ -26,25 +26,21 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50]
 const STATUS_OPTIONS = [
   { value: '', label: 'Todos' },
   { value: 'REGISTERED', label: 'Registrado' },
-  { value: 'EFFECTIVIZED', label: 'Efectivizado' },
+  { value: 'SETTLED', label: 'Liquidado' },
   { value: 'REVERSED', label: 'Reversado' },
-  { value: 'CANCELLED', label: 'Cancelado' },
-]
-
-const PAYMENT_TYPE_FILTER_OPTIONS = [
-  { value: '', label: 'Todos' },
-  ...PAYMENT_TYPE_OPTIONS,
 ]
 
 export const PaymentsListPage = () => {
   const navigate = useNavigate()
   const { notify } = useNotifications()
   const { hasPermission, isLoading: isLoadingPermissions } = useUserPermissions()
-  const canRead = hasPermission('payments.read')
-  const payments = usePaymentsList(canRead)
+  const canReadAll = hasPermission('cash_collections.payments.read_all')
+  const canRead = hasPermission('cash_collections.payments.read') || canReadAll
+  const payments = usePaymentsList(canRead, undefined, 'cash-collections')
   const supportData = usePaymentSupportData()
   const businessDate = useBusinessDate()
   const mutations = usePaymentMutations()
+  const receiptReport = usePaymentReceiptReport()
 
   const [loanCode, setLoanCode] = useState('')
   const [loanId, setLoanId] = useState<string | undefined>(undefined)
@@ -54,12 +50,11 @@ export const PaymentsListPage = () => {
   const [registeredByOption, setRegisteredByOption] =
     useState<AsyncSelectOption<SecurityUser> | null>(null)
   const [statusCode, setStatusCode] = useState('')
-  const [paymentTypeCode, setPaymentTypeCode] = useState('')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [rowActions, setRowActions] = useState<Record<string, PaymentActionsResponse>>({})
   const [selectedPayment, setSelectedPayment] = useState<PaymentResponse | null>(null)
-  const [effectivizeOpen, setEffectivizeOpen] = useState(false)
+  const [settleOpen, setSettleOpen] = useState(false)
   const [reverseOpen, setReverseOpen] = useState(false)
 
   useEffect(() => {
@@ -144,9 +139,8 @@ export const PaymentsListPage = () => {
       loanId: nextLoanId,
       clientId: clientOption?.value || undefined,
       collectionChannelId: channelId || undefined,
-      registeredByUserId: registeredByOption?.value || undefined,
+      registeredByUserId: canReadAll ? registeredByOption?.value || undefined : undefined,
       statusCode: statusCode || undefined,
-      paymentTypeCode: paymentTypeCode || undefined,
       from: from || undefined,
       to: to || undefined,
     })
@@ -159,7 +153,6 @@ export const PaymentsListPage = () => {
     setChannelId('')
     setRegisteredByOption(null)
     setStatusCode('')
-    setPaymentTypeCode('')
     setFrom('')
     setTo('')
     payments.applyFilters({
@@ -168,7 +161,6 @@ export const PaymentsListPage = () => {
       collectionChannelId: undefined,
       registeredByUserId: undefined,
       statusCode: undefined,
-      paymentTypeCode: undefined,
       from: undefined,
       to: undefined,
     })
@@ -176,7 +168,7 @@ export const PaymentsListPage = () => {
 
   const getActionDisabledReason = (
     payment: PaymentResponse,
-    code: 'effectivize' | 'reverse',
+    code: 'settle' | 'reverse',
   ) => {
     const action = rowActions[payment.id]?.allowedActions.find((item) => item.code === code)
     if (action?.enabled) return null
@@ -188,10 +180,10 @@ export const PaymentsListPage = () => {
     setSelectedPayment(null)
   }
 
-  const handleEffectivize = async (payment: PaymentResponse) => {
+  const handleSettle = async (payment: PaymentResponse) => {
     mutations.setError(null)
     setSelectedPayment(payment)
-    setEffectivizeOpen(true)
+    setSettleOpen(true)
   }
 
   const handleReverse = async (payment: PaymentResponse) => {
@@ -214,18 +206,18 @@ export const PaymentsListPage = () => {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
-            Consulta de pagos
+            Pagos en efectivo
           </h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            Filtra pagos por préstamo, cliente, estado y rango de fechas.
+            Consulta efectivo cobrado por cobradores, liquidación por caja y reversas.
           </p>
         </div>
         <button
           type="button"
-          className="btn-secondary px-4 py-2 text-sm"
-          onClick={() => navigate('/payments/effectivization')}
+          className="btn-primary px-4 py-2 text-sm"
+          onClick={() => navigate('/cash-collections/payments/new')}
         >
-          Efectivización administrativa
+          Registrar efectivo
         </button>
       </div>
 
@@ -281,22 +273,24 @@ export const PaymentsListPage = () => {
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Usuario registrador
-            </label>
-            <AsyncSelect<SecurityUser>
-              value={registeredByOption}
-              onChange={(option) => setRegisteredByOption(option)}
-              loadOptions={loadUserOptions}
-              defaultOptions
-              isClearable
-              isLoading={supportData.isLoadingUsers}
-              inputId="payments-filter-user"
-              instanceId="payments-filter-user"
-              placeholder="Buscar usuario"
-            />
-          </div>
+          {canReadAll ? (
+            <div className="space-y-1">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Usuario registrador
+              </label>
+              <AsyncSelect<SecurityUser>
+                value={registeredByOption}
+                onChange={(option) => setRegisteredByOption(option)}
+                loadOptions={loadUserOptions}
+                defaultOptions
+                isClearable
+                isLoading={supportData.isLoadingUsers}
+                inputId="payments-filter-user"
+                instanceId="payments-filter-user"
+                placeholder="Buscar usuario"
+              />
+            </div>
+          ) : null}
 
           <div className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -308,23 +302,6 @@ export const PaymentsListPage = () => {
               value={STATUS_OPTIONS.find((option) => option.value === statusCode) ?? null}
               onChange={(option) => setStatusCode(option?.value ?? '')}
               options={STATUS_OPTIONS}
-              placeholder="Todos"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Tipo de pago
-            </label>
-            <SelectField
-              inputId="payments-filter-type"
-              instanceId="payments-filter-type"
-              value={
-                PAYMENT_TYPE_FILTER_OPTIONS.find((option) => option.value === paymentTypeCode) ??
-                null
-              }
-              onChange={(option) => setPaymentTypeCode(option?.value ?? '')}
-              options={PAYMENT_TYPE_FILTER_OPTIONS}
               placeholder="Todos"
             />
           </div>
@@ -352,7 +329,7 @@ export const PaymentsListPage = () => {
       ) : null}
 
       <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
-        <span>{payments.totalCount} pagos encontrados</span>
+        <span>{payments.totalCount} pagos en efectivo encontrados</span>
         <div className="flex items-center gap-2">
           <span>Registros por página</span>
           <select
@@ -377,39 +354,42 @@ export const PaymentsListPage = () => {
         pageSize={payments.pageSize}
         totalPages={payments.totalPages}
         onPageChange={payments.setPage}
-        onView={(payment) => navigate(`/payments/${payment.id}`)}
+        onView={(payment) => navigate(`/cash-collections/payments/${payment.id}`)}
         actionsByPaymentId={rowActions}
-        onEffectivize={handleEffectivize}
+        onSettle={handleSettle}
         onReverse={handleReverse}
+        onPrintReceipt={async (payment) => {
+          const result = await receiptReport.openReceipt(payment.id)
+          if (!result.success) notify(result.error, 'error')
+        }}
       />
 
-      <EffectivizePaymentModal
-        open={effectivizeOpen}
+      <SettleCashPaymentModal
+        open={settleOpen}
         payment={selectedPayment}
-        businessDate={businessDate.state?.businessDate}
         isSubmitting={mutations.isSubmitting}
         backendError={mutations.error}
         disabledReason={
-          selectedPayment ? getActionDisabledReason(selectedPayment, 'effectivize') : null
+          selectedPayment ? getActionDisabledReason(selectedPayment, 'settle') : null
         }
         onClose={() => {
           mutations.setError(null)
-          setEffectivizeOpen(false)
+          setSettleOpen(false)
         }}
-        onSubmit={async (payload) => {
+        onConfirm={async () => {
           if (!selectedPayment) return false
-          const disabledReason = getActionDisabledReason(selectedPayment, 'effectivize')
+          const disabledReason = getActionDisabledReason(selectedPayment, 'settle')
           if (disabledReason) {
             notify(disabledReason, 'warning')
             return false
           }
-          const result = await mutations.effectivize(selectedPayment.id, payload)
+          const result = await mutations.settleCash(selectedPayment.id)
           if (!result.success) {
             notify(result.error, 'error')
             if (result.status === 409) await payments.refresh()
             return false
           }
-          notify('Pago efectivizado correctamente.', 'success')
+          notify('Pago en efectivo liquidado correctamente.', 'success')
           await refreshAfterMutation()
           return true
         }}
@@ -435,7 +415,7 @@ export const PaymentsListPage = () => {
             notify(disabledReason, 'warning')
             return false
           }
-          const result = await mutations.reverse(selectedPayment.id, payload)
+          const result = await mutations.reverseCash(selectedPayment.id, payload)
           if (!result.success) {
             notify(result.error, 'error')
             if (result.status === 409) await payments.refresh()

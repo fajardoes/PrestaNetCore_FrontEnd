@@ -24,7 +24,11 @@ export const useDailyClosingStatus = (enabled = true) => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
     const result = await getDailyClosingStatusAction()
     if (!result.success) {
-      setState({ status: null, isLoading: false, error: result.error })
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: result.error,
+      }))
       return null
     }
 

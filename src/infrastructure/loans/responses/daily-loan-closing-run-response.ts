@@ -13,4 +13,7 @@ export interface DailyLoanClosingRunResponse {
   generatedSnapshots: number
   executionTimeMs?: number | null
   errorMessage?: string | null
+  heartbeatAt?: string | null
+  leaseExpiresAt?: string | null
+  recoveryRequired: boolean
 }

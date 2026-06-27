@@ -11,6 +11,11 @@ import type { LoanApplicationSearchRequest } from '@/infrastructure/loans/reques
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
 import type { LoanApplicationUpdateRequest } from '@/infrastructure/loans/requests/loan-application-update-request'
 import type { LoanSchedulePreviewRequest } from '@/infrastructure/loans/requests/loan-schedule-preview-request'
+import type {
+  AnticipatedInstallmentLimitPreviewRequest,
+  CancelAnticipatedInstallmentRequest,
+  UpsertAnticipatedInstallmentRequest,
+} from '@/infrastructure/loans/requests/anticipated-installment-request'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
 import type { LoanApplicationCreditScoreHistoryItemResponse } from '@/infrastructure/loans/responses/loan-application-credit-score-history-item.response'
 import type { LoanApplicationCreditScoreResponse } from '@/infrastructure/loans/responses/loan-application-credit-score.response'
@@ -20,6 +25,11 @@ import type { LoanApplicationFeeResponse } from '@/infrastructure/loans/response
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
 import type { LoanApplicationSearchResponse } from '@/infrastructure/loans/responses/loan-application-search-response'
 import type { LoanSchedulePreviewResponse } from '@/infrastructure/loans/responses/loan-schedule-preview-response'
+import type {
+  AnticipatedInstallmentEventResponse,
+  AnticipatedInstallmentLimitPreviewResponse,
+  AnticipatedInstallmentResponse,
+} from '@/infrastructure/loans/responses/anticipated-installment-response'
 
 const basePath = '/loan-applications'
 
@@ -232,6 +242,57 @@ export const getLoanApplicationScoringById = async (
 ): Promise<LoanApplicationCreditScoreResponse> => {
   const { data } = await httpClient.get<LoanApplicationCreditScoreResponse>(
     `${basePath}/${id}/scoring/${scoreId}`,
+  )
+  return data
+}
+
+export const getLoanApplicationAnticipatedInstallment = async (
+  id: string,
+): Promise<AnticipatedInstallmentResponse | null> => {
+  const { data } = await httpClient.get<AnticipatedInstallmentResponse | null>(
+    `${basePath}/${id}/anticipated-installment`,
+  )
+  return data
+}
+
+export const saveLoanApplicationAnticipatedInstallment = async (
+  id: string,
+  dto: UpsertAnticipatedInstallmentRequest,
+): Promise<AnticipatedInstallmentResponse> => {
+  const { data } = await httpClient.put<AnticipatedInstallmentResponse>(
+    `${basePath}/${id}/anticipated-installment`,
+    dto,
+  )
+  return data
+}
+
+export const cancelLoanApplicationAnticipatedInstallment = async (
+  id: string,
+  dto: CancelAnticipatedInstallmentRequest,
+): Promise<AnticipatedInstallmentResponse> => {
+  const { data } = await httpClient.post<AnticipatedInstallmentResponse>(
+    `${basePath}/${id}/anticipated-installment/cancel`,
+    dto,
+  )
+  return data
+}
+
+export const listLoanApplicationAnticipatedInstallmentHistory = async (
+  id: string,
+): Promise<AnticipatedInstallmentEventResponse[]> => {
+  const { data } = await httpClient.get<AnticipatedInstallmentEventResponse[]>(
+    `${basePath}/${id}/anticipated-installment/history`,
+  )
+  return data
+}
+
+export const previewLoanApplicationAnticipatedInstallmentLimit = async (
+  id: string,
+  dto: AnticipatedInstallmentLimitPreviewRequest,
+): Promise<AnticipatedInstallmentLimitPreviewResponse> => {
+  const { data } = await httpClient.post<AnticipatedInstallmentLimitPreviewResponse>(
+    `${basePath}/${id}/anticipated-installment/limit-preview`,
+    dto,
   )
   return data
 }

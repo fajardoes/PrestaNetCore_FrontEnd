@@ -9,6 +9,13 @@ export const getPaymentAction = async (
     const result = await getPayment(id)
     return { success: true, data: result }
   } catch (error) {
-    return toApiError(error, 'No fue posible obtener el detalle del pago.')
+    const apiError = toApiError(error, 'No fue posible obtener el detalle del pago.')
+    if (apiError.status === 404) {
+      return {
+        ...apiError,
+        error: 'El pago no existe o no está dentro de tu alcance de consulta.',
+      }
+    }
+    return apiError
   }
 }

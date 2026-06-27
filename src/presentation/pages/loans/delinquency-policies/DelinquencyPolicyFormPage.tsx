@@ -12,30 +12,10 @@ import {
 } from '@/presentation/components/loans/delinquency/delinquency-policy-form.schema'
 import { useDelinquencyPolicyDetail } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policy-detail'
 import { useDelinquencyPolicyMutations } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policy-mutations'
+import { useDelinquencyPolicyCatalogs } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policy-catalogs'
 import type { CreateDelinquencyPolicyRequestDto } from '@/infrastructure/intranet/requests/loans/create-delinquency-policy.request'
 import type { UpdateDelinquencyPolicyRequestDto } from '@/infrastructure/intranet/requests/loans/update-delinquency-policy.request'
-
-const calculationBaseOptions = [
-  { value: 'PRINCIPAL', label: 'Capital' },
-  { value: 'PRINCIPAL_INTEREST', label: 'Capital + Interés' },
-  { value: 'OUTSTANDING_BALANCE', label: 'Saldo vencido' },
-]
-
-const roundingModeOptions = [
-  { value: 'HALF_UP', label: 'Redondeo estándar' },
-  { value: 'UP', label: 'Redondear hacia arriba' },
-  { value: 'DOWN', label: 'Redondear hacia abajo' },
-]
-
-const rateBaseOptions = [
-  { value: 360, label: '360' },
-  { value: 365, label: '365' },
-]
-
-const normalizeOptions = (options: { value: string; label: string }[], value?: string) => {
-  if (!value || options.some((option) => option.value === value)) return options
-  return [{ value, label: value }, ...options]
-}
+import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 
 const filterOptions = <TMeta,>(
   options: AsyncSelectOption<TMeta>[],
@@ -46,17 +26,36 @@ const filterOptions = <TMeta,>(
   return options.filter((option) => option.label.toLowerCase().includes(term))
 }
 
+const toCatalogOption = (
+  item: LoanCatalogItemDto,
+): AsyncSelectOption<LoanCatalogItemDto> => ({
+  value: item.id,
+  label: `${item.code} - ${item.name}`,
+  meta: item,
+})
+
+const ensureResolvedOption = (
+  options: AsyncSelectOption<LoanCatalogItemDto>[],
+  id?: string | null,
+  code?: string | null,
+  name?: string | null,
+) => {
+  if (!id || options.some((option) => option.value === id)) return options
+  const label = code && name ? `${code} - ${name}` : name || code || id
+  return [{ value: id, label }, ...options]
+}
+
 const buildDefaultValues = (): DelinquencyPolicyFormValues => ({
   code: '',
   name: '',
   description: '',
   graceDays: 0,
   penaltyRateAnnual: 0,
-  rateBase: 360,
-  calculationBase: '',
-  roundingMode: '',
+  rateBaseId: '',
+  calculationBaseId: '',
+  roundingModeId: '',
   roundingDecimals: 2,
-  minimumPenaltyAmount: 0,
+  minimumPenaltyAmount: null,
   maximumPenaltyAmount: null,
   includeSaturday: false,
   includeSunday: false,
@@ -77,6 +76,13 @@ export const DelinquencyPolicyFormPage = () => {
     error: saveError,
     clearError,
   } = useDelinquencyPolicyMutations()
+  const {
+    rateBases,
+    calculationBases,
+    roundingModes,
+    isLoading: isLoadingCatalogs,
+    error: catalogsError,
+  } = useDelinquencyPolicyCatalogs()
 
   const {
     register,
@@ -111,11 +117,11 @@ export const DelinquencyPolicyFormPage = () => {
       description: data.description ?? '',
       graceDays: data.graceDays,
       penaltyRateAnnual: data.penaltyRateAnnual,
-      rateBase: data.rateBase,
-      calculationBase: data.calculationBase,
-      roundingMode: data.roundingMode,
+      rateBaseId: data.rateBaseId ?? '',
+      calculationBaseId: data.calculationBaseId ?? '',
+      roundingModeId: data.roundingModeId ?? '',
       roundingDecimals: data.roundingDecimals,
-      minimumPenaltyAmount: data.minimumPenaltyAmount,
+      minimumPenaltyAmount: data.minimumPenaltyAmount ?? null,
       maximumPenaltyAmount: data.maximumPenaltyAmount ?? null,
       includeSaturday: data.includeSaturday,
       includeSunday: data.includeSunday,
@@ -123,43 +129,50 @@ export const DelinquencyPolicyFormPage = () => {
     })
   }, [data, isEdit, reset])
 
-  const calculationOptions = useMemo(
-    () => normalizeOptions(calculationBaseOptions, data?.calculationBase),
-    [data?.calculationBase],
-  )
-  const roundingOptions = useMemo(
-    () => normalizeOptions(roundingModeOptions, data?.roundingMode),
-    [data?.roundingMode],
-  )
-  const rateBase = watch('rateBase')
-  const calculationBase = watch('calculationBase')
-  const roundingMode = watch('roundingMode')
+  const rateBaseId = watch('rateBaseId')
+  const calculationBaseId = watch('calculationBaseId')
+  const roundingModeId = watch('roundingModeId')
   const rateBaseAsyncOptions = useMemo(
     () =>
-      rateBaseOptions.map((option) => ({
-        value: String(option.value),
-        label: option.label,
-        meta: option,
-      })),
-    [],
+      ensureResolvedOption(
+        rateBases.map(toCatalogOption),
+        data?.rateBaseId,
+        data?.rateBaseCode ?? String(data?.rateBase ?? ''),
+        data?.rateBaseName,
+      ),
+    [data?.rateBase, data?.rateBaseCode, data?.rateBaseId, data?.rateBaseName, rateBases],
   )
   const calculationAsyncOptions = useMemo(
     () =>
-      calculationOptions.map((option) => ({
-        value: option.value,
-        label: option.label,
-        meta: option,
-      })),
-    [calculationOptions],
+      ensureResolvedOption(
+        calculationBases.map(toCatalogOption),
+        data?.calculationBaseId,
+        data?.calculationBaseCode ?? data?.calculationBase,
+        data?.calculationBaseName,
+      ),
+    [
+      calculationBases,
+      data?.calculationBase,
+      data?.calculationBaseCode,
+      data?.calculationBaseId,
+      data?.calculationBaseName,
+    ],
   )
   const roundingAsyncOptions = useMemo(
     () =>
-      roundingOptions.map((option) => ({
-        value: option.value,
-        label: option.label,
-        meta: option,
-      })),
-    [roundingOptions],
+      ensureResolvedOption(
+        roundingModes.map(toCatalogOption),
+        data?.roundingModeId,
+        data?.roundingModeCode ?? data?.roundingMode,
+        data?.roundingModeName,
+      ),
+    [
+      data?.roundingMode,
+      data?.roundingModeCode,
+      data?.roundingModeId,
+      data?.roundingModeName,
+      roundingModes,
+    ],
   )
 
   const onSubmit = handleSubmit(async (values) => {
@@ -169,6 +182,11 @@ export const DelinquencyPolicyFormPage = () => {
       code: values.code.trim(),
       name: values.name.trim(),
       description: values.description?.trim() || null,
+      minimumPenaltyAmount:
+        values.minimumPenaltyAmount === null ||
+        values.minimumPenaltyAmount === undefined
+          ? null
+          : values.minimumPenaltyAmount,
       maximumPenaltyAmount:
         values.maximumPenaltyAmount === null || values.maximumPenaltyAmount === undefined
           ? null
@@ -220,6 +238,12 @@ export const DelinquencyPolicyFormPage = () => {
       </div>
 
       <form className="space-y-6" onSubmit={onSubmit} noValidate>
+        {catalogsError ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+            {catalogsError}
+          </div>
+        ) : null}
+
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
             Identificación
@@ -310,13 +334,13 @@ export const DelinquencyPolicyFormPage = () => {
                 htmlFor="penaltyRateAnnual"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
-                Tasa anual
+                Tasa moratoria anual
               </label>
               <input
                 id="penaltyRateAnnual"
                 type="number"
                 min={0}
-                step="0.01"
+                step="0.0001"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                 {...register('penaltyRateAnnual', { valueAsNumber: true })}
                 disabled={isSaving}
@@ -335,13 +359,13 @@ export const DelinquencyPolicyFormPage = () => {
               >
                 Base de tasa
               </label>
-              <AsyncSelect<{ value: number; label: string }>
+              <AsyncSelect<LoanCatalogItemDto>
                 value={
-                  rateBaseAsyncOptions.find((option) => option.value === String(rateBase)) ??
+                  rateBaseAsyncOptions.find((option) => option.value === rateBaseId) ??
                   null
                 }
                 onChange={(option) =>
-                  setValue('rateBase', Number(option?.value ?? 360), {
+                  setValue('rateBaseId', option?.value ?? '', {
                     shouldValidate: true,
                   })
                 }
@@ -351,13 +375,13 @@ export const DelinquencyPolicyFormPage = () => {
                 placeholder="Selecciona base"
                 inputId="rateBase"
                 instanceId="delinquency-policy-rate-base"
-                isDisabled={isSaving}
+                isDisabled={isSaving || isLoadingCatalogs}
                 defaultOptions={rateBaseAsyncOptions}
                 noOptionsMessage="Sin bases"
               />
-              <input type="hidden" {...register('rateBase', { valueAsNumber: true })} />
-              {errors.rateBase ? (
-                <p className="text-xs text-red-500">{errors.rateBase.message}</p>
+              <input type="hidden" {...register('rateBaseId')} />
+              {errors.rateBaseId ? (
+                <p className="text-xs text-red-500">{errors.rateBaseId.message}</p>
               ) : null}
             </div>
 
@@ -368,13 +392,13 @@ export const DelinquencyPolicyFormPage = () => {
               >
                 Base de cálculo
               </label>
-              <AsyncSelect<{ value: string; label: string }>
+              <AsyncSelect<LoanCatalogItemDto>
                 value={
-                  calculationAsyncOptions.find((option) => option.value === calculationBase) ??
+                  calculationAsyncOptions.find((option) => option.value === calculationBaseId) ??
                   null
                 }
                 onChange={(option) =>
-                  setValue('calculationBase', option?.value ?? '', {
+                  setValue('calculationBaseId', option?.value ?? '', {
                     shouldValidate: true,
                   })
                 }
@@ -384,14 +408,14 @@ export const DelinquencyPolicyFormPage = () => {
                 placeholder="Selecciona una base"
                 inputId="calculationBase"
                 instanceId="delinquency-policy-calculation-base"
-                isDisabled={isSaving}
+                isDisabled={isSaving || isLoadingCatalogs}
                 defaultOptions={calculationAsyncOptions}
                 noOptionsMessage="Sin bases de cálculo"
               />
-              <input type="hidden" {...register('calculationBase')} />
-              {errors.calculationBase ? (
+              <input type="hidden" {...register('calculationBaseId')} />
+              {errors.calculationBaseId ? (
                 <p className="text-xs text-red-500">
-                  {errors.calculationBase.message}
+                  {errors.calculationBaseId.message}
                 </p>
               ) : null}
             </div>
@@ -403,12 +427,12 @@ export const DelinquencyPolicyFormPage = () => {
               >
                 Modo de redondeo
               </label>
-              <AsyncSelect<{ value: string; label: string }>
+              <AsyncSelect<LoanCatalogItemDto>
                 value={
-                  roundingAsyncOptions.find((option) => option.value === roundingMode) ?? null
+                  roundingAsyncOptions.find((option) => option.value === roundingModeId) ?? null
                 }
                 onChange={(option) =>
-                  setValue('roundingMode', option?.value ?? '', {
+                  setValue('roundingModeId', option?.value ?? '', {
                     shouldValidate: true,
                   })
                 }
@@ -418,14 +442,14 @@ export const DelinquencyPolicyFormPage = () => {
                 placeholder="Selecciona un modo"
                 inputId="roundingMode"
                 instanceId="delinquency-policy-rounding-mode"
-                isDisabled={isSaving}
+                isDisabled={isSaving || isLoadingCatalogs}
                 defaultOptions={roundingAsyncOptions}
                 noOptionsMessage="Sin modos de redondeo"
               />
-              <input type="hidden" {...register('roundingMode')} />
-              {errors.roundingMode ? (
+              <input type="hidden" {...register('roundingModeId')} />
+              {errors.roundingModeId ? (
                 <p className="text-xs text-red-500">
-                  {errors.roundingMode.message}
+                  {errors.roundingModeId.message}
                 </p>
               ) : null}
             </div>
@@ -458,7 +482,7 @@ export const DelinquencyPolicyFormPage = () => {
                 htmlFor="minimumPenaltyAmount"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
-                Monto mínimo
+                Mínimo de mora (opcional)
               </label>
               <input
                 id="minimumPenaltyAmount"
@@ -466,7 +490,9 @@ export const DelinquencyPolicyFormPage = () => {
                 min={0}
                 step="0.01"
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('minimumPenaltyAmount', { valueAsNumber: true })}
+                {...register('minimumPenaltyAmount', {
+                  setValueAs: (value) => (value === '' ? null : Number(value)),
+                })}
                 disabled={isSaving}
               />
               {errors.minimumPenaltyAmount ? (
@@ -481,7 +507,7 @@ export const DelinquencyPolicyFormPage = () => {
                 htmlFor="maximumPenaltyAmount"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
               >
-                Monto máximo (opcional)
+                Máximo de mora (opcional)
               </label>
               <input
                 id="maximumPenaltyAmount"

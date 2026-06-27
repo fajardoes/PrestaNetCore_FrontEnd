@@ -1,11 +1,41 @@
 import type { LoanApplicationFinancialProfileResponse } from '@/infrastructure/loans/responses/loan-application-financial-profile-response'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
+import type {
+  PaymentFrequencyCode,
+  TermUnitCode,
+} from '@/infrastructure/loans/types/loan-contract.types'
 
 export const formatDate = (value?: string | null) => {
   if (!value) return '—'
-  const parsed = new Date(value)
+  const dateOnlyMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  const parsed = dateOnlyMatch
+    ? new Date(
+        Number(dateOnlyMatch[1]),
+        Number(dateOnlyMatch[2]) - 1,
+        Number(dateOnlyMatch[3]),
+      )
+    : new Date(value)
   if (Number.isNaN(parsed.getTime())) return value
   return parsed.toLocaleDateString('es-HN')
+}
+
+export const formatTermUnitCode = (value?: TermUnitCode | string | null) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'DAYS') return 'Días'
+  if (normalized === 'WEEKS') return 'Semanas'
+  if (normalized === 'MONTHS') return 'Meses'
+  return value?.trim() || '—'
+}
+
+export const formatPaymentFrequencyCode = (
+  value?: PaymentFrequencyCode | string | null,
+) => {
+  const normalized = (value ?? '').trim().toUpperCase()
+  if (normalized === 'DAILY') return 'Diario'
+  if (normalized === 'WEEKLY') return 'Semanal'
+  if (normalized === 'BIWEEKLY') return 'Quincenal'
+  if (normalized === 'MONTHLY') return 'Mensual'
+  return value?.trim() || '—'
 }
 
 export const formatDateTime = (value?: string | null) => {
@@ -100,6 +130,7 @@ export const formatFinancialComponentCode = (
   const normalized = (value ?? '').trim().toUpperCase()
   if (normalized === 'PRINCIPAL') return 'Capital'
   if (normalized === 'INTEREST') return 'Interés'
+  if (normalized === 'PENALTY') return 'Mora'
   if (normalized === 'INSURANCE') return 'Seguro'
   if (normalized === 'FEE') return 'Comisión'
   return fallbackName?.trim() || value?.trim() || '—'
@@ -219,6 +250,7 @@ export const hasDisbursementData = (value: {
   grossDisbursementAmount?: number | null
   totalDisbursementFees?: number | null
   totalDisbursementInsurance?: number | null
+  anticipatedInstallmentDeductionAmount?: number | null
   totalScheduledInsurance?: number | null
   netDisbursementAmount?: number | null
   disbursementJournalEntryId?: string | null
@@ -227,6 +259,7 @@ export const hasDisbursementData = (value: {
   value.grossDisbursementAmount != null ||
   value.totalDisbursementFees != null ||
   value.totalDisbursementInsurance != null ||
+  value.anticipatedInstallmentDeductionAmount != null ||
   value.totalScheduledInsurance != null ||
   value.netDisbursementAmount != null ||
   Boolean(value.disbursementJournalEntryNumber?.trim()) ||
@@ -245,6 +278,10 @@ export const translateLoanApplicationStatus = (
   if (normalized === 'REJECTED') return 'Rechazada'
   if (normalized === 'CANCELLED') return 'Cancelada'
   if (normalized === 'DISBURSEMENT_REVERSED') return 'Desembolso revertido'
+  if (normalized === 'PENDING') return 'Pendiente'
+  if (normalized === 'PARTIAL' || normalized === 'PARTIALLY_PAID') return 'Parcial'
+  if (normalized === 'PAID' || normalized === 'SETTLED') return 'Pagada'
+  if (normalized === 'OVERDUE' || normalized === 'DELINQUENT') return 'Vencida'
   return statusName?.trim() || statusCode || '—'
 }
 
@@ -264,6 +301,18 @@ export const statusBadgeClass = (statusCode?: string | null) => {
   }
   if (normalized === 'ACTIVE') {
     return 'bg-sky-100 text-sky-800 ring-1 ring-sky-300 dark:bg-sky-500/20 dark:text-sky-100 dark:ring-sky-500/40'
+  }
+  if (normalized === 'PENDING') {
+    return 'bg-blue-100 text-blue-800 ring-1 ring-blue-300 dark:bg-blue-500/20 dark:text-blue-100 dark:ring-blue-500/40'
+  }
+  if (normalized === 'PARTIAL' || normalized === 'PARTIALLY_PAID') {
+    return 'bg-indigo-100 text-indigo-800 ring-1 ring-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-100 dark:ring-indigo-500/40'
+  }
+  if (normalized === 'PAID' || normalized === 'SETTLED') {
+    return 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-100 dark:ring-emerald-500/40'
+  }
+  if (normalized === 'OVERDUE' || normalized === 'DELINQUENT') {
+    return 'bg-red-100 text-red-800 ring-1 ring-red-300 dark:bg-red-500/20 dark:text-red-100 dark:ring-red-500/40'
   }
   if (normalized === 'REJECTED') {
     return 'bg-rose-100 text-rose-800 ring-1 ring-rose-300 dark:bg-rose-500/20 dark:text-rose-100 dark:ring-rose-500/40'

@@ -8,6 +8,7 @@ import {
   View,
 } from '@react-pdf/renderer'
 
+import defaultReportLogo from '../../../assets/logo_light.png'
 export interface ReportLayoutProps {
   title: string
   subtitle?: string
@@ -30,20 +31,23 @@ export const ReportLayout = ({
   const printedAt = new Date().toLocaleString('es-HN', {
     hour12: false,
   })
+  const resolvedLogoUrl = logoUrl || defaultReportLogo
 
   return (
     <Document>
       <Page size="A4" orientation={orientation} style={styles.page}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            {logoUrl ? <Image src={logoUrl} style={styles.logo} /> : null}
             <View style={styles.headerTitles}>
-              {organizationName ? (
-                <Text style={styles.organization}>{organizationName}</Text>
-              ) : null}
               <Text style={styles.title}>{title}</Text>
               {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
             </View>
+          </View>
+          <View style={styles.headerBrand}>
+            <Image src={resolvedLogoUrl} style={styles.logo} />
+            {organizationName ? (
+              <Text style={styles.organization}>{organizationName}</Text>
+            ) : null}
           </View>
         </View>
 
@@ -69,7 +73,7 @@ export const ReportLayout = ({
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 40,
+    paddingTop: 28,
     paddingBottom: 36,
     paddingHorizontal: 40,
     fontFamily: 'Helvetica',
@@ -78,29 +82,36 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: 16,
-    paddingBottom: 10,
+    paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
   },
   headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 56,
-    height: 56,
-    marginRight: 12,
-    objectFit: 'contain',
+    flex: 1,
+    paddingRight: 16,
   },
   headerTitles: {
     flexGrow: 1,
+  },
+  headerBrand: {
+    width: 92,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 52,
+    height: 52,
+    objectFit: 'contain',
   },
   organization: {
     fontSize: 9,
     color: '#475569',
     textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 2,
+    letterSpacing: 1.1,
+    marginTop: 4,
+    textAlign: 'center',
   },
   title: {
     fontSize: 14,

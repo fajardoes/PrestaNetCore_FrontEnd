@@ -3,6 +3,8 @@ export interface HolidayDetailDto {
   date: string
   name: string
   description?: string | null
-  type: number
+  holidayTypeId: string | number
+  holidayTypeCode: string
+  holidayTypeName: string
   isActive: boolean
 }

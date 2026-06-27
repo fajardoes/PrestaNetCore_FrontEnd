@@ -7,6 +7,7 @@ import { useResolveDelinquencyPolicy } from '@/presentation/features/loans/delin
 import AsyncSelect, {
   type AsyncSelectOption,
 } from '@/presentation/share/components/async-select'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import {
   delinquencyPolicyResolveSchema,
   type DelinquencyPolicyResolveFormValues,
@@ -187,9 +188,22 @@ export const ResolveDelinquencyPolicyPage = () => {
             <div className="mt-4 grid gap-3 md:grid-cols-3">
               <InfoItem label="Días gracia" value={String(data.graceDays)} />
               <InfoItem label="Tasa anual" value={String(data.penaltyRateAnnual)} />
-              <InfoItem label="Base" value={String(data.rateBase)} />
-              <InfoItem label="Base cálculo" value={data.calculationBase} />
-              <InfoItem label="Modo redondeo" value={data.roundingMode} />
+              <InfoItem
+                label="Base de tasa"
+                value={data.rateBaseName || data.rateBaseCode || String(data.rateBase)}
+              />
+              <InfoItem
+                label="Base cálculo"
+                value={
+                  data.calculationBaseName ||
+                  data.calculationBaseCode ||
+                  data.calculationBase
+                }
+              />
+              <InfoItem
+                label="Modo redondeo"
+                value={data.roundingModeName || data.roundingModeCode || data.roundingMode}
+              />
               <InfoItem label="Decimales" value={String(data.roundingDecimals)} />
               <InfoItem
                 label="Incluye sábado"
@@ -202,7 +216,7 @@ export const ResolveDelinquencyPolicyPage = () => {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <TableContainer mode="legacy-compact">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
                 <thead className="bg-slate-50 dark:bg-slate-900">
@@ -267,7 +281,7 @@ export const ResolveDelinquencyPolicyPage = () => {
                 </tbody>
               </table>
             </div>
-          </div>
+          </TableContainer>
         </div>
       ) : null}
     </div>

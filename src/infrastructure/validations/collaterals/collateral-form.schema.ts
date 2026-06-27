@@ -2,6 +2,7 @@ import * as yup from 'yup'
 
 const guidRegex =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const personalGuarantorTypeCode = 'PERSONAL_GUARANTOR'
 
 const normalizeOptionalString = (value: unknown) => {
   if (typeof value !== 'string') return value
@@ -25,6 +26,25 @@ const toNullableDateOnly = (value: unknown) => {
   return trimmed.length ? trimmed : null
 }
 
+const parseIsoDateOnly = (value?: string | null) => {
+  if (!value) return null
+  const [yearText, monthText, dayText] = value.split('-')
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  if (!year || !month || !day) return null
+  const parsed = new Date(Date.UTC(year, month - 1, day))
+  if (Number.isNaN(parsed.getTime())) return null
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null
+  }
+  return parsed
+}
+
 export const collateralCreateSchema = yup.object({
   ownerClientId: yup
     .string()
@@ -39,6 +59,34 @@ export const collateralCreateSchema = yup.object({
     .trim()
     .matches(guidRegex, 'El tipo de garantía debe ser un GUID válido.')
     .required('El tipo de garantía es requerido.'),
+  collateralTypeCode: yup.string().trim().nullable().notRequired(),
+  guarantorClientId: yup
+    .string()
+    .trim()
+    .nullable()
+    .when('collateralTypeCode', {
+      is: (typeCode?: string | null) =>
+        (typeCode ?? '').trim().toUpperCase() === personalGuarantorTypeCode,
+      then: (schema) =>
+        schema
+          .required('El cliente aval es requerido para aval personal.')
+          .test(
+            'guarantor-guid',
+            'El cliente aval debe ser un GUID válido.',
+            (value) => !value || guidRegex.test(value),
+          )
+          .test(
+            'guarantor-different-owner',
+            'El cliente aval debe ser distinto del titular.',
+            function validateGuarantor(guarantorClientId) {
+              const ownerClientId = (this.parent.ownerClientId ?? '').trim()
+              const guarantor = (guarantorClientId ?? '').trim()
+              if (!ownerClientId || !guarantor) return true
+              return ownerClientId !== guarantor
+            },
+          ),
+      otherwise: (schema) => schema.nullable().notRequired(),
+    }),
   statusId: yup
     .string()
     .trim()
@@ -53,23 +101,47 @@ export const collateralCreateSchema = yup.object({
     .string()
     .transform(normalizeOptionalString)
     .nullable()
+    .required('La referencia es requerida.')
     .max(60, 'La referencia no puede superar 60 caracteres.'),
   description: yup
     .string()
     .transform(normalizeOptionalString)
     .nullable()
+    .required('La descripción es requerida.')
     .max(500, 'La descripción no puede superar 500 caracteres.'),
   appraisedValue: yup
     .number()
     .transform(toNullableNumber)
     .nullable()
     .typeError('El valor de avalúo debe ser numérico.')
-    .min(0, 'El valor de avalúo debe ser mayor o igual a 0.'),
+    .min(0, 'El valor de avalúo debe ser mayor o igual a 0.')
+    .required('El valor de avalúo es requerido.'),
   appraisedDate: yup
     .string()
     .transform(toNullableDateOnly)
     .nullable()
     .matches(/^\d{4}-\d{2}-\d{2}$/, 'La fecha debe tener formato YYYY-MM-DD.')
+    .test(
+      'appraised-date-max-business-date',
+      'La fecha de avalúo no puede ser mayor a la fecha operativa del sistema.',
+      function validateAppraisedDateMaxBusinessDate(appraisedDate) {
+        if (!appraisedDate) return true
+
+        const appraised = parseIsoDateOnly(appraisedDate)
+        if (!appraised) return true
+
+        const context = this.options.context as
+          | { maxAppraisedDate?: string | null }
+          | undefined
+        const maxDateText = context?.maxAppraisedDate
+        if (!maxDateText) return true
+
+        const maxDate = parseIsoDateOnly(maxDateText)
+        if (!maxDate) return true
+
+        return appraised.getTime() <= maxDate.getTime()
+      },
+    )
     .notRequired(),
 })
 

@@ -3,6 +3,10 @@ import { useFieldArray, useWatch, type Control, type FieldErrors } from 'react-h
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { InsuranceModal } from '@/presentation/features/loans/products/components/insurance-modal'
+import {
+  formatInsuranceValue,
+  getCatalogItemCodeById,
+} from '@/core/helpers/insurance-value'
 
 interface InsurancesEditorProps {
   control: Control<LoanProductFormValues>
@@ -11,7 +15,7 @@ interface InsurancesEditorProps {
   allowRemove?: boolean
   insuranceTypes: LoanCatalogItemDto[]
   insuranceCalculationBases: LoanCatalogItemDto[]
-  insuranceCoveragePeriods: LoanCatalogItemDto[]
+  insuranceValueTypes: LoanCatalogItemDto[]
   insuranceChargeTimings: LoanCatalogItemDto[]
 }
 
@@ -23,7 +27,7 @@ export const InsurancesEditor = ({
   allowRemove = true,
   insuranceTypes,
   insuranceCalculationBases,
-  insuranceCoveragePeriods,
+  insuranceValueTypes,
   insuranceChargeTimings,
 }: InsurancesEditorProps) => {
   const { fields, append, remove, update } = useFieldArray({
@@ -94,12 +98,15 @@ export const InsurancesEditor = ({
             const calculationBase = insuranceCalculationBases.find(
               (item) => item.id === insurance.calculationBaseId,
             )
-            const coverage = insuranceCoveragePeriods.find(
-              (item) => item.id === insurance.coveragePeriodId,
+            const valueType = insuranceValueTypes.find(
+              (item) => item.id === insurance.valueTypeId,
             )
             const timing = insuranceChargeTimings.find(
               (item) => item.id === insurance.chargeTimingId,
             )
+            const valueTypeCode =
+              valueType?.code ??
+              getCatalogItemCodeById(insuranceValueTypes, insurance.valueTypeId)
 
             const isInactive = insurance.isActive === false
             return (
@@ -120,17 +127,23 @@ export const InsurancesEditor = ({
                       Base: {calculationBase ? getOptionLabel(calculationBase) : 'Sin base'}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Cobertura: {coverage ? getOptionLabel(coverage) : 'Sin cobertura'}
+                      Tipo valor:{' '}
+                      {valueType
+                        ? getOptionLabel(valueType)
+                        : insurance.valueTypeName || 'Sin tipo'}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Tasa: {insurance.rate} ·{' '}
+                      Valor: {formatInsuranceValue(insurance.value, valueTypeCode)} ·{' '}
                       {timing ? getOptionLabel(timing) : 'Sin momento'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {insurance.isMandatory ? 'Obligatorio' : 'Opcional'}
                     </p>
                   </div>
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
                       insurance.isActive !== false
-                        ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-50 dark:ring-emerald-500/40'
+                        ? 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-50 dark:ring-sky-500/40'
                         : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
                     }`}
                   >
@@ -140,7 +153,7 @@ export const InsurancesEditor = ({
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="btn-icon-label text-xs"
+                    className="btn-table-action"
                     onClick={() => openEditInsuranceModal(index)}
                     disabled={disabled}
                   >
@@ -148,7 +161,7 @@ export const InsurancesEditor = ({
                   </button>
                   <button
                     type="button"
-                    className="btn-icon-label text-xs"
+                    className="btn-table-action"
                     onClick={() => handleToggleInsurance(index)}
                     disabled={disabled}
                   >
@@ -157,7 +170,7 @@ export const InsurancesEditor = ({
                   {allowRemove ? (
                     <button
                       type="button"
-                      className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                      className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       onClick={() => remove(index)}
                       disabled={disabled}
                     >
@@ -180,7 +193,7 @@ export const InsurancesEditor = ({
         initialValues={editingIndex !== null ? insurances[editingIndex] : null}
         insuranceTypes={insuranceTypes}
         insuranceCalculationBases={insuranceCalculationBases}
-        insuranceCoveragePeriods={insuranceCoveragePeriods}
+        insuranceValueTypes={insuranceValueTypes}
         insuranceChargeTimings={insuranceChargeTimings}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleSaveInsurance}

@@ -6,10 +6,10 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: '#0f9aa7',
-          foreground: '#f0fdfa',
+          DEFAULT: '#0284c7',
+          foreground: '#f0f9ff',
         },
-        accent: '#0b7285',
+        accent: '#0369a1',
         danger: {
           DEFAULT: '#dc2626',
           foreground: '#fef2f2',

@@ -1,1 +1,7 @@
-export type BusinessDayAdjustmentRule = 1 | 2
+export const BUSINESS_DAY_ADJUSTMENT_RULES = {
+  NEXT_BUSINESS_DAY: 'NEXT_BUSINESS_DAY',
+  PREVIOUS_BUSINESS_DAY: 'PREVIOUS_BUSINESS_DAY',
+} as const
+
+export type BusinessDayAdjustmentRuleCode =
+  (typeof BUSINESS_DAY_ADJUSTMENT_RULES)[keyof typeof BUSINESS_DAY_ADJUSTMENT_RULES]

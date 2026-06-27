@@ -5,9 +5,13 @@ import type { LoanProductListQueryDto } from '@/infrastructure/loans/dtos/loan-p
 
 export const listLoanProductsAction = async (
   query: LoanProductListQueryDto,
+  options?: { silent?: boolean },
 ): Promise<ApiResult<LoanProductListItemDto[]>> => {
   try {
-    const result = await loanProductsApi.getLoanProducts(query)
+    const result = await loanProductsApi.getLoanProducts(
+      query,
+      options?.silent ? { skipGlobalLoading: true } : undefined,
+    )
     return { success: true, data: result }
   } catch (error) {
     return toApiError(error, 'No fue posible obtener el listado de productos.')

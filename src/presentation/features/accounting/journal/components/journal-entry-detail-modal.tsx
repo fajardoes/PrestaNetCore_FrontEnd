@@ -3,6 +3,11 @@ import type { JournalEntryDetail } from '@/infrastructure/interfaces/accounting/
 import { JournalEntryStateBadge } from './journal-entry-state-badge'
 import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
 import { JournalEntryVoucherReport } from '@/presentation/components/reports/accounting/journal-entry-voucher-report'
+import {
+  formatAccountingDate,
+  getJournalAccountingDate,
+  getPostingModeLabel,
+} from '@/presentation/features/accounting/accounting-ui'
 
 interface JournalEntryDetailModalProps {
   open: boolean
@@ -33,9 +38,9 @@ export const JournalEntryDetailModal = ({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
-      <div className="w-full max-w-4xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
-        <div className="mb-4 flex items-start justify-between gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur">
+      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-4 dark:border-slate-800">
           <div>
             <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
               Detalle del asiento
@@ -65,17 +70,18 @@ export const JournalEntryDetailModal = ({
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-            Cargando detalle del asiento...
-          </div>
-        ) : error ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
-            {error}
-          </div>
-        ) : entry ? (
-          <div className="space-y-4">
-            <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 md:grid-cols-3">
+        <div className="flex-1 overflow-y-auto p-6">
+          {isLoading ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+              Cargando detalle del asiento...
+            </div>
+          ) : error ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+              {error}
+            </div>
+          ) : entry ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 md:grid-cols-3">
               <div>
                 <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                   Número
@@ -89,7 +95,7 @@ export const JournalEntryDetailModal = ({
                   Fecha
                 </span>
                 <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {entry.date}
+                  {formatAccountingDate(getJournalAccountingDate(entry))}
                 </p>
               </div>
               <div>
@@ -99,6 +105,38 @@ export const JournalEntryDetailModal = ({
                 <div className="mt-1">
                   <JournalEntryStateBadge state={entry.state} />
                 </div>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Tipo de posteo
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {getPostingModeLabel(entry.postingMode)}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Fecha del evento
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {formatAccountingDate(entry.eventDate)}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Fecha de negocio
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {formatAccountingDate(entry.businessDateSnapshot)}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
+                  Periodo de posteo
+                </span>
+                <p className="font-semibold text-slate-900 dark:text-slate-100">
+                  {entry.postingPeriodName || entry.periodName || '—'}
+                </p>
               </div>
               <div className="md:col-span-3">
                 <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
@@ -110,56 +148,57 @@ export const JournalEntryDetailModal = ({
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                  <thead className="bg-slate-50 dark:bg-slate-900">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Cuenta
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Descripción
-                      </th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Debe
-                      </th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Haber
-                      </th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Referencia
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {entry.lines.map((line, index) => (
-                      <tr key={`${line.accountId}-${index}`}>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-                          {line.accountCode
-                            ? `${line.accountCode} - ${line.accountName ?? ''}`
-                            : line.accountId}
-                        </td>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-                          {line.description || '—'}
-                        </td>
-                        <td className="px-3 py-2 text-right text-sm text-slate-700 dark:text-slate-200">
-                          {formatAmount(line.debit)}
-                        </td>
-                        <td className="px-3 py-2 text-right text-sm text-slate-700 dark:text-slate-200">
-                          {formatAmount(line.credit)}
-                        </td>
-                        <td className="px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-                          {line.reference || '—'}
-                        </td>
+              <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+                    <thead className="bg-slate-50 dark:bg-slate-900">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          Cuenta
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          Descripción
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          Debe
+                        </th>
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          Haber
+                        </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          Referencia
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                      {entry.lines.map((line, index) => (
+                        <tr key={`${line.accountId}-${index}`}>
+                          <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
+                            {line.accountCode
+                              ? `${line.accountCode} - ${line.accountName ?? ''}`
+                              : line.accountId}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
+                            {line.description || '—'}
+                          </td>
+                          <td className="px-3 py-2 text-right text-xs text-slate-700 dark:text-slate-200">
+                            {formatAmount(line.debit)}
+                          </td>
+                          <td className="px-3 py-2 text-right text-xs text-slate-700 dark:text-slate-200">
+                            {formatAmount(line.credit)}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
+                            {line.reference || '—'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
 
       {entry ? (

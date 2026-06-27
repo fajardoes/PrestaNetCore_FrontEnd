@@ -1,7 +1,16 @@
-﻿import { Fragment } from 'react'
+﻿import { Fragment, lazy } from 'react'
 import { Route } from 'react-router-dom'
-import { PromotersListPage } from '@/presentation/features/sales/promoters/pages/promoters-list-page'
-import { PromoterFormPage } from '@/presentation/features/sales/promoters/pages/promoter-form-page'
+
+const PromotersListPage = lazy(() =>
+  import('@/presentation/features/sales/promoters/pages/promoters-list-page').then((module) => ({
+    default: module.PromotersListPage,
+  })),
+)
+const PromoterFormPage = lazy(() =>
+  import('@/presentation/features/sales/promoters/pages/promoter-form-page').then((module) => ({
+    default: module.PromoterFormPage,
+  })),
+)
 
 export const SalesRoutes = () => (
   <Fragment>

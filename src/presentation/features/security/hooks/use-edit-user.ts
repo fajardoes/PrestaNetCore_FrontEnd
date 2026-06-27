@@ -10,6 +10,7 @@ interface EditUserParams {
   isDeleted: boolean
   roles?: string[]
   agencyId: string
+  queryOfficeIds?: string[]
 }
 
 interface EditUserState {
@@ -34,6 +35,7 @@ export const useEditUser = () => {
         phoneNumber: params.phoneNumber ?? null,
         isDeleted: params.isDeleted,
         agencyId: params.agencyId,
+        queryOfficeIds: params.queryOfficeIds ?? [],
       },
     })
 

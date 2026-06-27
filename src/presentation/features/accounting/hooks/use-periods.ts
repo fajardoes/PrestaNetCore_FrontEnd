@@ -26,40 +26,10 @@ export const usePeriods = (options?: { enabled?: boolean }) => {
     isLoading: false,
     error: null,
   })
-  const [openPeriod, setOpenPeriod] = useState<AccountingPeriodDto | null>(null)
-  const [openPeriodLoading, setOpenPeriodLoading] = useState(false)
-  const [openPeriodError, setOpenPeriodError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [year, setYear] = useState<number | null>(null)
   const [periodState, setPeriodState] = useState<PeriodStateFilter>('all')
   const pageSize = DEFAULT_PAGE_SIZE
-
-  const fetchOpenPeriod = useCallback(async () => {
-    if (!enabled) {
-      setOpenPeriod(null)
-      setOpenPeriodLoading(false)
-      setOpenPeriodError(null)
-      return
-    }
-
-    setOpenPeriodLoading(true)
-    setOpenPeriodError(null)
-    const result = await listPeriodsAction({
-      page: 1,
-      pageSize: 1,
-      state: 'open',
-    })
-
-    if (result.success) {
-      setOpenPeriod(result.data.items[0] ?? null)
-      setOpenPeriodLoading(false)
-      return
-    }
-
-    setOpenPeriod(null)
-    setOpenPeriodError(result.error)
-    setOpenPeriodLoading(false)
-  }, [enabled])
 
   const fetchPeriods = useCallback(
     async (pageNumber: number) => {
@@ -114,11 +84,6 @@ export const usePeriods = (options?: { enabled?: boolean }) => {
   useEffect(() => {
     void fetchPeriods(page)
   }, [page, fetchPeriods])
-
-  useEffect(() => {
-    void fetchOpenPeriod()
-  }, [fetchOpenPeriod])
-
   const getNextPeriodPreview = useCallback((period: AccountingPeriodDto | null) => {
     if (!period) return null
     if (period.month >= 12) {
@@ -135,9 +100,6 @@ export const usePeriods = (options?: { enabled?: boolean }) => {
     pageSize,
     isLoading: state.isLoading,
     error: state.error,
-    openPeriod,
-    openPeriodLoading,
-    openPeriodError,
     getNextPeriodPreview,
     year,
     setYear,
@@ -145,7 +107,7 @@ export const usePeriods = (options?: { enabled?: boolean }) => {
     setPeriodState,
     setPage,
     refresh: async () => {
-      await Promise.all([fetchPeriods(page), fetchOpenPeriod()])
+      await fetchPeriods(page)
     },
   }
 }

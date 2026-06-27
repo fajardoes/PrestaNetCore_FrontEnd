@@ -1,9 +1,26 @@
-import { Fragment } from 'react'
+import { Fragment, lazy } from 'react'
 import { Route } from 'react-router-dom'
-import { AgenciesPage } from '@/presentation/features/organization/pages/agencies-page'
-import { DepartmentsPage } from '@/presentation/features/organization/pages/departments-page'
-import { MunicipalitiesPage } from '@/presentation/features/organization/pages/municipalities-page'
-import { HolidaysPage } from '@/presentation/features/organization/pages/holidays-page'
+
+const AgenciesPage = lazy(() =>
+  import('@/presentation/features/organization/pages/agencies-page').then((module) => ({
+    default: module.AgenciesPage,
+  })),
+)
+const DepartmentsPage = lazy(() =>
+  import('@/presentation/features/organization/pages/departments-page').then((module) => ({
+    default: module.DepartmentsPage,
+  })),
+)
+const MunicipalitiesPage = lazy(() =>
+  import('@/presentation/features/organization/pages/municipalities-page').then((module) => ({
+    default: module.MunicipalitiesPage,
+  })),
+)
+const HolidaysPage = lazy(() =>
+  import('@/presentation/features/organization/pages/holidays-page').then((module) => ({
+    default: module.HolidaysPage,
+  })),
+)
 
 export const OrganizationRoutes = () => (
   <Fragment>

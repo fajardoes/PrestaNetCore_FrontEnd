@@ -53,7 +53,7 @@ export const BusinessDateIndicator = () => {
   }
 
   const statusStyles = state.isDayOpen
-    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200'
+    ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/60 dark:text-sky-200'
     : 'bg-red-100 text-red-700 dark:bg-red-900/60 dark:text-red-200'
 
   return (

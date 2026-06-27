@@ -121,7 +121,7 @@ export const FeesEditor = ({
                   <span
                     className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
                       fee.isActive !== false
-                        ? 'bg-emerald-100 text-emerald-800 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-50 dark:ring-emerald-500/40'
+                        ? 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-50 dark:ring-sky-500/40'
                         : 'bg-red-100 text-red-800 ring-red-200 dark:bg-red-500/10 dark:text-red-100 dark:ring-red-500/40'
                     }`}
                   >
@@ -131,7 +131,7 @@ export const FeesEditor = ({
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
-                    className="btn-icon-label text-xs"
+                    className="btn-table-action"
                     onClick={() => openEditFeeModal(index)}
                     disabled={disabled}
                   >
@@ -139,7 +139,7 @@ export const FeesEditor = ({
                   </button>
                   <button
                     type="button"
-                    className="btn-icon-label text-xs"
+                    className="btn-table-action"
                     onClick={() => handleToggleFee(index)}
                     disabled={disabled}
                   >
@@ -148,7 +148,7 @@ export const FeesEditor = ({
                   {allowRemove ? (
                     <button
                       type="button"
-                      className="btn-icon-label text-xs text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                      className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       onClick={() => remove(index)}
                       disabled={disabled}
                     >

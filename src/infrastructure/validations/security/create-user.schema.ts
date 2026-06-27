@@ -24,6 +24,7 @@ export const createUserSchema = z
     agencyId: z
       .string({ required_error: 'Selecciona una agencia.' })
       .min(1, 'Selecciona una agencia.'),
+    queryOfficeIds: z.array(z.string()).default([]),
     roles: z.array(z.string()).min(1, 'Selecciona al menos un rol.'),
   })
   .refine((data) => data.password === data.confirmPassword, {

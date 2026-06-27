@@ -6,9 +6,14 @@ import type { LoanCatalogListQueryDto } from '@/infrastructure/loans/dtos/catalo
 export const listLoanCatalogItemsAction = async (
   catalog: LoanCatalogKey,
   query?: LoanCatalogListQueryDto,
+  options?: { silent?: boolean },
 ): Promise<ApiResult<LoanCatalogItemDto[]>> => {
   try {
-    const result = await loanCatalogsApi.getLoanCatalogItems(catalog, query)
+    const result = await loanCatalogsApi.getLoanCatalogItems(
+      catalog,
+      query,
+      options?.silent ? { skipGlobalLoading: true } : undefined,
+    )
     return { success: true, data: result }
   } catch (error) {
     return toApiError(error, 'No fue posible obtener el catálogo.')

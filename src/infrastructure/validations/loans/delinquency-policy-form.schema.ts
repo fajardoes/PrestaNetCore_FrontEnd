@@ -48,15 +48,15 @@ export const delinquencyPolicyFormSchema = yup
       .typeError('La tasa anual es requerida.')
       .min(0, 'La tasa anual debe ser mayor o igual a 0.')
       .required('La tasa anual es requerida.'),
-    rateBase: yup
-      .number()
-      .oneOf([360, 365], 'La base debe ser 360 o 365.')
+    rateBaseId: yup
+      .string()
+      .trim()
       .required('La base de tasa es requerida.'),
-    calculationBase: yup
+    calculationBaseId: yup
       .string()
       .trim()
       .required('La base de cálculo es requerida.'),
-    roundingMode: yup
+    roundingModeId: yup
       .string()
       .trim()
       .required('El modo de redondeo es requerido.'),
@@ -67,9 +67,10 @@ export const delinquencyPolicyFormSchema = yup
       .required('Los decimales son requeridos.'),
     minimumPenaltyAmount: yup
       .number()
-      .typeError('El monto mínimo es requerido.')
+      .typeError('El monto mínimo debe ser numérico.')
       .min(0, 'El monto mínimo debe ser mayor o igual a 0.')
-      .required('El monto mínimo es requerido.'),
+      .nullable()
+      .optional(),
     maximumPenaltyAmount: yup
       .number()
       .typeError('El monto máximo debe ser numérico.')
@@ -81,7 +82,10 @@ export const delinquencyPolicyFormSchema = yup
         'El monto máximo debe ser mayor o igual al mínimo.',
         function (value) {
           const { minimumPenaltyAmount } = this.parent
-          if (typeof value !== 'number' || typeof minimumPenaltyAmount !== 'number') {
+          if (
+            typeof value !== 'number' ||
+            typeof minimumPenaltyAmount !== 'number'
+          ) {
             return true
           }
           return value >= minimumPenaltyAmount

@@ -1,0 +1,815 @@
+# Prompt Frontend - Cierre Diario de Cartera - PrestaNet - 2026-05-17
+
+Necesito implementar en el frontend de PrestaNet la interfaz administrativa para operar y consultar el cierre diario de cartera usando los endpoints ya implementados en backend.
+
+Este prompt es exclusivamente para FRONTEND dentro de este repo. No implementar backend. No inventar endpoints, campos, estados ni reglas adicionales. Usar estrictamente los contratos descritos aqui y respetar la arquitectura real del proyecto.
+
+========================================================
+REGLAS DEL REPO
+========================================================
+
+- No ejecutar `npm`, `pnpm`, `yarn`, `vite`, `eslint` ni comandos de build/lint.
+- No ejecutar comandos `git`.
+- Solo crear o modificar archivos frontend de este repo.
+- Mantener tema claro/oscuro en todo componente visual nuevo usando Tailwind `dark:`.
+- Evitar textos funcionales en ingles para usuario final. Si backend envia codigos en ingles, mostrar labels en espanol y conservar codigos solo como dato tecnico si hace falta.
+- En UI financiera, usar "Capital" / "Saldo de capital" cuando aplique; no usar "Principal" como label visible.
+- No usar `window.confirm`; usar `ConfirmModal` de `src/presentation/features/loans/products/components/confirm-modal.tsx` o un modal propio si se necesita formulario.
+- No usar `input type="date"`; usar `DatePicker` de `src/presentation/share/components/date-picker.tsx`.
+- No usar `react-select` directamente; usar `SelectField` de `src/presentation/share/components/select.tsx` para selects locales.
+- Para tablas administrativas usar `TableContainer` con `mode="legacy-compact"` y preferiblemente `variant="strong"`.
+- Para paginacion usar `TablePagination`.
+- Para acciones de fila usar la clase `.btn-table-action`.
+
+========================================================
+ARQUITECTURA ESPERADA EN ESTE PROYECTO
+========================================================
+
+Implementar el feature bajo la arquitectura existente:
+
+1. Contratos TypeScript:
+   - Requests en `src/infrastructure/loans/requests/`
+   - Responses en `src/infrastructure/loans/responses/`
+
+2. API client:
+   - Crear `src/core/api/loans/daily-loan-closing-api.ts`
+   - Usar `httpClient` de `src/infrastructure/api/httpClient`.
+   - Importante: `httpClient` ya tiene base URL con `/api`. Por eso las rutas deben ser relativas tipo `/loans/daily-closing/status`, no `/api/loans/daily-closing/status`.
+
+3. Actions:
+   - Crear actions en `src/core/actions/loans/`
+   - Cada action debe envolver el API y retornar `ApiResult<T>` usando `toApiError` de `src/core/helpers/api-result.ts`.
+   - Usar mensajes fallback en espanol.
+
+4. Hooks:
+   - Crear hooks en `src/presentation/features/loans/daily-closing/hooks/`
+   - Los hooks llaman actions, manejan loading/error/data y exponen funciones claras para las pages.
+
+5. Componentes:
+   - Crear componentes UI puros en `src/presentation/features/loans/daily-closing/components/`
+   - Sin HTTP directo, sin actions directas y sin efectos secundarios de dominio.
+
+6. Pages:
+   - Crear pages en `src/presentation/features/loans/daily-closing/pages/`
+   - Las pages solo orquestan estado de UI, permisos, modales, hooks y navegacion.
+
+7. Rutas:
+   - Registrar rutas en `src/routes/loans-routes.tsx`.
+   - Las rutas estan dentro de `ProtectedRoute` y `LayoutShell` desde `AppRouter`.
+
+8. Permisos:
+   - Usar `useUserPermissions` desde `src/presentation/features/security/hooks/use-user-permissions.ts`.
+   - No consultar permisos manualmente si el hook ya los expone.
+   - Para acceso denegado, seguir el patron de paginas existentes: panel `Acceso restringido` con clases Tailwind claro/oscuro.
+
+9. Menu:
+   - El sidebar se alimenta dinamicamente desde backend con `/menus/my`.
+   - Si se necesita entrada de menu, no hardcodearla en `Sidebar`; documentar/agregar configuracion backend/menu admin fuera de este prompt o indicar que el frontend solo registra la ruta.
+
+========================================================
+OBJETIVO FUNCIONAL
+========================================================
+
+Crear una experiencia frontend para:
+
+1. Consultar el estado operativo del cierre diario de cartera.
+2. Ejecutar el cierre diario para la fecha operativa vigente.
+3. Ejecutar simulacion/dry-run del cierre diario.
+4. Consultar historico de runs de cierre.
+5. Consultar detalle de procesos por run.
+6. Mostrar errores, advertencias, contadores y bloqueos operativos.
+7. Respetar permisos del usuario autenticado.
+
+El cierre diario de cartera ya existe en backend y opera sobre:
+
+- fecha operativa vigente del sistema,
+- dia operativo abierto/cerrado,
+- periodo contable automatico,
+- devengo de intereses,
+- reconocimiento de cargos diferidos,
+- refresco de estados de cuotas,
+- calculo de mora diaria cuando existe configuracion suficiente,
+- snapshots diarios,
+- eventos auditables internos,
+- runs y detalles auditables.
+
+========================================================
+LO QUE FRONTEND NO DEBE HACER
+========================================================
+
+Frontend NO debe:
+
+- pedir al usuario una fecha arbitraria para ejecutar el cierre;
+- asumir que puede cerrar fechas pasadas o futuras;
+- avanzar automaticamente la fecha operativa;
+- efectivizar pagos REGISTERED desde el cierre diario;
+- liberar exposicion de canales de recaudacion desde el cierre diario;
+- crear depositos bancarios automaticos;
+- implementar reversa destructiva de cierres;
+- inventar endpoint de compensacion;
+- inventar endpoint para eventos diarios;
+- inventar endpoint para snapshots diarios;
+- asumir que `COMPLETED_WITH_ERRORS` es equivalente a `COMPLETED`;
+- asumir que `dryRun` no deja registro: dry-run crea run, detalles y eventos de calculo, pero no aplica efectos contables ni snapshots.
+
+La efectivizacion de pagos sigue siendo flujo administrativo separado:
+
+- `POST /api/payments/{id}/effectivize`
+
+La exposicion de canales se libera en pagos, no en cierre diario.
+
+========================================================
+PERMISOS
+========================================================
+
+Permisos requeridos:
+
+1. `loans.daily_closing.read`
+   Permite:
+   - ver dashboard/status de cierre,
+   - listar runs,
+   - ver detalle de run.
+
+2. `loans.daily_closing.run`
+   Permite:
+   - ejecutar cierre real,
+   - ejecutar dry-run,
+   - ejecutar reproceso con `allowReprocess=true`.
+
+Reglas de visibilidad:
+
+- Si el usuario no tiene `loans.daily_closing.read`:
+  - no debe ver entrada de menu si backend/menu admin filtra por permisos,
+  - si entra por URL directa, mostrar pantalla/panel de acceso restringido.
+
+- Si tiene `loans.daily_closing.read` pero no `loans.daily_closing.run`:
+  - puede ver status, historico y detalles,
+  - no mostrar botones "Ejecutar cierre", "Simular cierre" ni "Reprocesar".
+
+- Si tiene `loans.daily_closing.run`:
+  - mostrar acciones operativas, pero respetar bloqueos devueltos por status y errores 409/400.
+
+========================================================
+RUTAS FRONTEND
+========================================================
+
+Registrar en `src/routes/loans-routes.tsx`:
+
+- `/loans/daily-closing`
+  Dashboard/status + acciones principales.
+
+- `/loans/daily-closing/runs`
+  Historico de runs con filtros.
+
+- `/loans/daily-closing/runs/:id`
+  Detalle del run + tabla de detalles.
+
+Evitar crear `/loans/daily-closing/runs/:id/details` como pagina separada salvo que sea realmente necesario. En este proyecto es mas simple y consistente que `/runs/:id` muestre cabecera del run y detalles paginados.
+
+Importante: colocar estas rutas antes de las rutas genericas `/loans` y `/loans/:id` para evitar conflictos con parametros dinamicos.
+
+========================================================
+ENDPOINTS DISPONIBLES
+========================================================
+
+Backend real:
+
+- `GET /api/loans/daily-closing/status`
+- `POST /api/loans/daily-closing/run`
+- `GET /api/loans/daily-closing/runs`
+- `GET /api/loans/daily-closing/runs/{id}`
+- `GET /api/loans/daily-closing/runs/{id}/details`
+
+En el API client frontend usar:
+
+- `GET /loans/daily-closing/status`
+- `POST /loans/daily-closing/run`
+- `GET /loans/daily-closing/runs`
+- `GET /loans/daily-closing/runs/{id}`
+- `GET /loans/daily-closing/runs/{id}/details`
+
+porque `httpClient` ya agrega `/api`.
+
+========================================================
+CONTRATOS TYPESCRIPT
+========================================================
+
+Crear estos tipos como interfaces/aliases separados en `src/infrastructure/loans/requests/` y `src/infrastructure/loans/responses/`. Usar nombres de archivo kebab-case.
+
+Status:
+
+```ts
+export type DailyClosingRunStatus =
+  | 'RUNNING'
+  | 'COMPLETED'
+  | 'COMPLETED_WITH_ERRORS'
+  | 'FAILED'
+  | 'COMPENSATED'
+  | 'DRY_RUN_COMPLETED'
+  | 'DRY_RUN_COMPLETED_WITH_ERRORS'
+```
+
+Procesos:
+
+```ts
+export type DailyClosingProcessCode =
+  | 'INTEREST_ACCRUAL'
+  | 'DEFERRED_FEE_RECOGNITION'
+  | 'INSTALLMENT_STATUS_REFRESH'
+  | 'DELINQUENCY_ACCRUAL'
+  | 'SNAPSHOT'
+  | 'FINAL_VALIDATION'
+
+export type DailyClosingProcessingStatus =
+  | 'PENDING'
+  | 'PROCESSED'
+  | 'SKIPPED'
+  | 'FAILED'
+```
+
+Request de ejecucion:
+
+```ts
+export interface DailyLoanClosingRunRequest {
+  businessDate?: string | null
+  allowReprocess: boolean
+  dryRun: boolean
+  closeBusinessDayOnSuccess: boolean
+  notes?: string | null
+}
+```
+
+Responses:
+
+```ts
+export interface DailyLoanClosingStatusResponse {
+  businessDate: string
+  isDayOpen: boolean
+  hasRunningRun: boolean
+  hasCompletedRunForBusinessDate: boolean
+  currentRunId?: string | null
+  currentRunStatus?: DailyClosingRunStatus | null
+  pendingRegisteredPayments: number
+  activeLoans: number
+  overdueLoansEstimate: number
+  postingContextStatus?: string | null
+}
+
+export interface DailyLoanClosingRunResponse {
+  id: string
+  businessDate: string
+  status: DailyClosingRunStatus
+  totalLoans: number
+  processedLoans: number
+  failedLoans: number
+  skippedLoans: number
+  generatedJournalEntries: number
+  generatedEvents: number
+  generatedSnapshots: number
+  executionTimeMs?: number | null
+  errorMessage?: string | null
+}
+
+export interface DailyLoanClosingRunDetailResponse {
+  id: string
+  runId: string
+  loanId?: string | null
+  loanNo?: string | null
+  processCode: DailyClosingProcessCode
+  processingStatus: DailyClosingProcessingStatus
+  startedAt: string
+  completedAt?: string | null
+  generatedEvents: number
+  generatedJournalEntries: number
+  generatedAmount?: number | null
+  errorMessage?: string | null
+}
+
+export interface DailyClosingPagedResult<T> {
+  items: T[]
+  totalCount: number
+  page: number
+  pageSize: number
+}
+```
+
+Filtros:
+
+```ts
+export interface DailyClosingRunFiltersRequest {
+  businessDate?: string
+  status?: DailyClosingRunStatus
+  from?: string
+  to?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface DailyClosingRunDetailFiltersRequest {
+  loanId?: string
+  loanNo?: string
+  processCode?: DailyClosingProcessCode
+  processingStatus?: DailyClosingProcessingStatus
+  page?: number
+  pageSize?: number
+}
+```
+
+========================================================
+API CLIENT Y ACTIONS
+========================================================
+
+Crear `src/core/api/loans/daily-loan-closing-api.ts` con funciones:
+
+```ts
+getDailyClosingStatus(): Promise<DailyLoanClosingStatusResponse>
+
+runDailyClosing(
+  payload: DailyLoanClosingRunRequest,
+): Promise<DailyLoanClosingRunResponse>
+
+searchDailyClosingRuns(
+  params: DailyClosingRunFiltersRequest,
+): Promise<DailyClosingPagedResult<DailyLoanClosingRunResponse>>
+
+getDailyClosingRun(id: string): Promise<DailyLoanClosingRunResponse>
+
+searchDailyClosingRunDetails(
+  runId: string,
+  params: DailyClosingRunDetailFiltersRequest,
+): Promise<DailyClosingPagedResult<DailyLoanClosingRunDetailResponse>>
+```
+
+Crear actions en `src/core/actions/loans/`:
+
+- `get-daily-closing-status.action.ts`
+- `run-daily-closing.action.ts`
+- `search-daily-closing-runs.action.ts`
+- `get-daily-closing-run.action.ts`
+- `search-daily-closing-run-details.action.ts`
+
+Patron esperado:
+
+- importar funcion del API,
+- `try/catch`,
+- retornar `{ success: true, data }`,
+- en error retornar `toApiError(error, 'Mensaje en espanol.')`.
+
+`toApiError` ya extrae `detail`, `title`, `message`, `error` y errores de validacion de Problem Details.
+
+========================================================
+HOOKS RECOMENDADOS
+========================================================
+
+Crear en `src/presentation/features/loans/daily-closing/hooks/`:
+
+1. `use-daily-closing-status.ts`
+   - carga status cuando `enabled=true`,
+   - expone `status`, `isLoading`, `error`, `refresh`.
+
+2. `use-daily-closing-run-mutation.ts`
+   - ejecuta `runDailyClosingAction`,
+   - expone `run`, `isLoading`, `error`, `setError`.
+
+3. `use-daily-closing-runs-list.ts`
+   - maneja filtros, `page`, `pageSize`, `totalPages`, `refresh`.
+   - patron similar a `usePaymentsList`.
+
+4. `use-daily-closing-run-detail.ts`
+   - carga cabecera `GET /runs/{id}`.
+
+5. `use-daily-closing-run-details-list.ts`
+   - maneja filtros y paginacion de detalles.
+
+========================================================
+COMPONENTES UI RECOMENDADOS
+========================================================
+
+Crear en `src/presentation/features/loans/daily-closing/components/`:
+
+1. `daily-closing-status-cards.tsx`
+   - tarjetas: fecha operativa, estado del dia, periodo contable, run actual, pagos REGISTERED pendientes, prestamos activos, prestamos vencidos estimados.
+
+2. `daily-closing-actions-panel.tsx`
+   - renderiza botones segun permisos y bloqueos.
+   - botones sugeridos: Refrescar, Simular cierre, Ejecutar cierre, Reprocesar, Ver historial.
+
+3. `daily-closing-run-action-modal.tsx`
+   - modal para dry-run, cierre real y reproceso.
+   - campos:
+     - fecha operativa readonly,
+     - notas opcional,
+     - checkbox `closeBusinessDayOnSuccess` solo para cierre real,
+     - confirmacion visible cuando `dryRun=false`.
+
+4. `daily-closing-run-result-summary.tsx`
+   - resumen despues de POST `/run`.
+   - mostrar status, totales, fallidos, omitidos, asientos, eventos, snapshots, duracion y error.
+   - link a `/loans/daily-closing/runs/{id}`.
+
+5. `daily-closing-runs-table.tsx`
+   - tabla paginada con `TableContainer mode="legacy-compact" variant="strong"`.
+   - accion de fila "Ver detalle" usando `.btn-table-action`.
+
+6. `daily-closing-run-details-table.tsx`
+   - tabla paginada con filtros de proceso/estado/prestamo.
+   - enfatizar FAILED, SKIPPED, PROCESSED y PENDING.
+
+7. `daily-closing-ui.ts`
+   - helpers de UI: labels en espanol, clases por status, formatters de fecha/duracion/montos.
+
+========================================================
+PAGES RECOMENDADAS
+========================================================
+
+Crear en `src/presentation/features/loans/daily-closing/pages/`:
+
+1. `daily-closing-dashboard-page.tsx`
+   - permiso requerido: `loans.daily_closing.read`
+   - usa `useDailyClosingStatus`
+   - muestra status, alertas, acciones y ultimo resultado de ejecucion.
+
+2. `daily-closing-runs-page.tsx`
+   - permiso requerido: `loans.daily_closing.read`
+   - filtros: fecha exacta, desde, hasta, estado.
+   - usar `DatePicker` para fechas y `SelectField` para status.
+   - usar `TablePagination`.
+
+3. `daily-closing-run-detail-page.tsx`
+   - permiso requerido: `loans.daily_closing.read`
+   - obtiene `id` por `useParams`.
+   - carga cabecera del run y detalles.
+   - si status es `COMPLETED_WITH_ERRORS`, `DRY_RUN_COMPLETED_WITH_ERRORS` o `FAILED`, mostrar alerta y facilitar filtro `FAILED`.
+
+========================================================
+CONTRATOS BACKEND DETALLADOS
+========================================================
+
+1. Consultar estado operativo
+
+`GET /api/loans/daily-closing/status`
+
+Permiso requerido: `loans.daily_closing.read`
+
+Response 200:
+
+```json
+{
+  "businessDate": "2026-05-17",
+  "isDayOpen": true,
+  "hasRunningRun": false,
+  "hasCompletedRunForBusinessDate": false,
+  "currentRunId": "guid-or-null",
+  "currentRunStatus": "RUNNING-or-COMPLETED-or-null",
+  "pendingRegisteredPayments": 12,
+  "activeLoans": 1500,
+  "overdueLoansEstimate": 180,
+  "postingContextStatus": "OK"
+}
+```
+
+Reglas UI:
+
+- `hasRunningRun=true`: badge "En ejecucion"; deshabilitar ejecutar/simular/reprocesar.
+- `isDayOpen=false`: badge "Dia cerrado"; deshabilitar acciones de ejecucion.
+- `postingContextStatus!="OK"`: badge/alerta "Periodo contable no disponible"; deshabilitar acciones de ejecucion.
+- `hasCompletedRunForBusinessDate=true`: badge "Cierre ya ejecutado"; mostrar "Reprocesar" solo con `loans.daily_closing.run`.
+- `pendingRegisteredPayments>0`: advertencia, no bloqueo automatico.
+
+2. Ejecutar cierre diario
+
+`POST /api/loans/daily-closing/run`
+
+Permiso requerido: `loans.daily_closing.run`
+
+Request:
+
+```json
+{
+  "businessDate": "2026-05-17",
+  "allowReprocess": false,
+  "dryRun": false,
+  "closeBusinessDayOnSuccess": false,
+  "notes": "Cierre operativo del dia"
+}
+```
+
+Reglas:
+
+- Antes de ejecutar, llamar/refrescar `GET /status`.
+- Enviar `businessDate` igual a `status.businessDate`.
+- No permitir editar manualmente `businessDate`.
+- Si `hasRunningRun=true`, no ejecutar.
+- Si `isDayOpen=false`, no ejecutar.
+- Si `postingContextStatus!="OK"`, no ejecutar.
+- Si `hasCompletedRunForBusinessDate=true`, cierre normal debe usar reproceso con `allowReprocess=true`.
+- Para cierre real `dryRun=false`, mostrar confirmacion fuerte.
+- Para dry-run `dryRun=true`, aclarar que no aplica devengos, cargos diferidos, mora, snapshots ni cambios de estado, pero registra run/detalles/eventos de simulacion.
+
+Response 200:
+
+```json
+{
+  "id": "guid",
+  "businessDate": "2026-05-17",
+  "status": "COMPLETED",
+  "totalLoans": 1500,
+  "processedLoans": 1498,
+  "failedLoans": 2,
+  "skippedLoans": 20,
+  "generatedJournalEntries": 86,
+  "generatedEvents": 3400,
+  "generatedSnapshots": 1498,
+  "executionTimeMs": 92500,
+  "errorMessage": null
+}
+```
+
+3. Listar runs
+
+`GET /api/loans/daily-closing/runs`
+
+Query params:
+
+- `businessDate`: YYYY-MM-DD opcional
+- `status`: string opcional
+- `from`: YYYY-MM-DD opcional
+- `to`: YYYY-MM-DD opcional
+- `page`: number opcional, default UI 1
+- `pageSize`: number opcional, default UI 25
+
+Response:
+
+```json
+{
+  "items": [
+    {
+      "id": "guid",
+      "businessDate": "2026-05-17",
+      "status": "COMPLETED_WITH_ERRORS",
+      "totalLoans": 1500,
+      "processedLoans": 1498,
+      "failedLoans": 2,
+      "skippedLoans": 20,
+      "generatedJournalEntries": 86,
+      "generatedEvents": 3400,
+      "generatedSnapshots": 1498,
+      "executionTimeMs": 92500,
+      "errorMessage": null
+    }
+  ],
+  "totalCount": 1,
+  "page": 1,
+  "pageSize": 25
+}
+```
+
+Columnas recomendadas:
+
+- Fecha operativa
+- Estado
+- Prestamos totales
+- Procesados
+- Fallidos
+- Omitidos
+- Asientos
+- Eventos
+- Snapshots
+- Duracion
+- Error
+- Accion: Ver detalle
+
+4. Consultar run por id
+
+`GET /api/loans/daily-closing/runs/{id}`
+
+Usar este endpoint para refrescar cabecera/resumen del run.
+
+5. Consultar detalles de un run
+
+`GET /api/loans/daily-closing/runs/{id}/details`
+
+Query params:
+
+- `loanId`: guid opcional
+- `loanNo`: string opcional
+- `processCode`: string opcional
+- `processingStatus`: string opcional
+- `page`: number opcional, default UI 1
+- `pageSize`: number opcional, default UI 25
+
+Response:
+
+```json
+{
+  "items": [
+    {
+      "id": "guid",
+      "runId": "guid",
+      "loanId": "guid-or-null",
+      "loanNo": "PRE-2026-000123",
+      "processCode": "SNAPSHOT",
+      "processingStatus": "PROCESSED",
+      "startedAt": "2026-05-17T10:15:30Z",
+      "completedAt": "2026-05-17T10:15:31Z",
+      "generatedEvents": 1,
+      "generatedJournalEntries": 0,
+      "generatedAmount": null,
+      "errorMessage": null
+    }
+  ],
+  "totalCount": 1,
+  "page": 1,
+  "pageSize": 25
+}
+```
+
+Columnas recomendadas:
+
+- Estado
+- Proceso
+- Prestamo
+- Inicio
+- Fin
+- Eventos
+- Asientos
+- Monto generado
+- Error
+
+========================================================
+LABELS EN ESPANOL
+========================================================
+
+Run status:
+
+- `RUNNING`: En ejecucion
+- `COMPLETED`: Completado
+- `COMPLETED_WITH_ERRORS`: Completado con errores
+- `FAILED`: Fallido
+- `COMPENSATED`: Compensado
+- `DRY_RUN_COMPLETED`: Simulacion completada
+- `DRY_RUN_COMPLETED_WITH_ERRORS`: Simulacion con errores
+
+Process code:
+
+- `INTEREST_ACCRUAL`: Devengo de intereses
+- `DEFERRED_FEE_RECOGNITION`: Reconocimiento de cargos diferidos
+- `INSTALLMENT_STATUS_REFRESH`: Refresco de cuotas
+- `DELINQUENCY_ACCRUAL`: Calculo de mora diaria
+- `SNAPSHOT`: Snapshot diario
+- `FINAL_VALIDATION`: Validacion final
+
+Processing status:
+
+- `PENDING`: Pendiente
+- `PROCESSED`: Procesado
+- `SKIPPED`: Omitido
+- `FAILED`: Fallido
+
+========================================================
+MANEJO DE ERRORES HTTP
+========================================================
+
+Backend devuelve Problem Details para errores de servicio.
+
+Manejar:
+
+- 401: sesion expirada/no autenticado. El interceptor puede limpiar sesion.
+- 403: mostrar acceso restringido.
+- 400: validacion de negocio. Mostrar `detail/title`.
+- 404: run o recurso no encontrado.
+- 409: conflicto de estado:
+  - ya existe run RUNNING,
+  - ya existe cierre completado para la fecha sin `allowReprocess`,
+  - dia operativo cerrado,
+  - periodo contable no admite posteo automatico.
+- 422: error semantico si backend lo usa.
+
+Formato esperado:
+
+```json
+{
+  "type": "about:blank",
+  "title": "Conflict",
+  "status": 409,
+  "detail": "Ya existe un cierre completado para la fecha operativa vigente."
+}
+```
+
+Mostrar preferentemente `detail`, luego `title`, luego fallback. El helper `toApiError` ya cubre esto.
+
+========================================================
+FLUJO DASHBOARD
+========================================================
+
+Al cargar `/loans/daily-closing`:
+
+1. Verificar `loans.daily_closing.read` con `useUserPermissions`.
+2. Si no tiene permiso y permisos ya cargaron, mostrar acceso restringido.
+3. Llamar `GET /loans/daily-closing/status`.
+4. Renderizar tarjetas y alertas.
+5. Si tiene `loans.daily_closing.run`, evaluar acciones:
+   - Simular cierre: habilitado si `isDayOpen=true`, `hasRunningRun=false`, `postingContextStatus="OK"`.
+   - Ejecutar cierre: habilitado si lo anterior y `hasCompletedRunForBusinessDate=false`.
+   - Reprocesar: habilitado si lo anterior y `hasCompletedRunForBusinessDate=true`.
+6. Despues de POST `/run`:
+   - mostrar `DailyClosingRunResultSummary`,
+   - refrescar status,
+   - ofrecer link a `/loans/daily-closing/runs/{id}`.
+
+========================================================
+FLUJO HISTORICO
+========================================================
+
+1. Verificar `loans.daily_closing.read`.
+2. Cargar `GET /loans/daily-closing/runs?page=1&pageSize=25`.
+3. Mostrar filtros:
+   - Fecha exacta (`DatePicker`)
+   - Desde (`DatePicker`)
+   - Hasta (`DatePicker`)
+   - Estado (`SelectField`)
+4. Mostrar tabla con `TableContainer`.
+5. Mostrar paginacion con `TablePagination`.
+6. En cada fila, accion "Ver detalle" hacia `/loans/daily-closing/runs/{id}`.
+
+========================================================
+FLUJO DETALLE DE RUN
+========================================================
+
+1. Verificar `loans.daily_closing.read`.
+2. Cargar `GET /loans/daily-closing/runs/{id}`.
+3. Cargar `GET /loans/daily-closing/runs/{id}/details`.
+4. Mostrar cabecera con resumen.
+5. Mostrar filtros:
+   - Estado de procesamiento (`SelectField`)
+   - Proceso (`SelectField`)
+   - Numero de prestamo (`input`)
+   - LoanId opcional para soporte/debug
+6. Mostrar tabla paginada.
+7. Si run tiene errores, mostrar alerta y boton/filtro rapido para `processingStatus=FAILED`.
+
+========================================================
+REGLAS DE FORMATO
+========================================================
+
+- `DateOnly` se renderiza como `YYYY-MM-DD`.
+- `DateTimeOffset` se renderiza como fecha/hora local del usuario.
+- `executionTimeMs`:
+  - menor que 1000: `850 ms`
+  - mayor o igual a 1000: segundos/minutos.
+- `generatedAmount=null`: mostrar `-`.
+- `loanNo=null`: mostrar `Proceso global`.
+- `loanId`: no mostrar por defecto si hay `loanNo`; puede mostrarse como dato tecnico.
+
+========================================================
+CRITERIOS DE ACEPTACION FRONTEND
+========================================================
+
+- La ruta `/loans/daily-closing` existe y queda protegida por permiso `loans.daily_closing.read`.
+- Las rutas `/loans/daily-closing/runs` y `/loans/daily-closing/runs/:id` existen.
+- Las acciones de ejecucion solo aparecen para usuarios con `loans.daily_closing.run`.
+- El usuario puede consultar status operativo del cierre.
+- El usuario puede ejecutar dry-run.
+- El usuario puede ejecutar cierre real.
+- El usuario puede reprocesar cuando ya existe cierre para la fecha, enviando `allowReprocess=true`.
+- El usuario ve claramente si hay pagos REGISTERED pendientes, sin que la UI prometa efectivizarlos.
+- El usuario ve claramente si el periodo contable no permite posteo automatico.
+- La UI no permite editar manualmente `businessDate`.
+- La UI muestra Problem Details de backend de forma legible.
+- La UI lista runs con filtros y paginacion.
+- La UI muestra detalle de run con filtros y paginacion.
+- La UI distingue visualmente `COMPLETED`, `COMPLETED_WITH_ERRORS`, `FAILED` y estados `DRY_RUN`.
+- La UI no llama endpoints inexistentes de eventos, snapshots, reverse o compensate.
+- La implementacion respeta capas: contracts en infrastructure, API/actions en core, hooks/components/pages en presentation.
+
+========================================================
+RESUMEN DE BACKEND IMPLEMENTADO
+========================================================
+
+Endpoints reales:
+
+- `GET /api/loans/daily-closing/status`
+- `POST /api/loans/daily-closing/run`
+- `GET /api/loans/daily-closing/runs`
+- `GET /api/loans/daily-closing/runs/{id}`
+- `GET /api/loans/daily-closing/runs/{id}/details`
+
+Permisos reales:
+
+- `loans.daily_closing.read`
+- `loans.daily_closing.run`
+
+Tablas backend creadas:
+
+- `loans.daily_closing_runs`
+- `loans.daily_closing_run_details`
+- `loans.loan_daily_snapshots`
+- `loans.loan_daily_events`
+
+No hay endpoints frontend en esta fase para:
+
+- consultar `loan_daily_events` directamente,
+- consultar `loan_daily_snapshots` directamente,
+- reversar cierre,
+- compensar cierre,
+- efectivizar pagos desde cierre.

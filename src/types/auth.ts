@@ -5,9 +5,11 @@ export interface AuthUser {
   email: string
   fullName: string
   roles: Role[]
+  permissions?: string[]
   agencyId?: string | null
   agencyName?: string | null
   agencyCode?: string | null
+  queryOfficeIds?: string[]
 }
 
 export interface AuthTokens {

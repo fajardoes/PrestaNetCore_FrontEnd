@@ -6,6 +6,7 @@ export interface AgencyPayload {
   slug: string
   code: string
   isActive: boolean
+  canCreateLoanApplications: boolean
 }
 
 export interface SaveAgencyResponse {
@@ -14,8 +15,12 @@ export interface SaveAgencyResponse {
 }
 
 export const catalogApi = {
-  async listAgencies(): Promise<Agency[]> {
-    const { data } = await httpClient.get<Agency[]>('/catalogs/agencies')
+  async listAgencies(onlyLoanApplicationEnabled = false): Promise<Agency[]> {
+    const { data } = await httpClient.get<Agency[]>('/catalogs/agencies', {
+      params: {
+        only_loan_application_enabled: onlyLoanApplicationEnabled,
+      },
+    })
     return data
   },
 

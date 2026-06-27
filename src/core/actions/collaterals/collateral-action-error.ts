@@ -3,6 +3,7 @@ import { toApiError } from '@/core/helpers/api-result'
 
 export interface CollateralActionErrorData {
   errorsByField?: Record<string, string[]>
+  detail?: string
 }
 
 interface ProblemDetailsLike {
@@ -34,14 +35,19 @@ export const toCollateralApiError = (
   }
 
   const details = data as ProblemDetailsLike
+  const detail =
+    typeof details.detail === 'string' && details.detail.trim()
+      ? details.detail.trim()
+      : undefined
   const errorsByField = mapErrorsByField(details.errors)
-  if (!errorsByField) {
+  if (!errorsByField && !detail) {
     return normalized
   }
 
   return {
     ...normalized,
     data: {
+      detail,
       errorsByField,
     },
   }

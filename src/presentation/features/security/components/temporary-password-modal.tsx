@@ -143,10 +143,10 @@ export const TemporaryPasswordModal = ({
           ) : null}
 
           {password ? (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-100">
+            <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100">
               <p className="font-semibold">Contraseña generada</p>
               <p className="mt-1 break-words text-base font-mono">{password}</p>
-              <p className="mt-2 text-xs text-emerald-700/80 dark:text-emerald-100/80">
+              <p className="mt-2 text-xs text-sky-700/80 dark:text-sky-100/80">
                 Compártela de forma segura. El usuario deberá cambiarla al
                 ingresar.
               </p>

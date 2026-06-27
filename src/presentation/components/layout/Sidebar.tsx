@@ -4,50 +4,21 @@ import { useAuth } from '@/hooks/useAuth'
 import type { MenuItemTreeDto } from '@/infrastructure/interfaces/security/menu'
 import { useMyMenus } from '@/presentation/features/security/menus/hooks/use-my-menus'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
+import logoLight from '@/assets/logo_light.svg'
+import logoDark from '@/assets/logo_dark.svg'
+import {
+  collectActiveGroups,
+  isItemActive,
+  isRouteExact,
+  sortMenuTree,
+} from './menu-tree'
 
 interface SidebarProps {
   collapsed: boolean
-}
-
-const isRouteActive = (route: string | null, pathname: string) => {
-  if (!route) return false
-  if (route === '/') return pathname === '/'
-  return pathname === route || pathname.startsWith(`${route}/`)
-}
-
-const isRouteExact = (route: string | null, pathname: string) => {
-  if (!route) return false
-  if (route === '/') return pathname === '/'
-  return pathname === route
-}
-
-const isItemActive = (item: MenuItemTreeDto, pathname: string): boolean => {
-  if (isRouteActive(item.route, pathname)) return true
-  return item.children.some((child) => isItemActive(child, pathname))
-}
-
-const sortMenuTree = (items: MenuItemTreeDto[]): MenuItemTreeDto[] => {
-  return items
-    .slice()
-    .sort((a, b) => a.order - b.order)
-    .map((item) => ({
-      ...item,
-      children: sortMenuTree(item.children ?? []),
-    }))
-}
-
-const collectActiveGroups = (
-  item: MenuItemTreeDto,
-  pathname: string,
-  activeGroups: Set<string>,
-): boolean => {
-  const childActive = item.children.some((child) =>
-    collectActiveGroups(child, pathname, activeGroups),
-  )
-  if (childActive) {
-    activeGroups.add(item.id)
-  }
-  return isRouteActive(item.route, pathname) || childActive
+  menus?: MenuItemTreeDto[]
+  isLoadingMenus?: boolean
+  menusError?: string | null
+  onRetryMenus?: () => void
 }
 
 const getIndentClasses = (depth: number, collapsed: boolean) => {
@@ -64,18 +35,31 @@ const getIndentClasses = (depth: number, collapsed: boolean) => {
 const getSubmenuClasses = (isExpanded: boolean) => {
   return [
     'space-y-1 overflow-hidden transition-[max-height,opacity,transform] duration-200 ease-out',
-    isExpanded ? 'max-h-96 opacity-100 translate-y-0' : 'max-h-0 opacity-0 -translate-y-1 pointer-events-none',
+    isExpanded
+      ? 'max-h-[80rem] opacity-100 translate-y-0'
+      : 'max-h-0 opacity-0 -translate-y-1 pointer-events-none',
   ].join(' ')
 }
 
-export const Sidebar = ({ collapsed }: SidebarProps) => {
+export const Sidebar = ({
+  collapsed,
+  menus: providedMenus,
+  isLoadingMenus,
+  menusError,
+  onRetryMenus,
+}: SidebarProps) => {
   const { isAuthenticated } = useAuth()
-  const { menus, isLoading, error, refetch } = useMyMenus({
+  const fallbackMenus = useMyMenus({
     enabled: isAuthenticated,
   })
   const location = useLocation()
   const sidebarWidth = collapsed ? 'w-20' : 'w-64'
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+
+  const menus = providedMenus ?? fallbackMenus.menus
+  const isLoading = isLoadingMenus ?? fallbackMenus.isLoading
+  const error = menusError ?? fallbackMenus.error
+  const refetch = onRetryMenus ?? fallbackMenus.refetch
 
   const sortedMenus = useMemo(() => sortMenuTree(menus), [menus])
 
@@ -113,12 +97,12 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
       const hasChildren = item.children.length > 0
       const isGroup = item.route === null
       const isActive = isItemActive(item, location.pathname)
-      const isExpanded = Boolean(expanded[item.id]) || isActive
+      const isExpanded = Boolean(expanded[item.id])
       const indentClasses = getIndentClasses(depth, collapsed)
       const collapsedClasses = collapsed ? 'flex-col gap-2 px-2 py-3 text-xs' : ''
       const isExactActive = isRouteExact(item.route, location.pathname)
       const activeClasses = isActive
-        ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-emerald-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-emerald-400"
+        ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-sky-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-sky-400"
         : 'text-slate-600 dark:text-slate-200'
 
       if (isGroup) {
@@ -165,7 +149,7 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
             end={item.route === '/'}
             className={() => {
               const linkActiveClasses = isExactActive
-                ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-emerald-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-emerald-400"
+                ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-sky-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-sky-400"
                 : 'text-slate-600 dark:text-slate-200'
               return [
                 baseItemClasses,
@@ -190,24 +174,32 @@ export const Sidebar = ({ collapsed }: SidebarProps) => {
 
   return (
     <aside
-      className={`fixed inset-y-0 hidden transform border-r border-slate-300 bg-white text-slate-900 transition-[width] duration-200 dark:border-slate-800 dark:bg-sidebar dark:text-slate-100 lg:flex lg:flex-col ${sidebarWidth}`}
+      className={`fixed inset-y-0 hidden transform overflow-hidden border-r border-slate-300 bg-white text-slate-900 transition-[width] duration-200 dark:border-slate-800 dark:bg-sidebar dark:text-slate-100 lg:flex lg:flex-col ${sidebarWidth}`}
     >
-      <div
-        className={`flex items-center ${
-          collapsed ? 'justify-center' : 'justify-start px-6'
-        } py-6`}
+      <NavLink
+        to="/"
+        className={`flex shrink-0 flex-col items-center justify-center px-3 transition-opacity hover:opacity-90 ${collapsed ? 'py-5' : 'py-6'}`}
+        aria-label="Ir al inicio"
       >
-        {collapsed ? (
-          <span className="text-xl font-bold uppercase tracking-wide">M</span>
-        ) : (
-          <div className="flex flex-col">
-            <span className="text-xl font-bold uppercase tracking-wide">
-              prestanet
-            </span>
-          </div>
-        )}
-      </div>
-      <nav className="flex-1 space-y-2 px-3">
+        <img
+          src={logoLight}
+          alt="Prestanet"
+          className={`${collapsed ? 'h-10' : 'h-12'} w-auto dark:hidden`}
+        />
+        <img
+          src={logoDark}
+          alt="Prestanet"
+          className={`${collapsed ? 'h-10' : 'h-12'} hidden w-auto dark:block`}
+        />
+        <span
+          className={`mt-2 text-center font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-slate-200 ${
+            collapsed ? 'text-[10px]' : 'text-xs'
+          }`}
+        >
+          PRESTANET
+        </span>
+      </NavLink>
+      <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-4">
         {!isAuthenticated ? null : isLoading ? (
           <SidebarSkeleton collapsed={collapsed} />
         ) : error ? (

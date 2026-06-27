@@ -23,7 +23,7 @@ export const SetDayOpenToggle = ({
         <span
           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${
             isDayOpen
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200'
+              ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200'
               : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200'
           }`}
         >
@@ -36,7 +36,7 @@ export const SetDayOpenToggle = ({
           type="button"
           className={`rounded-lg border px-4 py-2 text-sm font-medium shadow-sm transition ${
             isDayOpen
-              ? 'border-emerald-200 bg-emerald-500 text-white dark:border-emerald-500 dark:bg-emerald-500'
+              ? 'border-sky-200 bg-sky-500 text-white dark:border-sky-500 dark:bg-sky-500'
               : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
           }`}
           onClick={() => onChange(true)}

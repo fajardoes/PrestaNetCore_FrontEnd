@@ -183,7 +183,7 @@ export const ResetPasswordPage = () => {
                 ) : null}
 
                 {requestMessage ? (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-100">
+                  <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100">
                     {requestMessage}
                   </div>
                 ) : null}
@@ -314,7 +314,7 @@ export const ResetPasswordPage = () => {
                 ) : null}
 
                 {resetMessage ? (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-100">
+                  <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700 dark:border-sky-900/60 dark:bg-sky-500/10 dark:text-sky-100">
                     {resetMessage}
                   </div>
                 ) : null}

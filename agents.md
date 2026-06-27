@@ -14,10 +14,13 @@
 
 - `src/presentation/share/components/list-filters-bar.tsx`: barra estándar de filtros con buscador y selector de estado (activos/inactivos/todos). Recibe `search`, `onSearchChange`, `status`, `onStatusChange`, `placeholder`, `children` para filtros adicionales (por ejemplo selects) y `actions` para botones (crear, limpiar filtros, etc.). Úsalo en páginas de listados para mantener consistencia.
 - `src/presentation/share/components/table-pagination.tsx`: pie de paginación uniforme para tablas. Recibe `page`, `totalPages`, `onPageChange` y opcional `label`. Integrarlo en tablas para la navegación de páginas.
+- `src/presentation/share/components/table-container.tsx`: contenedor global para tablas con variantes visuales consistentes. Para tablas administrativas usar `mode="legacy-compact"` y borde marcado (`variant="strong"` cuando aplique) para mantener densidad y legibilidad homogénea.
+- `src/index.css` (`.btn-table-action`): clase estándar para acciones dentro de tablas/listas (editar, estado, ver, eliminar). Evitar botones ad-hoc por módulo para conservar tamaño y espaciado consistentes.
 
 ## Componentes compartidos de selects
 
 - `src/presentation/share/components/async-select.tsx`: wrapper de `react-select/async` con estilos Tailwind (claro/oscuro). Usar este componente para selects asíncronos con búsqueda remota. No usar `react-select` directamente en componentes de features.
+- `src/presentation/share/components/select.tsx`: wrapper de `react-select` para selects síncronos/locales con opciones ya cargadas en memoria. Usarlo para catálogos, filtros y combos no remotos. No reutilizar `async-select` para listas locales solo para simular un select normal.
 
 ## Componentes compartidos de fecha
 
@@ -113,8 +116,47 @@ Configurados en `tsconfig.app.json` y `vite.config.ts`:
 - Siempre ofrecer soporte para tema claro/oscuro mediante utilidades Tailwind.
 - Formularios nuevos deben integrarse con `react-hook-form` y un esquema Yup/Zod correspondiente.
 - Centralizar feedback (éxito/error) usando componentes compartidos dentro de `presentation/share/components`.
+- En módulos financieros para UI de usuario final en LATAM, evitar el label `Principal` para montos de préstamos; preferir `Capital`, `Saldo de capital` o `Capital solicitado` según el contexto. Mantener `principal` solo como nombre técnico interno si así viene del backend o del modelo.
+- En tablas de administración:
+  - Usar `TableContainer` como wrapper estándar (preferencia `mode="legacy-compact"` para vistas densas tipo sistema).
+  - Homologar acciones de fila con `.btn-table-action`; íconos compactos permitidos con `w-7 px-0`.
+  - Mantener consistencia de bordes/divisores entre módulos; no mezclar estilos de tabla en un mismo feature.
 - En listas tipo tarjetas con estado (ej. referencias, actividades, comisiones, seguros, garantías): usar tarjeta con etiqueta Activo/Inactivo, botón Agregar que abre modal con toggle Activo, y fondo tenue rojo para items inactivos (`bg-red-50` y variante `dark:bg-red-500/10`).
 - No hagas pruebas de eslint ni intentes correr la aplicacion
 - No hagas pruebas con git ni intentes ejecutarlo
 
 Cuando agregues nuevas funcionalidades replica esta arquitectura: define contratos en infraestructura, casos de uso en core, hooks y componentes dentro de `presentation/features/<feature>` y deja que las páginas se encarguen únicamente de coordinar esas piezas.
+
+## Contexto módulo créditos (2026-02-15)
+
+- **Solicitudes de Crédito** frontend implementado en:
+  - `src/presentation/features/loans/applications/`
+  - rutas: `/loans/applications`, `/loans/applications/new`, `/loans/applications/:id`, `/loans/applications/:id/edit`
+- **Loans consulta mínima** implementado en:
+  - `src/presentation/features/loans/loans-query/`
+  - rutas: `/loans`, `/loans/:id`, `/loans/:id/installments/:installmentNo`
+- **Core API**:
+  - `src/core/api/loans/loan-applications-api.ts`
+  - `src/core/api/loans/loans-api.ts`
+- **Actions por caso de uso**:
+  - `src/core/actions/loan-applications/`
+  - `src/core/actions/loans/`
+- **DTOs y validaciones**:
+  - requests/responses: `src/infrastructure/loans/requests` y `src/infrastructure/loans/responses`
+  - schemas Yup: `src/infrastructure/validations/loans/loan-application*.ts`, `loan-schedule-preview.schema.ts`
+- **Workflow soportado**: `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`, `CANCELLED`.
+  - `DRAFT`: editar, submit, cancelar, preview, agregar/quitar garantía
+  - `SUBMITTED`: aprobar, rechazar, cancelar, preview
+  - `APPROVED/REJECTED/CANCELLED`: solo lectura (APPROVED con enlace a préstamo si `approvedLoanId` existe)
+
+## Lineamientos globales Roles/Permisos y Actions (2026-03-04)
+
+- La pantalla `security/permisos-por-rol` (`/security/role-permissions`) es única y global para toda la aplicación, no exclusiva de un módulo.
+- El guardado de permisos por rol se centraliza en `PUT /api/auth/roles/{roleName}/permissions`.
+- Los permisos se deben consumir dinámicamente desde backend y agruparse/filtrarse por prefijo de módulo (`loan_applications.*`, `accounting.*`, `clients.*`, etc.); no hardcodear catálogos por módulo en frontend.
+- Convención de naming de permisos: `modulo.feature.action` para mantener escalabilidad y compatibilidad de UI.
+- No hardcodear visibilidad de botones por estado o rol en módulos operativos; cada módulo debe consumir su endpoint `/actions` para decidir acciones visibles/habilitadas.
+- En solicitudes de crédito, usar `GET /api/loan-applications/{id}/actions` como fuente de verdad para acciones permitidas.
+- Para módulos futuros (ej. contabilidad), seguir el mismo patrón con su endpoint `GET /api/<modulo>/.../actions`.
+- En UI de frontend, evitar mostrar textos funcionales en ingles al usuario final. Si backend envia nombres/descripciones de permisos o estados en ingles (ej. `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`, `CANCELLED`), mostrar su equivalente en espanol en la interfaz.
+- En `security/role-permissions`, mantener visible el `permission.code` como dato tecnico, pero el `name/description` y labels de agrupacion deben presentarse en espanol.

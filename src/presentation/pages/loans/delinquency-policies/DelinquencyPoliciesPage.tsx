@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AccountingStatusBadge } from '@/presentation/features/accounting/components/accounting-status-badge'
 import { ListFiltersBar, type StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
+import { TableContainer } from '@/presentation/share/components/table-container'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { useDelinquencyPoliciesList } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policies-list'
 import { useDelinquencyPolicyMutations } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policy-mutations'
@@ -93,7 +94,7 @@ export const DelinquencyPoliciesPage = () => {
         }
       />
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <TableContainer mode="legacy-compact">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
             <thead className="bg-slate-50 dark:bg-slate-900">
@@ -114,7 +115,10 @@ export const DelinquencyPoliciesPage = () => {
                   Tasa anual
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                  Base
+                  Base de tasa
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Base de cálculo
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                   Acciones
@@ -126,7 +130,7 @@ export const DelinquencyPoliciesPage = () => {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                    colSpan={7}
+                    colSpan={8}
                   >
                     Cargando políticas...
                   </td>
@@ -135,7 +139,7 @@ export const DelinquencyPoliciesPage = () => {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-red-600 dark:text-red-300"
-                    colSpan={7}
+                    colSpan={8}
                   >
                     {error}
                   </td>
@@ -144,7 +148,7 @@ export const DelinquencyPoliciesPage = () => {
                 <tr>
                   <td
                     className="px-4 py-6 text-center text-sm text-slate-600 dark:text-slate-400"
-                    colSpan={7}
+                    colSpan={8}
                   >
                     No hay políticas con esos filtros.
                   </td>
@@ -171,13 +175,19 @@ export const DelinquencyPoliciesPage = () => {
                       {item.penaltyRateAnnual}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
-                      {item.rateBase}
+                      {item.rateBaseName || item.rateBaseCode || item.rateBase}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-800 dark:text-slate-100">
+                      {item.calculationBaseName ||
+                        item.calculationBaseCode ||
+                        item.calculationBase ||
+                        'Sin dato'}
                     </td>
                     <td className="px-4 py-3 text-right text-sm">
                       <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
                         <button
                           type="button"
-                          className="btn-icon-label"
+                          className="btn-table-action"
                           onClick={() =>
                             navigate(`/loans/delinquency-policies/${item.id}`)
                           }
@@ -186,7 +196,7 @@ export const DelinquencyPoliciesPage = () => {
                         </button>
                         <button
                           type="button"
-                          className="btn-icon-label"
+                          className="btn-table-action"
                           onClick={() => setPendingToggle(item)}
                           disabled={isToggling}
                         >
@@ -200,7 +210,7 @@ export const DelinquencyPoliciesPage = () => {
             </tbody>
           </table>
         </div>
-      </div>
+      </TableContainer>
 
       <ConfirmModal
         open={Boolean(pendingToggle)}

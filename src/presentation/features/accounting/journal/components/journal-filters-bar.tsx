@@ -3,12 +3,15 @@ import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar
 import type { JournalFiltersState, JournalSourceFilter, JournalStateFilter } from '@/presentation/features/accounting/journal/hooks/use-journal-list'
 import AsyncSelect from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
+import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
+import { getPeriodLabel } from '@/presentation/features/accounting/accounting-ui'
 
 interface JournalFiltersBarProps {
   filters: JournalFiltersState
   onFiltersChange: (next: Partial<JournalFiltersState>) => void
   actions?: ReactNode
   onReset?: () => void
+  periods?: AccountingPeriodDto[]
 }
 
 export const JournalFiltersBar = ({
@@ -16,6 +19,7 @@ export const JournalFiltersBar = ({
   onFiltersChange,
   actions,
   onReset,
+  periods = [],
 }: JournalFiltersBarProps) => {
   const stateOptions = [
     { value: 'all', label: 'Todos' },
@@ -28,7 +32,13 @@ export const JournalFiltersBar = ({
     { value: 'manual', label: 'Manual' },
     { value: 'system', label: 'Sistema' },
   ]
-  const periodOptions = [{ value: '', label: 'TODO: cargar períodos' }]
+  const periodOptions = [
+    { value: '', label: 'Todos los periodos' },
+    ...periods.map((period) => ({
+      value: period.id,
+      label: getPeriodLabel(period),
+    })),
+  ]
   const filterOptions = async (
     options: Array<{ value: string; label: string }>,
     inputValue: string,
@@ -126,7 +136,6 @@ export const JournalFiltersBar = ({
                 }
                 loadOptions={(inputValue) => filterOptions(periodOptions, inputValue)}
                 defaultOptions={periodOptions}
-                isDisabled
                 isClearable={false}
                 instanceId="accounting-journal-period-filter"
                 noOptionsMessage="Sin períodos"

@@ -1,8 +1,8 @@
-import type { BusinessDayAdjustmentRule } from './business-day-adjustment-rule'
+import type { BusinessDayAdjustmentRuleCode } from './business-day-adjustment-rule'
 
 export interface AdjustDateRequestDto {
   date: string
-  rule: BusinessDayAdjustmentRule
+  holidayAdjustmentRuleCode: BusinessDayAdjustmentRuleCode
   agencyId?: string | null
   portfolioTypeId?: string | null
 }

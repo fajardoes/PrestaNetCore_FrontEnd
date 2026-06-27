@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { getPaymentReversalAction } from '@/core/actions/payments/get-payment-reversal.action'
+import type { EffectivizePaymentRequest } from '@/infrastructure/payments/requests/effectivize-payment-request'
 import type { PaymentReversalResponse } from '@/infrastructure/payments/responses/payment-reversal-response'
 import { EffectivizePaymentModal } from '@/presentation/features/payments/components/effectivize-payment-modal'
 import { PaymentDetailView } from '@/presentation/features/payments/components/payment-detail-view'
@@ -275,15 +276,29 @@ export const PaymentDetailPage = () => {
             return false
           }
           const isBankProof = payment.paymentFlowCode?.trim().toUpperCase() === 'BANK_PROOF'
-          const result = isBankProof
-            ? await mutations.approveBankProof(payment.id, {
-                bankEntityId: payload.bankEntityId || '',
-                effectivizationDate: payload.effectivizationDate,
-                verifiedBankDepositDate: payload.bankDepositDate,
-                verifiedBankReferenceNumber: payload.bankReferenceNumber,
-                reviewNotes: payload.notes,
-              })
-            : await mutations.effectivize(payment.id, payload)
+          let result
+          if (isBankProof) {
+            result = await mutations.approveBankProof(payment.id, {
+              bankEntityId: payload.bankEntityId || '',
+              effectivizationDate: payload.effectivizationDate,
+              verifiedBankDepositDate: payload.bankDepositDate,
+              verifiedBankReferenceNumber: payload.bankReferenceNumber,
+              reviewNotes: payload.notes,
+            })
+          } else {
+            if (!payload.bankGlAccountId) {
+              notify('Selecciona la cuenta contable de banco.', 'warning')
+              return false
+            }
+            const effectivizePayload: EffectivizePaymentRequest = {
+              bankGlAccountId: payload.bankGlAccountId,
+              effectivizationDate: payload.effectivizationDate,
+              bankReferenceNumber: payload.bankReferenceNumber,
+              bankDepositDate: payload.bankDepositDate,
+              notes: payload.notes,
+            }
+            result = await mutations.effectivize(payment.id, effectivizePayload)
+          }
           if (!result.success) {
             notify(result.error, 'error')
             if (result.status === 409) await refreshAll()

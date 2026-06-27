@@ -1,12 +1,41 @@
-import { Fragment } from 'react'
+import { Fragment, lazy } from 'react'
 import { Navigate, Route } from 'react-router-dom'
-import { BankEntitiesPage } from '@/presentation/features/payments/pages/bank-entities-page'
-import { BankPaymentProofRegisterPage } from '@/presentation/features/payments/pages/bank-payment-proof-register-page'
-import { BankPaymentProofsPage } from '@/presentation/features/payments/pages/bank-payment-proofs-page'
-import { PaymentComponentPrioritiesPage } from '@/presentation/features/payments/pages/payment-component-priorities-page'
-import { PaymentDetailPage } from '@/presentation/features/payments/pages/payment-detail-page'
-import { PaymentsListPage } from '@/presentation/features/payments/pages/payments-list-page'
-import { PaymentsRegisterPage } from '@/presentation/features/payments/pages/payments-register-page'
+
+const BankEntitiesPage = lazy(() =>
+  import('@/presentation/features/payments/pages/bank-entities-page').then((module) => ({
+    default: module.BankEntitiesPage,
+  })),
+)
+const BankPaymentProofRegisterPage = lazy(() =>
+  import('@/presentation/features/payments/pages/bank-payment-proof-register-page').then((module) => ({
+    default: module.BankPaymentProofRegisterPage,
+  })),
+)
+const BankPaymentProofsPage = lazy(() =>
+  import('@/presentation/features/payments/pages/bank-payment-proofs-page').then((module) => ({
+    default: module.BankPaymentProofsPage,
+  })),
+)
+const PaymentComponentPrioritiesPage = lazy(() =>
+  import('@/presentation/features/payments/pages/payment-component-priorities-page').then((module) => ({
+    default: module.PaymentComponentPrioritiesPage,
+  })),
+)
+const PaymentDetailPage = lazy(() =>
+  import('@/presentation/features/payments/pages/payment-detail-page').then((module) => ({
+    default: module.PaymentDetailPage,
+  })),
+)
+const PaymentsListPage = lazy(() =>
+  import('@/presentation/features/payments/pages/payments-list-page').then((module) => ({
+    default: module.PaymentsListPage,
+  })),
+)
+const PaymentsRegisterPage = lazy(() =>
+  import('@/presentation/features/payments/pages/payments-register-page').then((module) => ({
+    default: module.PaymentsRegisterPage,
+  })),
+)
 
 export const PaymentsRoutes = () => (
   <Fragment>

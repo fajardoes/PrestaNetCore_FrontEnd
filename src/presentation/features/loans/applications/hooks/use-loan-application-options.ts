@@ -80,6 +80,12 @@ const findCatalogLabel = (items: LoanCatalogItemDto[], id?: string | null) => {
   return `${found.code} - ${found.name}`
 }
 
+const findCatalogName = (items: LoanCatalogItemDto[], id?: string | null) => {
+  if (!id) return '—'
+  const found = items.find((item) => item.id === id)
+  return found?.name ?? id
+}
+
 export const useLoanApplicationOptions = () => {
   const listAllPromoters = useCallback(async (search?: string) => {
     const pageSize = 100
@@ -287,7 +293,7 @@ export const useLoanApplicationOptions = () => {
       ? findCatalogLabel(rateBasesResult.data, detailResult.data.rateBaseId)
       : detailResult.data.rateBaseId
     const paymentFrequencyLabel = paymentFrequenciesResult.success
-      ? findCatalogLabel(paymentFrequenciesResult.data, detailResult.data.paymentFrequencyId)
+      ? findCatalogName(paymentFrequenciesResult.data, detailResult.data.paymentFrequencyId)
       : detailResult.data.paymentFrequencyId
 
     return {

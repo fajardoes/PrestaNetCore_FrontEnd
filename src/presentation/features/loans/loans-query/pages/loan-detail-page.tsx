@@ -115,7 +115,7 @@ export const LoanDetailPage = () => {
       : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <QueryHeroCard
         eyebrow="Expediente financiero"
         title={loanLabel}
@@ -137,7 +137,7 @@ export const LoanDetailPage = () => {
           </Link>
         }
       >
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
           <QueryMetricCard
             label="Capital"
             value={formatCurrency(loan.principal)}
@@ -165,12 +165,12 @@ export const LoanDetailPage = () => {
         </div>
       </QueryHeroCard>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.95fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.95fr)]">
         <QuerySectionCard
           title="Resumen ejecutivo"
           description="Datos principales para gestión operativa, comercial y de control."
         >
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3">
             <QueryDetailField label="No. de préstamo" value={loan.loanNo?.trim() || '—'} />
             <QueryDetailField
               label="Cliente"
@@ -216,8 +216,8 @@ export const LoanDetailPage = () => {
           title="Indicadores de cartera"
           description="Lectura rápida del comportamiento del cronograma."
         >
-          <div className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-3">
+            <div className="grid gap-2.5 sm:grid-cols-2">
               <QueryMetricCard
                 label="Número de cuotas"
                 value={String(loan.installmentsCount ?? installments.length)}
@@ -232,8 +232,8 @@ export const LoanDetailPage = () => {
               />
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-              <div className="flex items-center justify-between gap-3 text-sm">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/70">
+              <div className="flex items-center justify-between gap-3 text-xs">
                 <span className="font-medium text-slate-700 dark:text-slate-200">
                   Avance de cobro del cronograma
                 </span>
@@ -241,7 +241,7 @@ export const LoanDetailPage = () => {
                   {formatMoney(paidRatio)}%
                 </span>
               </div>
-              <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-cyan-600 via-sky-500 to-sky-400 transition-all"
                   style={{ width: `${Math.max(0, Math.min(paidRatio, 100))}%` }}
@@ -249,7 +249,7 @@ export const LoanDetailPage = () => {
               </div>
             </div>
 
-            <div className="grid gap-3">
+            <div className="grid gap-2.5">
               <SignalRow
                 icon={<ClipboardList className="h-4 w-4" />}
                 label="Frecuencia pactada"
@@ -279,15 +279,15 @@ export const LoanDetailPage = () => {
         loan.disbursementReversalReason ||
         loan.disbursementReversalJournalEntryNumber ||
         loan.disbursementReversalJournalEntryId) && (
-        <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10">
-          <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">
+        <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10">
+          <h2 className="text-base font-semibold text-amber-900 dark:text-amber-100">
             Desembolso revertido
           </h2>
           <p className="mt-1 text-sm text-amber-800 dark:text-amber-100">
             Este préstamo quedó en estado final de reversión y debe tratarse como expediente
             cerrado para operación de cartera.
           </p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-3 grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
             <QueryDetailField
               label="Fecha y hora de reversión"
               value={formatDateTime(loan.disbursementReversedAt)}
@@ -359,8 +359,8 @@ export const LoanDetailPage = () => {
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-        <div className="space-y-6">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+        <div className="space-y-4">
           <DisbursementChargesTable charges={loan.disbursementCharges} />
 
           <QuerySectionCard
@@ -373,7 +373,7 @@ export const LoanDetailPage = () => {
               </div>
             }
           >
-            <div className="mb-4 grid gap-3 md:grid-cols-3">
+            <div className="mb-3 grid gap-2.5 md:grid-cols-3">
               <QueryMetricCard
                 label="Pendientes"
                 value={String(installmentSummary.pendingCount)}
@@ -399,6 +399,7 @@ export const LoanDetailPage = () => {
                 <table className="min-w-full">
                   <thead>
                     <tr>
+                      <th>Acciones</th>
                       <th>#</th>
                       <th>Vence original</th>
                       <th>Vence ajustada</th>
@@ -409,7 +410,6 @@ export const LoanDetailPage = () => {
                       <th className="text-right">Total</th>
                       <th className="text-right">Pagado</th>
                       <th>Estado</th>
-                      <th className="text-right">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -434,6 +434,14 @@ export const LoanDetailPage = () => {
                     ) : (
                       installments.map((item) => (
                         <tr key={item.id}>
+                          <td>
+                            <Link
+                              to={`/loans/${loan.id}/installments/${item.installmentNo}`}
+                              className="btn-table-action inline-flex px-2"
+                            >
+                              Ver
+                            </Link>
+                          </td>
                           <td className="font-medium text-slate-700 dark:text-slate-200">
                             {item.installmentNo}
                           </td>
@@ -458,14 +466,6 @@ export const LoanDetailPage = () => {
                               {translateLoanApplicationStatus(item.statusCode, item.statusName)}
                             </span>
                           </td>
-                          <td className="text-right">
-                            <Link
-                              to={`/loans/${loan.id}/installments/${item.installmentNo}`}
-                              className="btn-table-action inline-flex px-2"
-                            >
-                              Ver
-                            </Link>
-                          </td>
                         </tr>
                       ))
                     )}
@@ -476,7 +476,7 @@ export const LoanDetailPage = () => {
           </QuerySectionCard>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {loan.insurance ? (
             <QuerySectionCard
               title="Seguro programado"
@@ -540,15 +540,15 @@ const SignalRow = ({
   label: string
   value: string
 }) => (
-  <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/70">
-    <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+  <div className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-900/70">
+    <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
       {icon}
     </span>
     <div className="min-w-0">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-100">{value}</p>
+      <p className="mt-0.5 text-xs font-medium text-slate-900 dark:text-slate-100">{value}</p>
     </div>
   </div>
 )

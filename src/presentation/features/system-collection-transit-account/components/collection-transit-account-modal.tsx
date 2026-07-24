@@ -36,6 +36,7 @@ export const CollectionTransitAccountModal = ({
   onClose,
   onSubmit,
 }: CollectionTransitAccountModalProps) => {
+  const menuPortalTarget = typeof document !== 'undefined' ? document.body : null
   const [selectedOption, setSelectedOption] =
     useState<AsyncSelectOption<ChartAccountListItem> | null>(null)
   const { searchAccounts, isLoading, error } = useGlAccountsSearch()
@@ -105,6 +106,8 @@ export const CollectionTransitAccountModal = ({
             isClearable
             isDisabled={isSaving}
             isLoading={isLoading}
+            menuPortalTarget={menuPortalTarget}
+            menuPosition="fixed"
             noOptionsMessage="No hay cuentas imputables activas."
           />
           <p className="text-xs text-slate-500 dark:text-slate-400">{selectionLabel}</p>

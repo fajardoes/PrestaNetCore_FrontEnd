@@ -44,6 +44,7 @@ export const LoanDisbursementAccountModal = ({
   onSubmit,
   onSearch,
 }: LoanDisbursementAccountModalProps) => {
+  const menuPortalTarget = typeof document !== 'undefined' ? document.body : null
   const [selectedOption, setSelectedOption] =
     useState<AsyncSelectOption<ChartAccountListItem> | null>(null)
 
@@ -114,6 +115,8 @@ export const LoanDisbursementAccountModal = ({
             isClearable
             isDisabled={isSaving}
             isLoading={isSearching}
+            menuPortalTarget={menuPortalTarget}
+            menuPosition="fixed"
             noOptionsMessage="No hay cuentas imputables activas."
           />
           <p className="text-xs text-slate-500 dark:text-slate-400">

@@ -44,7 +44,13 @@ export const useLoanSettlementReport = () => {
       return result
     }
 
-    const objectUrl = window.URL.createObjectURL(result.data.blob)
+    const previewFile =
+      typeof File === 'undefined'
+        ? result.data.blob
+        : new File([result.data.blob], result.data.fileName, {
+            type: result.data.contentType,
+          })
+    const objectUrl = window.URL.createObjectURL(previewFile)
     if (objectUrlRef.current) {
       window.URL.revokeObjectURL(objectUrlRef.current)
     }

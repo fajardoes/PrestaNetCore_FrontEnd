@@ -3,6 +3,12 @@
 - NO uses `git`.
 - Solo genera o modifica archivos de FRONTEND en este repo.
 
+## Rutas y menús dinámicos
+
+- Cada vez que se cree una ruta frontend que represente una pantalla de entrada y necesite aparecer en la navegación, se debe crear en la misma tarea su elemento en `PrestaNetCore-BackEnd/seeds/security/menu_items.json` y la asignación inicial correspondiente en `PrestaNetCore-BackEnd/seeds/security/menu_item_roles.json`.
+- Antes de agregar el menú, verifica la ruta real registrada en `src/routes/`, reutiliza la jerarquía existente y conserva IDs y slugs únicos. No crees entradas directas para rutas de detalle, edición, creación o acciones cuando se acceda a ellas desde una pantalla padre.
+- El sidebar consume el menú dinámico desde backend; no hardcodees la nueva opción de navegación en componentes del frontend.
+
 ## Development Commands
 
 - **Development server**: `npm run dev` - Starts the Vite development server

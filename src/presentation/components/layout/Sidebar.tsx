@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { useAuth } from '@/hooks/useAuth'
 import type { MenuItemTreeDto } from '@/infrastructure/interfaces/security/menu'
-import { useMyMenus } from '@/presentation/features/security/menus/hooks/use-my-menus'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
 import logoLight from '@/assets/logo_light.svg'
 import logoDark from '@/assets/logo_dark.svg'
@@ -15,10 +13,10 @@ import {
 
 interface SidebarProps {
   collapsed: boolean
-  menus?: MenuItemTreeDto[]
-  isLoadingMenus?: boolean
-  menusError?: string | null
-  onRetryMenus?: () => void
+  menus: MenuItemTreeDto[]
+  isLoadingMenus: boolean
+  menusError: string | null
+  onRetryMenus: () => void
 }
 
 const getIndentClasses = (depth: number, collapsed: boolean) => {
@@ -43,23 +41,14 @@ const getSubmenuClasses = (isExpanded: boolean) => {
 
 export const Sidebar = ({
   collapsed,
-  menus: providedMenus,
+  menus,
   isLoadingMenus,
   menusError,
   onRetryMenus,
 }: SidebarProps) => {
-  const { isAuthenticated } = useAuth()
-  const fallbackMenus = useMyMenus({
-    enabled: isAuthenticated,
-  })
   const location = useLocation()
   const sidebarWidth = collapsed ? 'w-20' : 'w-64'
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-
-  const menus = providedMenus ?? fallbackMenus.menus
-  const isLoading = isLoadingMenus ?? fallbackMenus.isLoading
-  const error = menusError ?? fallbackMenus.error
-  const refetch = onRetryMenus ?? fallbackMenus.refetch
 
   const sortedMenus = useMemo(() => sortMenuTree(menus), [menus])
 
@@ -70,7 +59,7 @@ export const Sidebar = ({
       collectActiveGroups(item, location.pathname, activeGroups)
     })
     setExpanded((prev) => {
-      const next: Record<string, boolean> = {}
+      const next: Record<string, boolean> = { ...prev }
       activeGroups.forEach((id) => {
         next[id] = true
       })
@@ -200,10 +189,10 @@ export const Sidebar = ({
         </span>
       </NavLink>
       <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-4">
-        {!isAuthenticated ? null : isLoading ? (
+        {isLoadingMenus ? (
           <SidebarSkeleton collapsed={collapsed} />
-        ) : error ? (
-          <SidebarError collapsed={collapsed} error={error} onRetry={refetch} />
+        ) : menusError ? (
+          <SidebarError collapsed={collapsed} error={menusError} onRetry={onRetryMenus} />
         ) : (
           renderItems(sortedMenus, 0)
         )}

@@ -19,12 +19,12 @@ export const isItemActive = (item: MenuItemTreeDto, pathname: string): boolean =
 
 export const sortMenuTree = (items: MenuItemTreeDto[]): MenuItemTreeDto[] => {
   return items
-    .slice()
-    .sort((a, b) => a.order - b.order)
     .map((item) => ({
       ...item,
       children: sortMenuTree(item.children ?? []),
     }))
+    .filter((item) => Boolean(item.route) || item.children.length > 0)
+    .sort((a, b) => a.order - b.order)
 }
 
 export const collectActiveGroups = (

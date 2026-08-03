@@ -39,7 +39,7 @@ export const anticipatedInstallmentEventLabel = (code: string) => {
     APPLICATION_REVERSED: 'Aplicación reversada',
     DISBURSEMENT_REVERSED: 'Desembolso reversado',
   }
-  return labels[code.trim().toUpperCase()] ?? code
+  return labels[code.trim().toUpperCase()] ?? 'Evento registrado'
 }
 
 export const formatAnticipatedInstallmentDate = (value?: string | null) => {

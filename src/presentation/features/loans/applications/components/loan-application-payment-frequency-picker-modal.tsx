@@ -48,7 +48,7 @@ export const LoanApplicationPaymentFrequencyPickerModal = ({
           <ListFiltersBar
             search={search}
             onSearchChange={onSearchChange}
-            placeholder="Buscar por código o nombre..."
+            placeholder="Buscar por nombre..."
             status="active"
             onStatusChange={() => undefined}
             showStatus={false}
@@ -60,26 +60,25 @@ export const LoanApplicationPaymentFrequencyPickerModal = ({
                 <thead>
                   <tr>
                     <th className="text-left">Accion</th>
-                    <th className="text-left">Codigo</th>
                     <th className="text-left">Frecuencia</th>
                   </tr>
                 </thead>
                 <tbody>
                   {isLoading ? (
                     <tr>
-                      <td colSpan={3} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={2} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
                         Cargando frecuencias...
                       </td>
                     </tr>
                   ) : error ? (
                     <tr>
-                      <td colSpan={3} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
+                      <td colSpan={2} className="px-2 py-6 text-center text-red-600 dark:text-red-300">
                         {error}
                       </td>
                     </tr>
                   ) : !frequencies.length ? (
                     <tr>
-                      <td colSpan={3} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
+                      <td colSpan={2} className="px-2 py-6 text-center text-slate-500 dark:text-slate-400">
                         No se encontraron frecuencias con ese filtro.
                       </td>
                     </tr>
@@ -97,7 +96,6 @@ export const LoanApplicationPaymentFrequencyPickerModal = ({
                               {isSelected ? 'Seleccionado' : 'Seleccionar'}
                             </button>
                           </td>
-                          <td className="font-semibold">{frequency.code}</td>
                           <td className="text-slate-800 dark:text-slate-100">{frequency.name}</td>
                         </tr>
                       )

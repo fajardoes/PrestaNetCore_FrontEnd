@@ -230,17 +230,24 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
         <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-800">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Historial</h3>
           {!history.length ? <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">No hay eventos registrados.</p> : (
-            <div className="mt-3 space-y-2">
+            <div className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
               {history.map((event) => (
-                <div key={event.id} className="rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-800">
-                  <div className="flex flex-wrap justify-between gap-2">
-                    <span className="font-medium text-slate-900 dark:text-slate-100">{anticipatedInstallmentEventLabel(event.eventCode)}</span>
-                    <span className="text-slate-500 dark:text-slate-400">{formatAnticipatedInstallmentDate(event.businessDate)}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Código: {event.eventCode}{event.newAmount == null ? '' : ` · Monto: ${formatCurrency(event.newAmount)}`}
-                  </p>
-                  {event.reason ? <p className="mt-1 text-slate-600 dark:text-slate-300">{event.reason}</p> : null}
+                <div
+                  key={event.id}
+                  className="grid gap-2 px-3 py-2 text-sm md:grid-cols-[minmax(0,1.1fr)_8rem_8rem_minmax(0,1.6fr)] md:items-center"
+                >
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    {anticipatedInstallmentEventLabel(event.eventCode)}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {formatAnticipatedInstallmentDate(event.businessDate)}
+                  </span>
+                  <span className="text-slate-700 dark:text-slate-200">
+                    {event.newAmount == null ? 'Sin monto' : formatCurrency(event.newAmount)}
+                  </span>
+                  <span className="truncate text-slate-600 dark:text-slate-300" title={event.reason ?? undefined}>
+                    {event.reason?.trim() || 'Sin motivo'}
+                  </span>
                 </div>
               ))}
             </div>

@@ -9,6 +9,10 @@
 - Antes de agregar el menú, verifica la ruta real registrada en `src/routes/`, reutiliza la jerarquía existente y conserva IDs y slugs únicos. No crees entradas directas para rutas de detalle, edición, creación o acciones cuando se acceda a ellas desde una pantalla padre.
 - El sidebar consume el menú dinámico desde backend; no hardcodees la nueva opción de navegación en componentes del frontend.
 
+## Sistema de diseño
+
+- Antes de crear o modificar componentes visuales, consulta [`DESIGN.md`](./DESIGN.md). Sus criterios de colores, tipografía, densidad, accesibilidad y movimiento complementan estas instrucciones y deben mantenerse en toda la interfaz.
+
 ## Development Commands
 
 - **Development server**: `npm run dev` - Starts the Vite development server

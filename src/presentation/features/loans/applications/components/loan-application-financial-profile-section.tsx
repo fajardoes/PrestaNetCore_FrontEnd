@@ -68,74 +68,74 @@ export const LoanApplicationFinancialProfileSection = ({
 
   return (
     <>
-      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
               Ficha financiera
             </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Consolidado patrimonial y financiero de la solicitud.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClass(application.statusCode)}`}
+              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(application.statusCode)}`}
             >
               {translateLoanApplicationStatus(application.statusCode, application.statusName)}
             </span>
             <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${financialProfileBadgeClass(hasExistingProfile)}`}
+              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${financialProfileBadgeClass(hasExistingProfile)}`}
             >
               {hasExistingProfile ? 'Ficha registrada' : 'Sin ficha'}
             </span>
             <span
-              className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${financialProfileCompletenessBadgeClass(isComplete)}`}
+              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${financialProfileCompletenessBadgeClass(isComplete)}`}
             >
               {isComplete ? 'Completa' : 'Incompleta'}
             </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 text-xs md:grid-cols-3">
           <MetaInfo label="Ultima actualizacion" value={formatDateTime(lastUpdatedAt)} />
           <MetaInfo label="Ratio pasivos / activos" value={formatRatio(debtRatio)} />
           <MetaInfo label="Ratio pasivos / patrimonio" value={formatRatio(debtToEquityRatio)} />
         </div>
 
         {!isDraft ? (
-          <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
+          <div className="rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
             La ficha financiera solo puede editarse mientras la solicitud está en borrador.
           </div>
         ) : null}
 
         {isMissing ? (
-          <div className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-700 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200">
+          <div className="rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-xs text-sky-700 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-200">
             Aún no existe una ficha financiera registrada para esta solicitud.
           </div>
         ) : null}
 
         {isForbidden ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
             No tienes permisos para consultar la ficha financiera.
           </div>
         ) : null}
 
         {error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
             {error}
           </div>
         ) : null}
 
         {saveError ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
             {saveError}
           </div>
         ) : null}
 
         {isLoading ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Cargando ficha financiera...
           </p>
         ) : !isForbidden ? (
@@ -182,8 +182,8 @@ export const LoanApplicationFinancialProfileSection = ({
 }
 
 const MetaInfo = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900">
-    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{value}</p>
+  <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-800 dark:bg-slate-900">
+    <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+    <p className="text-xs font-medium text-slate-900 dark:text-slate-100">{value}</p>
   </div>
 )

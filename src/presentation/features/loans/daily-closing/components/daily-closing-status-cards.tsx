@@ -72,29 +72,29 @@ export const DailyClosingStatusCards = ({
   ]
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
       {cards.map((card) => (
         <div
           key={card.label}
-          className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950"
+          className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950"
         >
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             {card.label}
           </p>
-          <div className="mt-2 min-h-8">
+          <div className="mt-1 min-h-7">
             {card.badgeClass ? (
               <span
-                className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${card.badgeClass}`}
+                className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${card.badgeClass}`}
               >
                 {isLoading ? 'Cargando...' : card.value}
               </span>
             ) : (
-              <p className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+              <p className="text-lg font-semibold text-slate-900 dark:text-slate-50">
                 {isLoading ? 'Cargando...' : card.value}
               </p>
             )}
           </div>
-          <p className="mt-2 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-1 line-clamp-2 text-[11px] text-slate-500 dark:text-slate-400">
             {card.hint}
           </p>
         </div>

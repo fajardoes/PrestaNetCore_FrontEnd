@@ -37,7 +37,7 @@ export const LayoutShell = () => {
     }
   }, [navigationState, navigate, location.pathname])
 
-  const contentOffsetClass = isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
+  const contentOffsetClass = isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-60'
 
   return (
     <div className="min-h-screen transition-colors">

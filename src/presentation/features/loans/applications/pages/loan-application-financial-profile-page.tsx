@@ -47,30 +47,28 @@ export const LoanApplicationFinancialProfilePage = () => {
   const canUpdateDraft = allowedActions.includes('update_draft')
 
   return (
-    <div className="space-y-4">
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+    <div className="space-y-3">
+      <section className="rounded-xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-1.5">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <h1 className="text-base font-bold text-slate-900 dark:text-slate-50">
               Ficha financiera
             </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="text-xs text-slate-600 dark:text-slate-400">
               Solicitud {application.applicationNo || application.id.slice(0, 8)}
             </p>
-            <div className="mt-2">
-              <span
-                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClass(application.statusCode)}`}
-              >
-                {translateLoanApplicationStatus(application.statusCode, application.statusName)}
-              </span>
-            </div>
+            <span
+              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadgeClass(application.statusCode)}`}
+            >
+              {translateLoanApplicationStatus(application.statusCode, application.statusName)}
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
             {canUpdateDraft ? (
               <button
                 type="button"
-                className="btn-secondary px-4 py-2 text-sm"
+                className="btn-secondary whitespace-nowrap px-2.5 py-1 text-[11px]"
                 onClick={() =>
                   navigate(`/loans/applications/${application.id}/edit`, {
                     state: { returnTo: `/loans/applications/${application.id}/financial-profile` },
@@ -82,7 +80,7 @@ export const LoanApplicationFinancialProfilePage = () => {
             ) : null}
             <button
               type="button"
-              className="btn-secondary px-4 py-2 text-sm"
+              className="btn-secondary whitespace-nowrap px-2.5 py-1 text-[11px]"
               onClick={() => navigate(returnTo)}
             >
               Volver a solicitud
@@ -91,8 +89,8 @@ export const LoanApplicationFinancialProfilePage = () => {
         </div>
       </section>
 
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6">
+      <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-6">
           <CompactInfo label="Cliente" value={application.clientFullName} />
           <CompactInfo label="Producto" value={application.loanProductName} />
           <CompactInfo label="Promotor" value={application.promoterClientFullName} />
@@ -101,18 +99,18 @@ export const LoanApplicationFinancialProfilePage = () => {
             label="Duración solicitada"
             value={`${application.requestedTerm} ${application.requestedTermUnitName}`}
           />
-          <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-            <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+            <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Estado ficha
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-1 flex flex-wrap gap-1.5">
               <span
-                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${financialProfileBadgeClass(application.hasFinancialProfile)}`}
+                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${financialProfileBadgeClass(application.hasFinancialProfile)}`}
               >
                 {application.hasFinancialProfile ? 'Registrada' : 'Sin ficha'}
               </span>
               <span
-                className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${financialProfileCompletenessBadgeClass(application.isFinancialProfileComplete)}`}
+                className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${financialProfileCompletenessBadgeClass(application.isFinancialProfileComplete)}`}
               >
                 {application.isFinancialProfileComplete ? 'Completa' : 'Incompleta'}
               </span>
@@ -133,8 +131,8 @@ export const LoanApplicationFinancialProfilePage = () => {
 }
 
 const CompactInfo = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-    <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{value || '—'}</p>
+  <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 dark:border-slate-700 dark:bg-slate-900">
+    <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+    <p className="text-xs font-medium text-slate-900 dark:text-slate-100">{value || '—'}</p>
   </div>
 )

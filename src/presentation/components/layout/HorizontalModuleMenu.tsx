@@ -63,12 +63,12 @@ export const HorizontalModuleMenu = ({
 
   if (isLoading) {
     return (
-      <div className="border-b border-slate-200 bg-white/90 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/90 lg:px-8">
-        <div className="flex animate-pulse gap-2 overflow-x-auto">
+      <div className="border-b border-slate-200 bg-white/90 px-4 py-2 dark:border-slate-800 dark:bg-slate-900/90 lg:px-8">
+        <div className="flex animate-pulse gap-1.5 overflow-x-auto">
           {Array.from({ length: 4 }, (_, index) => (
             <div
               key={index}
-              className="h-9 min-w-28 rounded-lg bg-slate-200 dark:bg-slate-800"
+              className="h-8 min-w-24 rounded-md bg-slate-200 dark:bg-slate-800"
             />
           ))}
         </div>
@@ -78,8 +78,8 @@ export const HorizontalModuleMenu = ({
 
   if (error) {
     return (
-      <div className="border-b border-slate-200 bg-white/90 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/90 lg:px-8">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
+      <div className="border-b border-slate-200 bg-white/90 px-4 py-2 dark:border-slate-800 dark:bg-slate-900/90 lg:px-8">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
           <span>{error}</span>
           {onRetry ? (
             <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={onRetry}>
@@ -95,13 +95,13 @@ export const HorizontalModuleMenu = ({
 
   return (
     <div className="border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-      <div ref={containerRef} className="px-4 py-3 lg:px-8">
-        <div className="mb-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+      <div ref={containerRef} className="px-4 py-2 lg:px-8">
+        <div className="mb-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
             {activeRootMenu.title}
           </p>
         </div>
-        <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto pb-0.5">
           {moduleItems.map((item) =>
             item.children.length > 0 ? (
               <HorizontalGroupItem
@@ -137,13 +137,13 @@ const HorizontalLinkItem = ({
       to={item.route ?? '/'}
       end={item.route === '/'}
       className={[
-        'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition whitespace-nowrap',
+        'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition whitespace-nowrap',
         isActive
           ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100'
           : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800',
       ].join(' ')}
     >
-      <MenuIcon iconName={item.icon} className="h-4 w-4" />
+      <MenuIcon iconName={item.icon} className="h-3.5 w-3.5" />
       <span>{item.title}</span>
     </NavLink>
   )
@@ -185,7 +185,7 @@ const HorizontalGroupItem = ({
       const estimatedDropdownWidth = 240
       const availableLeft = window.innerWidth - estimatedDropdownWidth - viewportPadding
       setDropdownPosition({
-        top: rect.bottom + 8,
+      top: rect.bottom + 6,
         left: Math.max(viewportPadding, Math.min(rect.left, availableLeft)),
         minWidth: Math.max(rect.width, estimatedDropdownWidth),
       })
@@ -208,23 +208,23 @@ const HorizontalGroupItem = ({
         type="button"
         onClick={onToggle}
         className={[
-          'inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition whitespace-nowrap',
+          'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition whitespace-nowrap',
           isActive
             ? 'border-sky-300 bg-sky-50 text-sky-900 shadow-sm dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100'
             : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800',
         ].join(' ')}
         aria-expanded={isOpen}
       >
-        <MenuIcon iconName={item.icon} className="h-4 w-4" />
+        <MenuIcon iconName={item.icon} className="h-3.5 w-3.5" />
         <span>{item.title}</span>
-        <ChevronDownIcon className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && dropdownPosition
         ? createPortal(
             <div
               data-horizontal-module-menu-dropdown="true"
-              className="fixed z-50 max-h-[min(28rem,calc(100vh-6rem))] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950"
+              className="fixed z-50 max-h-[min(28rem,calc(100vh-5rem))] overflow-y-auto rounded-lg border border-slate-200 bg-white p-1.5 shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950"
               style={{
                 top: dropdownPosition.top,
                 left: dropdownPosition.left,
@@ -233,11 +233,11 @@ const HorizontalGroupItem = ({
             >
               {item.children.map((child) =>
                 child.children.length > 0 ? (
-                  <div key={child.id} className="py-1">
-                    <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <div key={child.id} className="py-0.5">
+                    <div className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       {child.title}
                     </div>
-                    <div className="space-y-1">
+                    <div className="space-y-0.5">
                       {child.children.map((grandchild) => (
                         <NavLink
                           key={grandchild.id}
@@ -246,14 +246,14 @@ const HorizontalGroupItem = ({
                           onClick={onClose}
                           className={({ isActive: isCurrent }) =>
                             [
-                              'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
+                              'flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition',
                               isCurrent
                                 ? 'bg-sky-50 text-sky-900 dark:bg-sky-500/10 dark:text-sky-100'
                                 : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
                             ].join(' ')
                           }
                         >
-                          <MenuIcon iconName={grandchild.icon} className="h-4 w-4" />
+                          <MenuIcon iconName={grandchild.icon} className="h-3.5 w-3.5" />
                           <span>{grandchild.title}</span>
                         </NavLink>
                       ))}
@@ -267,14 +267,14 @@ const HorizontalGroupItem = ({
                     onClick={onClose}
                     className={({ isActive: isCurrent }) =>
                       [
-                        'flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition',
+                      'flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs transition',
                         isCurrent
                           ? 'bg-sky-50 text-sky-900 dark:bg-sky-500/10 dark:text-sky-100'
                           : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
                       ].join(' ')
                     }
                   >
-                    <MenuIcon iconName={child.icon} className="h-4 w-4" />
+                    <MenuIcon iconName={child.icon} className="h-3.5 w-3.5" />
                     <span>{child.title}</span>
                   </NavLink>
                 ),

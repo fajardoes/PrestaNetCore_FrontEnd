@@ -24,17 +24,17 @@ export const DisbursementSummaryCard = ({
 }: DisbursementSummaryCardProps) => {
   if (!hasDisbursementData(data)) {
     return (
-      <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{emptyMessage}</p>
+      <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{emptyMessage}</p>
       </section>
     )
   }
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-7">
+    <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+      <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-7">
         <Metric label="Monto bruto" value={formatCurrency(data.grossDisbursementAmount)} />
         <Metric
           label="Comisiones descontadas"
@@ -67,10 +67,10 @@ export const DisbursementSummaryCard = ({
 }
 
 const Metric = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900">
     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
       {label}
     </p>
-    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+    <p className="mt-0.5 text-xs font-semibold text-slate-900 dark:text-slate-100">{value}</p>
   </div>
 )

@@ -159,63 +159,63 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
   const reasonLabel = upsertMode === 'reactivate' ? 'Motivo *' : 'Motivo'
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Cuota anticipada</h2>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Monto registrado antes del desembolso y movimientos informados por el servidor.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {canCreate ? (
-            <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={() => openUpsert('create')}>
+            <button type="button" className="btn-primary whitespace-nowrap px-2.5 py-1 text-xs" onClick={() => openUpsert('create')}>
               Registrar monto
             </button>
           ) : null}
           {canEdit ? (
-            <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={() => openUpsert('edit')}>
+            <button type="button" className="btn-primary whitespace-nowrap px-2.5 py-1 text-xs" onClick={() => openUpsert('edit')}>
               Editar monto
             </button>
           ) : null}
           {canReactivate ? (
-            <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={() => openUpsert('reactivate')}>
+            <button type="button" className="btn-primary whitespace-nowrap px-2.5 py-1 text-xs" onClick={() => openUpsert('reactivate')}>
               Reactivar cuota anticipada
             </button>
           ) : null}
           {canCancelPending ? (
-            <button type="button" className="btn-secondary px-3 py-2 text-sm" onClick={() => setCancelOpen(true)}>
+            <button type="button" className="btn-secondary whitespace-nowrap px-2.5 py-1 text-xs" onClick={() => setCancelOpen(true)}>
               Cancelar cuota
             </button>
           ) : null}
         </div>
       </div>
 
-      {isLoading ? <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Consultando cuota anticipada...</p> : null}
-      {error ? <p className="mt-4 text-sm text-red-700 dark:text-red-300">{error}</p> : null}
+      {isLoading ? <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">Consultando cuota anticipada...</p> : null}
+      {error ? <p className="mt-3 text-xs text-red-700 dark:text-red-300">{error}</p> : null}
       {!isLoading && !error && !data ? (
-        <p className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+        <p className="mt-3 rounded-lg bg-slate-50 p-2.5 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300">
           Esta solicitud no tiene una cuota anticipada registrada.
         </p>
       ) : null}
       {data ? (
         <>
-          <div className="mt-4 flex items-center gap-2">
-            <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${anticipatedInstallmentStatusClass(data.statusCode)}`}>
+          <div className="mt-3 flex items-center gap-1.5">
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${anticipatedInstallmentStatusClass(data.statusCode)}`}>
               {anticipatedInstallmentStatusLabel(data.statusCode, data.statusName)}
             </span>
           </div>
           {isPending ? (
-            <p className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+            <p className="mt-2 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
               Cuota anticipada pendiente.
             </p>
           ) : null}
           {isCancelled ? (
-            <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+            <p className="mt-2 rounded-lg bg-slate-50 p-2.5 text-xs text-slate-600 dark:bg-slate-900 dark:text-slate-300">
               Cuota anticipada cancelada. Puede reactivarse antes del desembolso si tiene permisos.
             </p>
           ) : null}
-          <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <div className="mt-3 grid gap-2 md:grid-cols-3 xl:grid-cols-6">
             <Metric label="Monto original" value={formatCurrency(data.originalAmount)} />
             <Metric label="Monto actual" value={formatCurrency(data.currentAmount)} />
             <Metric label="Aplicado" value={formatCurrency(data.appliedAmount)} />
@@ -223,18 +223,18 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
             <Metric label="Máximo permitido" value={data.maxAllowedAmountSnapshot == null ? '—' : formatCurrency(data.maxAllowedAmountSnapshot)} />
             <Metric label="Fecha de registro" value={formatAnticipatedInstallmentDate(data.createdBusinessDate)} />
           </div>
-          {data.notes ? <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Notas: {data.notes}</p> : null}
+          {data.notes ? <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">Notas: {data.notes}</p> : null}
         </>
       ) : null}
       {data ? (
-        <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-800">
+        <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-800">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Historial</h3>
-          {!history.length ? <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">No hay eventos registrados.</p> : (
-            <div className="mt-3 divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+          {!history.length ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">No hay eventos registrados.</p> : (
+            <div className="mt-2 divide-y divide-slate-200 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
               {history.map((event) => (
                 <div
                   key={event.id}
-                  className="grid gap-2 px-3 py-2 text-sm md:grid-cols-[minmax(0,1.1fr)_8rem_8rem_minmax(0,1.6fr)] md:items-center"
+                  className="grid gap-1.5 px-2.5 py-1.5 text-xs md:grid-cols-[minmax(0,1.1fr)_8rem_8rem_minmax(0,1.6fr)] md:items-center"
                 >
                   <span className="font-medium text-slate-900 dark:text-slate-100">
                     {anticipatedInstallmentEventLabel(event.eventCode)}
@@ -296,9 +296,9 @@ const createIdempotencyKey = () => {
 }
 
 const Metric = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+  <div className="rounded-lg bg-slate-50 p-2 dark:bg-slate-900">
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+    <p className="mt-0.5 text-xs font-semibold text-slate-900 dark:text-slate-100">{value}</p>
   </div>
 )
 

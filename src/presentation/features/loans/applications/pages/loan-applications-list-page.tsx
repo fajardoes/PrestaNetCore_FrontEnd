@@ -174,6 +174,20 @@ export const LoanApplicationsListPage = () => {
       ),
     },
     {
+      key: 'status',
+      header: 'Estado',
+      className: 'min-w-[115px]',
+      render: (item: LoanApplicationResponse) => (
+        <span
+          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusBadgeClass(item.statusCode)}`}
+        >
+          {translateLoanApplicationStatus(item.statusCode, item.statusName)}
+        </span>
+      ),
+      getTitle: (item: LoanApplicationResponse) =>
+        translateLoanApplicationStatus(item.statusCode, item.statusName),
+    },
+    {
       key: 'application',
       header: 'Solicitud / préstamo',
       className: 'min-w-[155px]',
@@ -247,20 +261,6 @@ export const LoanApplicationsListPage = () => {
       className: 'min-w-[130px]',
       render: (item: LoanApplicationResponse) => item.requestedPaymentFrequencyName,
       getTitle: (item: LoanApplicationResponse) => item.requestedPaymentFrequencyName,
-    },
-    {
-      key: 'status',
-      header: 'Estado',
-      className: 'min-w-[115px]',
-      render: (item: LoanApplicationResponse) => (
-        <span
-          className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusBadgeClass(item.statusCode)}`}
-        >
-          {translateLoanApplicationStatus(item.statusCode, item.statusName)}
-        </span>
-      ),
-      getTitle: (item: LoanApplicationResponse) =>
-        translateLoanApplicationStatus(item.statusCode, item.statusName),
     },
     {
       key: 'financialProfile',

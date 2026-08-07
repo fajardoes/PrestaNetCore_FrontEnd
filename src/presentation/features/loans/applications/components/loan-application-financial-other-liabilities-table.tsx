@@ -48,7 +48,7 @@ export const LoanApplicationFinancialOtherLiabilitiesTable = ({
             append({
               id: null,
               description: '',
-              amount: '' as unknown as LoanApplicationFinancialProfileFormValues['otherLiabilities'][number]['amount'],
+              amount: 0,
               sortOrder: fields.length + 1,
             })
           }

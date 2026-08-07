@@ -52,9 +52,9 @@ export const LoanApplicationRequestedDataCard = ({
   const isFinancialProfileComplete = Boolean(application.isFinancialProfileComplete)
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Datos solicitados</h2>
-      <div className="mt-3 grid grid-cols-1 gap-3 text-sm md:grid-cols-2 lg:grid-cols-3">
+    <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Datos solicitados</h2>
+      <div className="mt-2 grid grid-cols-1 gap-2 text-xs md:grid-cols-2 lg:grid-cols-3">
         <Info label="Cliente" value={application.clientFullName} />
         <Info
           label="Identidad"
@@ -73,23 +73,23 @@ export const LoanApplicationRequestedDataCard = ({
           label="Frecuencia predeterminada del producto"
           value={application.suggestedPaymentFrequencyName || '—'}
         />
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-900">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Ficha financiera
           </p>
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-1 flex flex-wrap gap-1.5">
             <span
-              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${financialProfileBadgeClass(hasFinancialProfile)}`}
+              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${financialProfileBadgeClass(hasFinancialProfile)}`}
             >
               {hasFinancialProfile ? 'Registrada' : 'Sin ficha'}
             </span>
             <span
-              className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${financialProfileCompletenessBadgeClass(isFinancialProfileComplete)}`}
+              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${financialProfileCompletenessBadgeClass(isFinancialProfileComplete)}`}
             >
               {isFinancialProfileComplete ? 'Completa' : 'Incompleta'}
             </span>
           </div>
-          <div className="mt-3 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+          <div className="mt-2 space-y-0.5 text-[11px] text-slate-600 dark:text-slate-300">
             <p>Actualizacion: {formatDateTime(application.financialProfileUpdatedAt)}</p>
             <p>Ratio pasivos / activos: {formatRatio(application.financialDebtRatio)}</p>
             <p>
@@ -100,12 +100,12 @@ export const LoanApplicationRequestedDataCard = ({
         </div>
       </div>
       {application.notes ? (
-        <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+        <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
           {application.notes}
         </div>
       ) : null}
       {workflowComments.length ? (
-        <div className="mt-3 space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+        <div className="mt-2 space-y-1.5 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
           <p className="text-xs font-semibold uppercase tracking-wide">
             Comentarios del flujo
           </p>
@@ -123,7 +123,7 @@ export const LoanApplicationRequestedDataCard = ({
 
 const Info = ({ label, value }: { label: string; value: ReactNode }) => (
   <div>
-    <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-    <p className="font-medium text-slate-800 dark:text-slate-100">{value}</p>
+    <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+    <p className="text-xs font-medium text-slate-800 dark:text-slate-100">{value}</p>
   </div>
 )

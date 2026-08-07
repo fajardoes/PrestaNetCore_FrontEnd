@@ -17,6 +17,14 @@ export const isItemActive = (item: MenuItemTreeDto, pathname: string): boolean =
   return item.children.some((child) => isItemActive(child, pathname))
 }
 
+const getActiveRouteScore = (item: MenuItemTreeDto, pathname: string): number => {
+  const selfScore = isRouteActive(item.route, pathname) ? item.route?.length ?? 0 : 0
+  return item.children.reduce(
+    (bestScore, child) => Math.max(bestScore, getActiveRouteScore(child, pathname)),
+    selfScore,
+  )
+}
+
 export const sortMenuTree = (items: MenuItemTreeDto[]): MenuItemTreeDto[] => {
   return items
     .map((item) => ({
@@ -46,10 +54,16 @@ export const findActiveRootMenu = (
   menus: MenuItemTreeDto[],
   pathname: string,
 ): MenuItemTreeDto | null => {
+  let activeRoot: MenuItemTreeDto | null = null
+  let bestScore = 0
+
   for (const item of menus) {
-    if (isItemActive(item, pathname)) {
-      return item
+    const score = getActiveRouteScore(item, pathname)
+    if (score > bestScore) {
+      activeRoot = item
+      bestScore = score
     }
   }
-  return null
+
+  return activeRoot
 }

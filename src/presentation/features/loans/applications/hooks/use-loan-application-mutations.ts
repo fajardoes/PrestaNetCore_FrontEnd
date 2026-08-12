@@ -9,6 +9,7 @@ import { RejectLoanApplicationAction } from '@/core/actions/loan-applications/re
 import { RemoveLoanApplicationCollateralAction } from '@/core/actions/loan-applications/remove-loan-application-collateral.action'
 import { ReturnLoanApplicationToDraftAction } from '@/core/actions/loan-applications/return-loan-application-to-draft.action'
 import { SaveLoanApplicationFeeOverridesAction } from '@/core/actions/loan-applications/save-loan-application-fee-overrides.action'
+import { setLoanApplicationFirstDueDateAction } from '@/core/actions/loan-applications/set-loan-application-first-due-date.action'
 import { SubmitLoanApplicationAction } from '@/core/actions/loan-applications/submit-loan-application.action'
 import { UpdateLoanApplicationAction } from '@/core/actions/loan-applications/update-loan-application.action'
 import type { ApiResult } from '@/core/helpers/api-result'
@@ -18,6 +19,7 @@ import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans
 import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/requests/loan-application-create-request'
 import type { LoanApplicationDisburseRequest } from '@/infrastructure/loans/requests/loan-application-disburse-request'
 import type { LoanApplicationFeeOverridesUpsertRequest } from '@/infrastructure/loans/requests/loan-application-fee-overrides-upsert-request'
+import type { LoanApplicationFirstDueDateRequest } from '@/infrastructure/loans/requests/loan-application-first-due-date-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
 import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
@@ -84,6 +86,20 @@ export const useLoanApplicationMutations = () => {
     }))
     return result
   }, [])
+
+  const setFirstDueDate = useCallback(
+    async (id: string, payload: LoanApplicationFirstDueDateRequest) => {
+      setState((prev) => ({ ...prev, isWorkflowRunning: true, error: null }))
+      const result = await setLoanApplicationFirstDueDateAction(id, payload)
+      setState((prev) => ({
+        ...prev,
+        isWorkflowRunning: false,
+        error: result.success ? null : mapErrorMessage(result),
+      }))
+      return result
+    },
+    [],
+  )
 
   const submit = useCallback(async (id: string, payload: LoanApplicationSubmitRequest) => {
     setState((prev) => ({ ...prev, isWorkflowRunning: true, error: null }))
@@ -227,6 +243,7 @@ export const useLoanApplicationMutations = () => {
     setError,
     create,
     update,
+    setFirstDueDate,
     submit,
     approve,
     disburse,

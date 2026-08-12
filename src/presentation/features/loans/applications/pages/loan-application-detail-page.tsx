@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { LoanApplicationReport } from '@/presentation/components/reports/loans/loan-application-report'
 import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
@@ -10,6 +10,7 @@ import { LoanApplicationFeesCard } from '@/presentation/features/loans/applicati
 import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applications/components/loan-application-header-card'
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
 import { LoanApplicationRequestedDataCard } from '@/presentation/features/loans/applications/components/loan-application-requested-data-card'
+import { LoanApplicationFirstDueDateCard } from '@/presentation/features/loans/applications/components/loan-application-first-due-date-card'
 import { LoanApplicationAnticipatedInstallmentSection } from '@/presentation/features/loans/applications/components/loan-application-anticipated-installment-section'
 import { useGenerateLoanApplicationScoring } from '@/presentation/features/loans/applications/hooks/use-generate-loan-application-scoring'
 import { useLoanApplicationFees } from '@/presentation/features/loans/applications/hooks/use-loan-application-fees'
@@ -37,6 +38,8 @@ import type {
 import type { LoanSchedulePreviewFormValues } from '@/infrastructure/validations/loans/loan-schedule-preview.schema'
 import type { LoanApplicationFeeOverrideFormValues } from '@/infrastructure/validations/loans/loan-application-fee-override.schema'
 import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
+import { useBusinessDate } from '@/presentation/features/system-business-date/hooks/use-business-date'
+import { useHolidays } from '@/presentation/features/organization/hooks/use-holidays'
 import {
   formatLoanApplicationScore,
   formatLoanApplicationScoringDateTime,
@@ -67,6 +70,12 @@ export const LoanApplicationDetailPage = () => {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const options = useLoanApplicationOptions()
+  const { state: businessDateState } = useBusinessDate()
+  const { holidays } = useHolidays()
+  const activeHolidayDates = useMemo(
+    () => holidays.filter((holiday) => holiday.isActive).map((holiday) => holiday.date),
+    [holidays],
+  )
   const {
     application,
     collaterals,
@@ -123,6 +132,7 @@ export const LoanApplicationDetailPage = () => {
     removeCollateral,
     previewSchedule,
     saveFeeOverrides,
+    setFirstDueDate,
   } = useLoanApplicationMutations()
   const canViewAnticipatedInstallment = allowedActions.includes('view_anticipated_installment')
   const anticipatedInstallment = useLoanApplicationAnticipatedInstallment(
@@ -176,6 +186,7 @@ export const LoanApplicationDetailPage = () => {
   ].join(':')
   const canPreview = hasAction('preview_schedule')
   const canGenerateScoring = !isDraftApplication && hasAction('generate_scoring')
+  const canSetFirstDueDate = hasAction('set_first_due_date')
   const canViewScoring = !isDraftApplication && hasAction('view_scoring')
   const canViewScoringHistory = !isDraftApplication && hasAction('view_scoring_history')
 
@@ -464,6 +475,38 @@ export const LoanApplicationDetailPage = () => {
 
       <LoanApplicationRequestedDataCard application={application} />
 
+      {!isDraftApplication && (applicationStatusCode === 'SUBMITTED' || Boolean(application.firstDueDate)) ? (
+        <LoanApplicationFirstDueDateCard
+          firstDueDate={application.firstDueDate}
+          businessDate={businessDateState?.businessDate}
+          disabledDates={activeHolidayDates}
+          canEdit={canSetFirstDueDate}
+          isSaving={isWorkflowRunning}
+          onSave={async (firstDueDate) => {
+            const result = await setFirstDueDate(id, { firstDueDate })
+            if (result.success) {
+              setApplication(result.data)
+              setPreview(null)
+              await refreshApplicationState()
+              if (canPreview) {
+                await generatePaymentPlan()
+              }
+              setFeedback({
+                tone: 'success',
+                title: 'Primera fecha de cuota guardada',
+                description: 'La fecha quedó registrada y será utilizada al aprobar y desembolsar.',
+              })
+              return
+            }
+            setFeedback({
+              tone: 'error',
+              title: 'No se pudo guardar la primera fecha de cuota',
+              description: result.error,
+            })
+          }}
+        />
+      ) : null}
+
       {shouldShowAnticipatedInstallment ? (
         <LoanApplicationAnticipatedInstallmentSection
           data={anticipatedInstallment.data}
@@ -651,6 +694,8 @@ export const LoanApplicationDetailPage = () => {
           void generatePaymentPlan(values)
         }}
         listPaymentFrequencies={() => options.listPaymentFrequencies()}
+        referenceDate={businessDateState?.businessDate}
+        disabledDates={activeHolidayDates}
         initialValues={{
           principalOverride: application.requestedPrincipal,
           termOverride: application.requestedTerm,
@@ -659,7 +704,7 @@ export const LoanApplicationDetailPage = () => {
             application.requestedRateOverride == null
               ? null
               : mapRateToPercentValue(application.requestedRateOverride),
-          firstDueDateOverride: null,
+          firstDueDateOverride: application.firstDueDate ?? null,
         }}
         termUnitName={application.requestedTermUnitName}
         applicationLabel={application.applicationNo || application.id.slice(0, 8)}

@@ -8,6 +8,7 @@ export type LoanApplicationAllowedAction =
   | 'view_scoring_history'
   | 'submit'
   | 'approve'
+  | 'set_first_due_date'
   | 'disburse'
   | 'reject'
   | 'cancel'

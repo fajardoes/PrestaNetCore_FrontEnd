@@ -25,6 +25,7 @@ export interface LoanApplicationResponse {
   requestedTermUnitCode: TermUnitCode
   requestedTermUnitName: string
   requestedPaymentFrequencyId: string
+  firstDueDate?: string | null
   requestedPaymentFrequencyCode: PaymentFrequencyCode
   requestedPaymentFrequencyName: string
   suggestedPaymentFrequencyId?: string | null

@@ -32,6 +32,8 @@ interface LoanApplicationPaymentPlanModalProps {
   onGenerate: (values: LoanSchedulePreviewFormValues) => void
   listPaymentFrequencies: () => Promise<LoanCatalogItemDto[]>
   initialValues?: Partial<LoanSchedulePreviewFormValues>
+  referenceDate?: string | null
+  disabledDates?: string[]
   termUnitName?: string
   applicationLabel?: string
   onClose: () => void
@@ -52,6 +54,8 @@ export const LoanApplicationPaymentPlanModal = ({
   onGenerate,
   listPaymentFrequencies,
   initialValues,
+  referenceDate,
+  disabledDates = [],
   termUnitName,
   applicationLabel,
   onClose,
@@ -251,7 +255,10 @@ export const LoanApplicationPaymentPlanModal = ({
                       value={field.value ?? ''}
                       onChange={field.onChange}
                       allowFutureDates
-                      disabled={isLoading}
+                      referenceDate={referenceDate}
+                      disableSundays
+                      disabledDates={disabledDates}
+                      disabled={isLoading || !referenceDate}
                     />
                   )}
                 />

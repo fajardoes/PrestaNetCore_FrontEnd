@@ -73,7 +73,14 @@ export const LoanApplicationRequestedDataCard = ({
           label="Frecuencia predeterminada del producto"
           value={application.suggestedPaymentFrequencyName || '—'}
         />
-        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-900">
+      </div>
+      {application.notes ? (
+        <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+          {application.notes}
+        </div>
+      ) : null}
+      <div className="mt-2 grid w-full grid-cols-1 items-stretch gap-2 md:max-w-5xl md:grid-cols-2">
+        <div className="h-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-900">
           <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
             Ficha financiera
           </p>
@@ -98,25 +105,20 @@ export const LoanApplicationRequestedDataCard = ({
             </p>
           </div>
         </div>
+        {workflowComments.length ? (
+          <div className="h-full space-y-1.5 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+            <p className="text-xs font-semibold uppercase tracking-wide">
+              Comentarios del flujo
+            </p>
+            {workflowComments.map((item) => (
+              <div key={item.label}>
+                <p className="text-[11px] uppercase tracking-wide opacity-80">{item.label}</p>
+                <p>{item.value}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
-      {application.notes ? (
-        <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-          {application.notes}
-        </div>
-      ) : null}
-      {workflowComments.length ? (
-        <div className="mt-2 space-y-1.5 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-          <p className="text-xs font-semibold uppercase tracking-wide">
-            Comentarios del flujo
-          </p>
-          {workflowComments.map((item) => (
-            <div key={item.label}>
-              <p className="text-[11px] uppercase tracking-wide opacity-80">{item.label}</p>
-              <p>{item.value}</p>
-            </div>
-          ))}
-        </div>
-      ) : null}
     </section>
   )
 }

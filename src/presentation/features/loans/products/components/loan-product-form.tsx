@@ -65,6 +65,8 @@ const defaultValues: LoanProductFormValues = {
   termUnitId: '',
   interestRateTypeId: '',
   nominalRate: 0,
+  minNominalRate: 0,
+  maxNominalRate: 0,
   rateBaseId: '',
   amortizationMethodId: '',
   paymentFrequencyId: '',
@@ -534,7 +536,7 @@ export const LoanProductForm = ({
           </div>
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
-              Tasa nominal (% anual)
+              Tasa nominal predeterminada (% anual)
             </label>
             <input
               type="number"
@@ -547,10 +549,46 @@ export const LoanProductForm = ({
               disabled={isSaving}
             />
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Ingresa el porcentaje anual sin decimal de conversión (ej. 24 = 24%).
+              Se usa por defecto en los planes de pago. Ingresa el porcentaje anual (ej. 24 = 24%).
             </p>
             {errors.nominalRate ? (
               <p className="text-xs text-red-500">{errors.nominalRate.message}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
+              Tasa mínima nominal (% anual)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Ej. 8"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+              {...register('minNominalRate', {
+                setValueAs: toNumberValue,
+              })}
+              disabled={isSaving}
+            />
+            {errors.minNominalRate ? (
+              <p className="text-xs text-red-500">{errors.minNominalRate.message}</p>
+            ) : null}
+          </div>
+          <div className="space-y-2">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
+              Tasa máxima nominal (% anual)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              placeholder="Ej. 12"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+              {...register('maxNominalRate', {
+                setValueAs: toNumberValue,
+              })}
+              disabled={isSaving}
+            />
+            {errors.maxNominalRate ? (
+              <p className="text-xs text-red-500">{errors.maxNominalRate.message}</p>
             ) : null}
           </div>
           <div className="space-y-2">
@@ -677,6 +715,10 @@ export const LoanProductForm = ({
             ) : null}
           </div>
         </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          La tasa nominal predeterminada debe estar entre la tasa mínima y la máxima. Para una
+          tasa fija, usa el mismo valor en los tres campos.
+        </p>
       </section>
 
       <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">

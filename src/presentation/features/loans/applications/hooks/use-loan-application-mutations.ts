@@ -6,10 +6,12 @@ import { CreateLoanApplicationAction } from '@/core/actions/loan-applications/cr
 import { DisburseLoanApplicationAction } from '@/core/actions/loan-applications/disburse-loan-application.action'
 import { PreviewLoanApplicationScheduleAction } from '@/core/actions/loan-applications/preview-loan-application-schedule.action'
 import { RejectLoanApplicationAction } from '@/core/actions/loan-applications/reject-loan-application.action'
+import { RefreshLoanApplicationProductConditionsAction } from '@/core/actions/loan-applications/refresh-loan-application-product-conditions.action'
 import { RemoveLoanApplicationCollateralAction } from '@/core/actions/loan-applications/remove-loan-application-collateral.action'
 import { ReturnLoanApplicationToDraftAction } from '@/core/actions/loan-applications/return-loan-application-to-draft.action'
 import { SaveLoanApplicationFeeOverridesAction } from '@/core/actions/loan-applications/save-loan-application-fee-overrides.action'
 import { setLoanApplicationFirstDueDateAction } from '@/core/actions/loan-applications/set-loan-application-first-due-date.action'
+import { setLoanApplicationRateAction } from '@/core/actions/loan-applications/set-loan-application-rate.action'
 import { SubmitLoanApplicationAction } from '@/core/actions/loan-applications/submit-loan-application.action'
 import { UpdateLoanApplicationAction } from '@/core/actions/loan-applications/update-loan-application.action'
 import type { ApiResult } from '@/core/helpers/api-result'
@@ -20,6 +22,7 @@ import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/reques
 import type { LoanApplicationDisburseRequest } from '@/infrastructure/loans/requests/loan-application-disburse-request'
 import type { LoanApplicationFeeOverridesUpsertRequest } from '@/infrastructure/loans/requests/loan-application-fee-overrides-upsert-request'
 import type { LoanApplicationFirstDueDateRequest } from '@/infrastructure/loans/requests/loan-application-first-due-date-request'
+import type { LoanApplicationRateOverrideRequest } from '@/infrastructure/loans/requests/loan-application-rate-override-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
 import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
@@ -87,10 +90,35 @@ export const useLoanApplicationMutations = () => {
     return result
   }, [])
 
+  const refreshProductConditions = useCallback(async (id: string) => {
+    setState((prev) => ({ ...prev, isSaving: true, error: null }))
+    const result = await new RefreshLoanApplicationProductConditionsAction().execute(id)
+    setState((prev) => ({
+      ...prev,
+      isSaving: false,
+      error: result.success ? null : mapErrorMessage(result),
+    }))
+    return result
+  }, [])
+
   const setFirstDueDate = useCallback(
     async (id: string, payload: LoanApplicationFirstDueDateRequest) => {
       setState((prev) => ({ ...prev, isWorkflowRunning: true, error: null }))
       const result = await setLoanApplicationFirstDueDateAction(id, payload)
+      setState((prev) => ({
+        ...prev,
+        isWorkflowRunning: false,
+        error: result.success ? null : mapErrorMessage(result),
+      }))
+      return result
+    },
+    [],
+  )
+
+  const setRate = useCallback(
+    async (id: string, payload: LoanApplicationRateOverrideRequest) => {
+      setState((prev) => ({ ...prev, isWorkflowRunning: true, error: null }))
+      const result = await setLoanApplicationRateAction(id, payload)
       setState((prev) => ({
         ...prev,
         isWorkflowRunning: false,
@@ -243,7 +271,9 @@ export const useLoanApplicationMutations = () => {
     setError,
     create,
     update,
+    refreshProductConditions,
     setFirstDueDate,
+    setRate,
     submit,
     approve,
     disburse,

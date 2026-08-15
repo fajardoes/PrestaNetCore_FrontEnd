@@ -1,5 +1,6 @@
 export type LoanApplicationAllowedAction =
   | 'update_draft'
+  | 'refresh_product_conditions'
   | 'edit_fees'
   | 'add_collateral'
   | 'remove_collateral'
@@ -9,6 +10,7 @@ export type LoanApplicationAllowedAction =
   | 'submit'
   | 'approve'
   | 'set_first_due_date'
+  | 'set_rate'
   | 'disburse'
   | 'reject'
   | 'cancel'

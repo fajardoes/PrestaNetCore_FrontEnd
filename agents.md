@@ -155,9 +155,10 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
   - requests/responses: `src/infrastructure/loans/requests` y `src/infrastructure/loans/responses`
   - schemas Yup: `src/infrastructure/validations/loans/loan-application*.ts`, `loan-schedule-preview.schema.ts`
 - **Workflow soportado**: `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`, `CANCELLED`.
-  - `DRAFT`: editar, submit, cancelar, preview, agregar/quitar garantía
-  - `SUBMITTED`: definir primera fecha de cuota (no domingo), aprobar, rechazar, cancelar, preview
+  - `DRAFT`: editar, definir primera fecha de cuota (no domingo), submit, cancelar, preview, agregar/quitar garantía
+  - `SUBMITTED`: definir o modificar primera fecha de cuota (no domingo), aprobar, rechazar, cancelar, preview
   - `APPROVED/REJECTED/CANCELLED`: solo lectura (APPROVED con enlace a préstamo si `approvedLoanId` existe)
+- Crear o editar una solicitud puede devolver `warnings`; mostrarlas mediante el mensaje reutilizable en tono de advertencia sin bloquear la operación.
 
 ## Lineamientos globales Roles/Permisos y Actions (2026-03-04)
 

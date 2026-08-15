@@ -18,7 +18,7 @@ import { LoanApplicationPromoterPickerModal } from '@/presentation/features/loan
 import { LoanApplicationProductPickerModal } from '@/presentation/features/loans/applications/components/loan-application-product-picker-modal'
 import { formatMoney } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
-import { formatRateAsPercent } from '@/core/helpers/rate-percent'
+import { formatRateAsPercent, mapRateToPercentValue } from '@/core/helpers/rate-percent'
 
 interface LoanApplicationFormProps {
   initialValues?: Partial<LoanApplicationFormValues>
@@ -46,6 +46,8 @@ interface LoanApplicationFormProps {
   ) => Promise<AsyncSelectOption<LoanProductListItemDto> | null>
   getLoanProductDisplayInfo: (id: string) => Promise<{
     nominalRate: number
+    minNominalRate: number
+    maxNominalRate: number
     termUnitLabel: string
     interestRateTypeLabel: string
     rateBaseLabel: string
@@ -64,6 +66,7 @@ const defaultValues: LoanApplicationFormValues = {
   promoterId: '',
   requestedPrincipal: 0,
   requestedTerm: 0,
+  requestedRateOverride: null,
   requestedPaymentFrequencyId: '',
   suggestedPaymentFrequencyId: null,
   notes: null,
@@ -134,9 +137,12 @@ export const LoanApplicationForm = ({
   >(null)
   const [productDisplayInfo, setProductDisplayInfo] = useState<{
     nominalRate: number
+    minNominalRate: number
+    maxNominalRate: number
     termUnitLabel: string
     interestRateTypeLabel: string
     rateBaseLabel: string
+    paymentFrequencyLabel: string
   } | null>(null)
   const [productDisplayLoading, setProductDisplayLoading] = useState(false)
   const [productPickerOpen, setProductPickerOpen] = useState(false)
@@ -340,7 +346,9 @@ export const LoanApplicationForm = ({
   }, [clientPage, clientPickerOpen, clientSearch, loadClientsPage])
 
   const resolvedTermUnitLabel = normalizeTermUnitLabel(
-    productDisplayInfo?.termUnitLabel || productOption?.meta?.termUnit,
+    productDisplayInfo?.termUnitLabel && productDisplayInfo.termUnitLabel !== '—'
+      ? productDisplayInfo.termUnitLabel
+      : productOption?.meta?.termUnit,
   )
 
   return (
@@ -428,7 +436,7 @@ export const LoanApplicationForm = ({
                   {productOption?.meta ? (
                     <div className="space-y-1">
                       <p className="font-semibold text-slate-900 dark:text-slate-100">
-                        {productOption.meta.code} - {productOption.meta.name}
+                        {productOption.meta.name}
                       </p>
                       <p className="text-xs text-slate-600 dark:text-slate-300">
                         Monto: {formatMoney(productOption.meta.minAmount)} - {formatMoney(productOption.meta.maxAmount)}
@@ -442,9 +450,21 @@ export const LoanApplicationForm = ({
                         {productDisplayInfo?.rateBaseLabel || '—'}
                       </p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Frecuencia predeterminada:{' '}
+                        {suggestedFrequencyOption?.meta?.name ||
+                          productDisplayInfo?.paymentFrequencyLabel ||
+                          '—'}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
                         Tasa anual:{' '}
                         {productDisplayInfo
                           ? formatRateAsPercent(productDisplayInfo.nominalRate)
+                          : '—'}
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Rango de tasa manual:{' '}
+                        {productDisplayInfo
+                          ? `${formatRateAsPercent(productDisplayInfo.minNominalRate)} - ${formatRateAsPercent(productDisplayInfo.maxNominalRate)}`
                           : '—'}
                       </p>
                       {productDisplayLoading ? (
@@ -495,6 +515,12 @@ export const LoanApplicationForm = ({
           />
           {errors.loanProductId ? (
             <p className="text-xs text-red-600 dark:text-red-300">{errors.loanProductId.message}</p>
+          ) : null}
+          <input type="hidden" {...register('suggestedPaymentFrequencyId')} />
+          {errors.suggestedPaymentFrequencyId ? (
+            <p className="text-xs text-red-600 dark:text-red-300">
+              {errors.suggestedPaymentFrequencyId.message}
+            </p>
           ) : null}
         </div>
 
@@ -559,34 +585,6 @@ export const LoanApplicationForm = ({
           />
           {errors.promoterId ? (
             <p className="text-xs text-red-600 dark:text-red-300">{errors.promoterId.message}</p>
-          ) : null}
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
-            Frecuencia predeterminada del producto
-          </label>
-          <input type="hidden" {...register('suggestedPaymentFrequencyId')} />
-          <div className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900">
-            {suggestedFrequencyOption?.meta ? (
-              <div className="space-y-1">
-                <p className="font-semibold text-slate-900 dark:text-slate-100">
-                  {suggestedFrequencyOption.meta.name}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Definida por el producto seleccionado.
-                </p>
-              </div>
-            ) : (
-              <p className="text-slate-500 dark:text-slate-400">
-                Selecciona un producto para visualizar la frecuencia sugerida.
-              </p>
-            )}
-          </div>
-          {errors.suggestedPaymentFrequencyId ? (
-            <p className="text-xs text-red-600 dark:text-red-300">
-              {errors.suggestedPaymentFrequencyId.message}
-            </p>
           ) : null}
         </div>
 
@@ -694,6 +692,45 @@ export const LoanApplicationForm = ({
           ) : null}
         </div>
 
+        <div className="space-y-1">
+          <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            Tasa nominal manual (%)
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            min={
+              productDisplayInfo
+                ? mapRateToPercentValue(productDisplayInfo.minNominalRate)
+                : undefined
+            }
+            max={
+              productDisplayInfo
+                ? mapRateToPercentValue(productDisplayInfo.maxNominalRate)
+                : undefined
+            }
+            placeholder={
+              productDisplayInfo
+                ? formatRateAsPercent(productDisplayInfo.nominalRate)
+                : 'Opcional'
+            }
+            disabled={readOnly || isSubmitting || !productOption}
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            {...register('requestedRateOverride', { valueAsNumber: true })}
+          />
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Opcional. Déjalo vacío para usar la tasa nominal del producto.
+            {productDisplayInfo
+              ? ` Rango permitido: ${formatRateAsPercent(productDisplayInfo.minNominalRate)} - ${formatRateAsPercent(productDisplayInfo.maxNominalRate)}.`
+              : ''}
+          </p>
+          {errors.requestedRateOverride ? (
+            <p className="text-xs text-red-600 dark:text-red-300">
+              {errors.requestedRateOverride.message}
+            </p>
+          ) : null}
+        </div>
+
       </div>
 
       <div className="space-y-1">
@@ -774,6 +811,7 @@ export const LoanApplicationForm = ({
           setValue('loanProductId', product.id, { shouldValidate: true })
           setSuggestedFrequencyOption(null)
           setValue('suggestedPaymentFrequencyId', null, { shouldValidate: true })
+          setValue('requestedRateOverride', null, { shouldValidate: true })
           setProductDisplayLoading(true)
           void getLoanProductDisplayInfo(product.id)
             .then((display) => {

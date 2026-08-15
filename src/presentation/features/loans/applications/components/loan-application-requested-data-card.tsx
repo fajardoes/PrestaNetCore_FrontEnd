@@ -9,6 +9,7 @@ import {
   financialProfileBadgeClass,
   financialProfileCompletenessBadgeClass,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 
 interface LoanApplicationRequestedDataCardProps {
   application: LoanApplicationResponse
@@ -72,6 +73,10 @@ export const LoanApplicationRequestedDataCard = ({
         <Info
           label="Frecuencia predeterminada del producto"
           value={application.suggestedPaymentFrequencyName || '—'}
+        />
+        <Info
+          label="Tasa nominal manual"
+          value={formatRateAsPercent(application.requestedRateOverride)}
         />
       </div>
       {application.notes ? (

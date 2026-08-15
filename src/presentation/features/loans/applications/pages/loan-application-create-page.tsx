@@ -4,6 +4,7 @@ import { LoanApplicationForm } from '@/presentation/features/loans/applications/
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { MessageModal } from '@/presentation/share/components/message-modal'
+import { mapPercentInputToRate } from '@/core/helpers/rate-percent'
 
 interface FeedbackState {
   tone: 'success' | 'error' | 'info' | 'warning'
@@ -39,10 +40,25 @@ export const LoanApplicationCreatePage = () => {
           onSubmit={async (values) => {
             const result = await create({
               ...values,
+              requestedRateOverride:
+                values.requestedRateOverride == null
+                  ? null
+                  : mapPercentInputToRate(values.requestedRateOverride),
               notes: values.notes || null,
               suggestedPaymentFrequencyId: values.suggestedPaymentFrequencyId || null,
             })
             if (result.success) {
+              const warnings = result.data.warnings ?? []
+              if (warnings.length > 0) {
+                setFeedback({
+                  tone: 'warning',
+                  title: 'Solicitud creada con advertencia',
+                  description: warnings.join(' '),
+                  onAcknowledge: () => navigate('/loans/applications'),
+                })
+                return
+              }
+
               setFeedback({
                 tone: 'success',
                 title: 'Solicitud creada',

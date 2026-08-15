@@ -1,5 +1,14 @@
 import * as yup from 'yup'
 
+const optionalNumber = yup
+  .number()
+  .transform((value, originalValue) => {
+    if (originalValue === '' || originalValue === null || originalValue === undefined) {
+      return undefined
+    }
+    return Number.isNaN(value) ? undefined : value
+  })
+
 export const loanApplicationSchema = yup.object({
   clientId: yup.string().trim().required('El cliente es obligatorio.'),
   loanProductId: yup.string().trim().required('El producto es obligatorio.'),
@@ -15,6 +24,10 @@ export const loanApplicationSchema = yup.object({
     .integer('La duración solicitada debe ser entera.')
     .moreThan(0, 'La duración solicitada debe ser mayor a 0.')
     .required('La duración solicitada es obligatoria.'),
+  requestedRateOverride: optionalNumber
+    .nullable()
+    .min(0, 'La tasa nominal manual no puede ser negativa.')
+    .optional(),
   requestedPaymentFrequencyId: yup
     .string()
     .trim()

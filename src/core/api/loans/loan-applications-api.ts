@@ -7,6 +7,7 @@ import type { LoanApplicationFirstDueDateRequest } from '@/infrastructure/loans/
 import type { LoanApplicationDisburseRequest } from '@/infrastructure/loans/requests/loan-application-disburse-request'
 import type { LoanApplicationFeeOverridesUpsertRequest } from '@/infrastructure/loans/requests/loan-application-fee-overrides-upsert-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
+import type { LoanApplicationRateOverrideRequest } from '@/infrastructure/loans/requests/loan-application-rate-override-request'
 import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSearchRequest } from '@/infrastructure/loans/requests/loan-application-search-request'
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
@@ -65,6 +66,26 @@ export const setLoanApplicationFirstDueDate = async (
 ): Promise<LoanApplicationResponse> => {
   const { data } = await httpClient.put<LoanApplicationResponse>(
     `${basePath}/${id}/first-due-date`,
+    dto,
+  )
+  return data
+}
+
+export const refreshLoanApplicationProductConditions = async (
+  id: string,
+): Promise<LoanApplicationResponse> => {
+  const { data } = await httpClient.put<LoanApplicationResponse>(
+    `${basePath}/${id}/product-conditions/refresh`,
+  )
+  return data
+}
+
+export const setLoanApplicationRate = async (
+  id: string,
+  dto: LoanApplicationRateOverrideRequest,
+): Promise<LoanApplicationResponse> => {
+  const { data } = await httpClient.put<LoanApplicationResponse>(
+    `${basePath}/${id}/rate`,
     dto,
   )
   return data

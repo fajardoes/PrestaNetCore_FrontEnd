@@ -33,7 +33,7 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
-    await httpClient.post('/auth/logout')
+    await httpClient.post('/auth/logout', undefined, { skipAuthRefresh: true })
   }
 
   async getProfile(): Promise<AuthUser> {
@@ -84,11 +84,10 @@ class AuthService {
     }
   }
 
-  async refresh(refreshToken: string): Promise<RefreshResponse> {
-    const { data } = await httpClient.post<RefreshResponse>(
-      '/auth/refresh',
-      { refreshToken },
-    )
+  async refresh(): Promise<RefreshResponse> {
+    const { data } = await httpClient.post<RefreshResponse>('/auth/refresh', undefined, {
+      skipAuthRefresh: true,
+    })
     return data
   }
 

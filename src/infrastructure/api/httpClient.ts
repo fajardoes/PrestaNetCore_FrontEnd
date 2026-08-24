@@ -6,6 +6,7 @@ import type { RefreshResponse } from '@/types/auth'
 declare module 'axios' {
   interface AxiosRequestConfig {
     _retry?: boolean
+    skipAuthRefresh?: boolean
     skipGlobalLoading?: boolean
     _countedInGlobalLoading?: boolean
   }
@@ -49,27 +50,18 @@ const refreshAccessToken = async (): Promise<string | null> => {
     return refreshPromise
   }
 
-  const refreshToken = tokenStorage.getRefreshToken()
-  if (!refreshToken) {
-    tokenStorage.clearTokens()
-    return null
-  }
-
   refreshPromise = axios
     .post<RefreshResponse>(
       '/auth/refresh',
-      { refreshToken },
+      undefined,
       {
         baseURL,
         withCredentials: true,
       },
     )
     .then((response) => {
-      const { accessToken, refreshToken: nextRefresh } = response.data
-      tokenStorage.setTokens({
-        accessToken,
-        refreshToken: nextRefresh ?? refreshToken,
-      }, tokenStorage.shouldPersist())
+      const { accessToken } = response.data
+      tokenStorage.setTokens({ accessToken })
       return accessToken
     })
     .catch(() => {
@@ -115,7 +107,7 @@ httpClient.interceptors.response.use(
       return Promise.reject(error)
     }
 
-    if (response.status === 401 && !config._retry) {
+    if (response.status === 401 && !config._retry && !config.skipAuthRefresh) {
       config._retry = true
       const newAccessToken = await refreshAccessToken()
       if (newAccessToken) {

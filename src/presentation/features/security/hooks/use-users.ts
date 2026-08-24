@@ -52,22 +52,29 @@ export const useUsers = (options?: UseUsersOptions) => {
 
   const filtered = useMemo(() => {
     const term = query.search.trim().toLowerCase()
-    return state.data.filter((user) => {
-      const matchesTerm =
-        !term ||
-        user.email.toLowerCase().includes(term) ||
-        (user.phoneNumber?.toLowerCase() ?? '').includes(term)
+    return state.data
+      .filter((user) => {
+        const matchesTerm =
+          !term ||
+          user.email.toLowerCase().includes(term) ||
+          (user.phoneNumber?.toLowerCase() ?? '').includes(term)
 
-      const isActive = !user.isDeleted
-      const matchesStatus =
-        query.status === 'all'
-          ? true
-          : query.status === 'active'
-            ? isActive
-            : !isActive
+        const isActive = !user.isDeleted
+        const matchesStatus =
+          query.status === 'all'
+            ? true
+            : query.status === 'active'
+              ? isActive
+              : !isActive
 
-      return matchesTerm && matchesStatus
-    })
+        return matchesTerm && matchesStatus
+      })
+      .sort((left, right) => {
+        const byUserName = left.email.localeCompare(right.email, 'es-HN', {
+          sensitivity: 'base',
+        })
+        return byUserName || left.id.localeCompare(right.id)
+      })
   }, [query, state.data])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))

@@ -25,6 +25,7 @@ export interface LoanApplicationResponse {
   requestedTermUnitCode: TermUnitCode
   requestedTermUnitName: string
   requestedPaymentFrequencyId: string
+  firstDueDate?: string | null
   requestedPaymentFrequencyCode: PaymentFrequencyCode
   requestedPaymentFrequencyName: string
   suggestedPaymentFrequencyId?: string | null
@@ -33,6 +34,10 @@ export interface LoanApplicationResponse {
   requestedRateOverride?: number | null
   notes?: string | null
   createdOperationalDate: string
+  productConditionsVersion?: string | null
+  productConditionsCapturedAt?: string | null
+  productConditionsStale?: boolean
+  productConditionsReviewRequired?: boolean
   submittedOperationalDate?: string | null
   approvedOperationalDate?: string | null
   disbursedOperationalDate?: string | null
@@ -52,6 +57,7 @@ export interface LoanApplicationResponse {
   financialProfileUpdatedAt?: string | null
   financialDebtRatio?: number | null
   financialDebtToEquityRatio?: number | null
+  warnings?: string[]
   grossDisbursementAmount?: number | null
   netDisbursementAmount?: number | null
   totalDisbursementFees?: number | null

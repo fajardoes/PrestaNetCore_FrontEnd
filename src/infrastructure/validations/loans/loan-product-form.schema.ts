@@ -137,7 +137,50 @@ export const loanProductFormSchema = yup.object({
     .number()
     .typeError('La tasa nominal es requerida.')
     .min(0, 'La tasa nominal debe ser mayor o igual a 0.')
+    .test(
+      'nominal-rate-range',
+      'La tasa nominal debe estar dentro del rango permitido.',
+      function (value) {
+        const { minNominalRate, maxNominalRate } = this.parent
+        if (
+          typeof value !== 'number' ||
+          typeof minNominalRate !== 'number' ||
+          typeof maxNominalRate !== 'number'
+        ) {
+          return true
+        }
+        return value >= minNominalRate && value <= maxNominalRate
+      },
+    )
     .required('La tasa nominal es requerida.'),
+  minNominalRate: yup
+    .number()
+    .typeError('La tasa mínima es requerida.')
+    .min(0, 'La tasa mínima debe ser mayor o igual a 0.')
+    .test(
+      'min-nominal-rate',
+      'La tasa mínima debe ser menor o igual a la tasa nominal.',
+      function (value) {
+        const { nominalRate } = this.parent
+        if (typeof value !== 'number' || typeof nominalRate !== 'number') return true
+        return value <= nominalRate
+      },
+    )
+    .required('La tasa mínima es requerida.'),
+  maxNominalRate: yup
+    .number()
+    .typeError('La tasa máxima es requerida.')
+    .min(0, 'La tasa máxima debe ser mayor o igual a 0.')
+    .test(
+      'max-nominal-rate',
+      'La tasa máxima debe ser mayor o igual a la tasa nominal.',
+      function (value) {
+        const { nominalRate } = this.parent
+        if (typeof value !== 'number' || typeof nominalRate !== 'number') return true
+        return value >= nominalRate
+      },
+    )
+    .required('La tasa máxima es requerida.'),
   rateBaseId: requiredCatalogId('La base de tasa'),
   amortizationMethodId: requiredCatalogId('El método de amortización'),
   paymentFrequencyId: requiredCatalogId('La frecuencia de pago'),

@@ -1,4 +1,4 @@
-import { CalendarRange, CheckCircle2, ClipboardList, ReceiptText } from 'lucide-react'
+import { CalendarRange, CheckCircle2, ClipboardList, History, ReceiptText } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
@@ -9,6 +9,7 @@ import { RecognitionPolicyBadges } from '@/presentation/features/loans/component
 import { LoanDisbursementReversalEligibilityCard } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-eligibility-card'
 import { LoanDisbursementReversalModal } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-modal'
 import { LoanAnticipatedInstallmentSection } from '@/presentation/features/loans/loans-query/components/loan-anticipated-installment-section'
+import { LoanPaymentsModal } from '@/presentation/features/loans/loans-query/components/loan-payments-modal'
 import {
   QueryDetailField,
   QueryHeroCard,
@@ -16,6 +17,7 @@ import {
   QuerySectionCard,
 } from '@/presentation/features/loans/loans-query/components/loan-query-ui'
 import { useLoanInstallments } from '@/presentation/features/loans/loans-query/hooks/use-loan-installments'
+import { useLoanPayments } from '@/presentation/features/loans/loans-query/hooks/use-loan-payments'
 import { useLoan } from '@/presentation/features/loans/loans-query/hooks/use-loan'
 import { useLoanAnticipatedInstallment } from '@/presentation/features/loans/loans-query/hooks/use-loan-anticipated-installment'
 import {
@@ -35,6 +37,7 @@ export const LoanDetailPage = () => {
   const location = useLocation()
   const { id = '' } = useParams()
   const [reversalModalOpen, setReversalModalOpen] = useState(false)
+  const [paymentsModalOpen, setPaymentsModalOpen] = useState(false)
   const {
     loan,
     allowedActions,
@@ -59,11 +62,13 @@ export const LoanDetailPage = () => {
   const { hasPermission } = useUserPermissions()
 
   const canReadEligibility = hasPermission('loans.disbursement_reversal.read_eligibility')
+  const canReadPayments = hasPermission('payments.read')
   const canExecuteReversal = hasPermission('loans.disbursement_reversal.execute')
   const canViewAnticipatedInstallment = allowedActions.includes('view_anticipated_installment')
   const canApplyAnticipatedInstallment = allowedActions.includes('apply_anticipated_installment')
   const canReverseAnticipatedInstallment = allowedActions.includes('reverse_anticipated_installment_application')
   const anticipatedInstallment = useLoanAnticipatedInstallment(id, canViewAnticipatedInstallment)
+  const loanPayments = useLoanPayments(id, paymentsModalOpen && canReadPayments)
   const isDisbursementAlreadyReversed =
     Boolean(loan?.isDisbursementReversed) ||
     (loan?.statusCode ?? '').trim().toUpperCase() === 'DISBURSEMENT_REVERSED'
@@ -128,13 +133,25 @@ export const LoanDetailPage = () => {
           </span>
         }
         actions={
-          <Link
-            className="btn-secondary px-4 py-2 text-sm"
-            to={returnTo}
-            state={navigationState?.loansQueryState ? { loansQueryState: navigationState.loansQueryState } : null}
-          >
-            Volver a consulta
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {canReadPayments ? (
+              <button
+                type="button"
+                className="btn-secondary inline-flex items-center gap-2 px-4 py-2 text-sm"
+                onClick={() => setPaymentsModalOpen(true)}
+              >
+                <History className="h-4 w-4" aria-hidden="true" />
+                Ver pagos recibidos
+              </button>
+            ) : null}
+            <Link
+              className="btn-secondary px-4 py-2 text-sm"
+              to={returnTo}
+              state={navigationState?.loansQueryState ? { loansQueryState: navigationState.loansQueryState } : null}
+            >
+              Volver a consulta
+            </Link>
+          </div>
         }
       >
         <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
@@ -525,6 +542,26 @@ export const LoanDetailPage = () => {
               loadInstallments(id),
             ])
           }}
+        />
+      ) : null}
+
+      {canReadPayments ? (
+        <LoanPaymentsModal
+          open={paymentsModalOpen}
+          loanNo={loan.loanNo?.trim() || loan.id}
+          totalPaidFromSchedule={installmentSummary.totalPaid}
+          items={loanPayments.items}
+          totalCount={loanPayments.totalCount}
+          page={loanPayments.pageNumber}
+          totalPages={loanPayments.totalPages}
+          isLoading={loanPayments.isLoading}
+          error={loanPayments.error}
+          detailsByPaymentId={loanPayments.detailsByPaymentId}
+          detailLoadingByPaymentId={loanPayments.detailLoadingByPaymentId}
+          detailErrorsByPaymentId={loanPayments.detailErrorsByPaymentId}
+          onPageChange={loanPayments.setPage}
+          onLoadPaymentDetail={loanPayments.loadPaymentDetail}
+          onClose={() => setPaymentsModalOpen(false)}
         />
       ) : null}
     </div>

@@ -92,7 +92,9 @@ export const LoanProductReport = ({
         <Text style={styles.sectionTitle}>Interes y amortizacion</Text>
         <View style={styles.grid}>
           <InfoItem label="Tipo de tasa" value={data.labels.interestRateType || product.interestRateTypeId} />
-          <InfoItem label="Tasa nominal" value={formatRateAsPercent(product.nominalRate)} />
+          <InfoItem label="Tasa nominal predeterminada" value={formatRateAsPercent(product.nominalRate)} />
+          <InfoItem label="Tasa mínima nominal" value={formatRateAsPercent(product.minNominalRate)} />
+          <InfoItem label="Tasa máxima nominal" value={formatRateAsPercent(product.maxNominalRate)} />
           <InfoItem label="Base de tasa" value={data.labels.rateBase || product.rateBaseId} />
           <InfoItem label="Metodo" value={data.labels.amortizationMethod || product.amortizationMethodId} />
           <InfoItem label="Frecuencia" value={data.labels.paymentFrequency || product.paymentFrequencyId} />

@@ -14,7 +14,6 @@ export interface AuthUser {
 
 export interface AuthTokens {
   accessToken: string
-  refreshToken?: string | null
 }
 
 export interface LoginCredentials {
@@ -46,4 +45,7 @@ export interface ChangePasswordWithCurrentPayload {
   newPassword: string
 }
 
-export type RefreshResponse = AuthTokens
+export interface RefreshResponse {
+  accessToken: string
+  expiresAt: string
+}

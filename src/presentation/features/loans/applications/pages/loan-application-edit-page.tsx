@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { LoanApplicationForm } from '@/presentation/features/loans/applications/components/loan-application-form'
 import { useLoanApplication } from '@/presentation/features/loans/applications/hooks/use-loan-application'
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { MessageModal } from '@/presentation/share/components/message-modal'
+import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
 
 interface FeedbackState {
   tone: 'success' | 'error' | 'info' | 'warning'
@@ -35,6 +36,25 @@ export const LoanApplicationEditPage = () => {
     if (!id) return
     void loadById(id)
   }, [id, loadById])
+
+  const formInitialValues = useMemo(() => {
+    if (!application) return undefined
+
+    return {
+      clientId: application.clientId,
+      loanProductId: application.loanProductId,
+      promoterId: application.promoterId,
+      requestedPrincipal: application.requestedPrincipal,
+      requestedTerm: application.requestedTerm,
+      requestedRateOverride:
+        application.requestedRateOverride == null
+          ? null
+          : mapRateToPercentValue(application.requestedRateOverride),
+      requestedPaymentFrequencyId: application.requestedPaymentFrequencyId,
+      suggestedPaymentFrequencyId: application.suggestedPaymentFrequencyId || null,
+      notes: application.notes || null,
+    }
+  }, [application])
 
   if (isLoading) {
     return <p className="text-sm text-slate-600 dark:text-slate-300">Cargando solicitud...</p>
@@ -95,26 +115,32 @@ export const LoanApplicationEditPage = () => {
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <LoanApplicationForm
-          initialValues={{
-            clientId: application.clientId,
-            loanProductId: application.loanProductId,
-            promoterId: application.promoterId,
-            requestedPrincipal: application.requestedPrincipal,
-            requestedTerm: application.requestedTerm,
-            requestedPaymentFrequencyId: application.requestedPaymentFrequencyId,
-            suggestedPaymentFrequencyId: application.suggestedPaymentFrequencyId || null,
-            notes: application.notes || null,
-          }}
+          initialValues={formInitialValues}
           isSubmitting={isSaving}
           readOnly={!canUpdateDraft}
           onSubmit={async (values) => {
             if (!canUpdateDraft) return
             const result = await update(id, {
               ...values,
+              requestedRateOverride:
+                values.requestedRateOverride == null
+                  ? null
+                  : mapPercentInputToRate(values.requestedRateOverride),
               notes: values.notes || null,
               suggestedPaymentFrequencyId: values.suggestedPaymentFrequencyId || null,
             })
             if (result.success) {
+              const warnings = result.data.warnings ?? []
+              if (warnings.length > 0) {
+                setFeedback({
+                  tone: 'warning',
+                  title: 'Solicitud actualizada con advertencia',
+                  description: warnings.join(' '),
+                  onAcknowledge: () => navigate(returnTo),
+                })
+                return
+              }
+
               setFeedback({
                 tone: 'success',
                 title: 'Solicitud actualizada',

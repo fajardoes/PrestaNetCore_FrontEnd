@@ -3,9 +3,11 @@ import type { LoanApplicationApproveRequest } from '@/infrastructure/loans/reque
 import type { LoanApplicationCancelRequest } from '@/infrastructure/loans/requests/loan-application-cancel-request'
 import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans/requests/loan-application-collateral-add-request'
 import type { LoanApplicationCreateRequest } from '@/infrastructure/loans/requests/loan-application-create-request'
+import type { LoanApplicationFirstDueDateRequest } from '@/infrastructure/loans/requests/loan-application-first-due-date-request'
 import type { LoanApplicationDisburseRequest } from '@/infrastructure/loans/requests/loan-application-disburse-request'
 import type { LoanApplicationFeeOverridesUpsertRequest } from '@/infrastructure/loans/requests/loan-application-fee-overrides-upsert-request'
 import type { LoanApplicationRejectRequest } from '@/infrastructure/loans/requests/loan-application-reject-request'
+import type { LoanApplicationRateOverrideRequest } from '@/infrastructure/loans/requests/loan-application-rate-override-request'
 import type { LoanApplicationReturnToDraftRequest } from '@/infrastructure/loans/requests/loan-application-return-to-draft-request'
 import type { LoanApplicationSearchRequest } from '@/infrastructure/loans/requests/loan-application-search-request'
 import type { LoanApplicationSubmitRequest } from '@/infrastructure/loans/requests/loan-application-submit-request'
@@ -55,6 +57,37 @@ export const getLoanApplication = async (
   id: string,
 ): Promise<LoanApplicationResponse> => {
   const { data } = await httpClient.get<LoanApplicationResponse>(`${basePath}/${id}`)
+  return data
+}
+
+export const setLoanApplicationFirstDueDate = async (
+  id: string,
+  dto: LoanApplicationFirstDueDateRequest,
+): Promise<LoanApplicationResponse> => {
+  const { data } = await httpClient.put<LoanApplicationResponse>(
+    `${basePath}/${id}/first-due-date`,
+    dto,
+  )
+  return data
+}
+
+export const refreshLoanApplicationProductConditions = async (
+  id: string,
+): Promise<LoanApplicationResponse> => {
+  const { data } = await httpClient.put<LoanApplicationResponse>(
+    `${basePath}/${id}/product-conditions/refresh`,
+  )
+  return data
+}
+
+export const setLoanApplicationRate = async (
+  id: string,
+  dto: LoanApplicationRateOverrideRequest,
+): Promise<LoanApplicationResponse> => {
+  const { data } = await httpClient.put<LoanApplicationResponse>(
+    `${basePath}/${id}/rate`,
+    dto,
+  )
   return data
 }
 

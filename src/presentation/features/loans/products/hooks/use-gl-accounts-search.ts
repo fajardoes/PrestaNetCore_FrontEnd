@@ -3,7 +3,9 @@ import { listChartAccountsAction } from '@/core/actions/accounting/list-chart-ac
 import { getChartAccountAction } from '@/core/actions/accounting/get-chart-account.action'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 
-const PAGE_SIZE = 20
+// The selector is remote-searchable, but the initial list should include the
+// regular posting accounts from the seeded chart without requiring a query.
+const PAGE_SIZE = 100
 const TOP_CACHE_KEY = '__top__'
 
 export const useGlAccountsSearch = () => {

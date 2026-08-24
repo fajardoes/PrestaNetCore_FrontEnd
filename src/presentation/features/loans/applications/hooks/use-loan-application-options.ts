@@ -73,17 +73,10 @@ const mapCollateralOption = (
   meta: collateral,
 })
 
-const findCatalogLabel = (items: LoanCatalogItemDto[], id?: string | null) => {
-  if (!id) return '—'
-  const found = items.find((item) => item.id === id)
-  if (!found) return id
-  return `${found.code} - ${found.name}`
-}
-
 const findCatalogName = (items: LoanCatalogItemDto[], id?: string | null) => {
   if (!id) return '—'
   const found = items.find((item) => item.id === id)
-  return found?.name ?? id
+  return found?.name ?? '—'
 }
 
 export const useLoanApplicationOptions = () => {
@@ -284,20 +277,22 @@ export const useLoanApplicationOptions = () => {
     if (!detailResult.success) return null
 
     const termUnitLabel = termUnitsResult.success
-      ? findCatalogLabel(termUnitsResult.data, detailResult.data.termUnitId)
-      : detailResult.data.termUnitId
+      ? findCatalogName(termUnitsResult.data, detailResult.data.termUnitId)
+      : '—'
     const interestRateTypeLabel = interestTypesResult.success
-      ? findCatalogLabel(interestTypesResult.data, detailResult.data.interestRateTypeId)
-      : detailResult.data.interestRateTypeId
+      ? findCatalogName(interestTypesResult.data, detailResult.data.interestRateTypeId)
+      : '—'
     const rateBaseLabel = rateBasesResult.success
-      ? findCatalogLabel(rateBasesResult.data, detailResult.data.rateBaseId)
-      : detailResult.data.rateBaseId
+      ? findCatalogName(rateBasesResult.data, detailResult.data.rateBaseId)
+      : '—'
     const paymentFrequencyLabel = paymentFrequenciesResult.success
       ? findCatalogName(paymentFrequenciesResult.data, detailResult.data.paymentFrequencyId)
-      : detailResult.data.paymentFrequencyId
+      : '—'
 
     return {
       nominalRate: detailResult.data.nominalRate,
+      minNominalRate: detailResult.data.minNominalRate,
+      maxNominalRate: detailResult.data.maxNominalRate,
       termUnitLabel,
       interestRateTypeLabel,
       rateBaseLabel,

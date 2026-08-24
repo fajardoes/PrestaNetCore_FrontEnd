@@ -68,9 +68,19 @@ export const GlAccountsSelector = ({
   const loadOptions = useCallback(
     async (inputValue: string) => {
       const results = await onSearch(inputValue.trim())
-      return results.map(toOption)
+      const options = results.map(toOption)
+
+      if (
+        !inputValue.trim() &&
+        selectedOption &&
+        !options.some((option) => option.value === selectedOption.value)
+      ) {
+        options.unshift(selectedOption)
+      }
+
+      return options
     },
-    [onSearch],
+    [onSearch, selectedOption],
   )
 
   return (
@@ -79,6 +89,7 @@ export const GlAccountsSelector = ({
         {label}
       </label>
       <AsyncSelect<ChartAccountListItem>
+        key={selectedOption?.value ?? 'no-selected-account'}
         value={selectedOption}
         onChange={(option) => {
           setSelectedOption(option)

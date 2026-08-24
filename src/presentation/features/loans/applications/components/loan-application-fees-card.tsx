@@ -98,22 +98,22 @@ export const LoanApplicationFeesCard = ({
   }, [chargeRows])
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
             Descuentos y comisiones
           </h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-400">
             Aquí puedes revisar las comisiones que se pueden ajustar y los descuentos que se
             aplicarán al desembolso, incluyendo seguros.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5">
           {onRefresh ? (
             <button
               type="button"
-              className="btn-secondary px-3 py-2 text-xs"
+              className="btn-secondary px-2.5 py-1 text-xs"
               onClick={onRefresh}
               disabled={isLoading || isSaving}
             >
@@ -124,7 +124,7 @@ export const LoanApplicationFeesCard = ({
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
+      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
         <Metric label="Descuentos estimados" value={formatCurrency(chargesSummary.total)} />
         <Metric label="Comisiones" value={formatCurrency(chargesSummary.fees)} />
         <Metric label="Seguros" value={formatCurrency(chargesSummary.insurance)} />
@@ -133,23 +133,23 @@ export const LoanApplicationFeesCard = ({
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
           No fue posible cargar las comisiones: {error}
         </div>
       ) : null}
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
           Cargando comisiones...
         </p>
       ) : null}
 
-      <div className="mt-4">
-        <div className="mb-3">
+      <div className="mt-3">
+        <div className="mb-2">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Descuentos del desembolso
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
             Aquí se muestra lo que se rebajará del desembolso, tanto comisiones como seguros.
           </p>
         </div>
@@ -276,10 +276,10 @@ export const LoanApplicationFeesCard = ({
 }
 
 const Metric = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900">
     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
       {label}
     </p>
-    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+    <p className="mt-0.5 text-xs font-semibold text-slate-900 dark:text-slate-100">{value}</p>
   </div>
 )

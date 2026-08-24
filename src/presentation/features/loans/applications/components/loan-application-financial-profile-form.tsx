@@ -23,32 +23,25 @@ const defaultValues: LoanApplicationFinancialProfileFormValues = {
   analysisPeriodType: 'monthly',
   notes: '',
   analysisComments: null,
-  cashAndBanks: '' as unknown as LoanApplicationFinancialProfileFormValues['cashAndBanks'],
-  accountsReceivable:
-    '' as unknown as LoanApplicationFinancialProfileFormValues['accountsReceivable'],
-  inventoryValue: '' as unknown as LoanApplicationFinancialProfileFormValues['inventoryValue'],
-  housesAndLand: '' as unknown as LoanApplicationFinancialProfileFormValues['housesAndLand'],
-  vehicles: '' as unknown as LoanApplicationFinancialProfileFormValues['vehicles'],
-  householdGoods: '' as unknown as LoanApplicationFinancialProfileFormValues['householdGoods'],
-  accountsPayableSuppliers:
-    '' as unknown as LoanApplicationFinancialProfileFormValues['accountsPayableSuppliers'],
-  loansPayable: '' as unknown as LoanApplicationFinancialProfileFormValues['loansPayable'],
+  cashAndBanks: 0,
+  accountsReceivable: 0,
+  inventoryValue: 0,
+  housesAndLand: 0,
+  vehicles: 0,
+  householdGoods: 0,
+  accountsPayableSuppliers: 0,
+  loansPayable: 0,
   otherLiabilities: [],
-  businessIncome: '' as unknown as LoanApplicationFinancialProfileFormValues['businessIncome'],
-  salaryIncome: '' as unknown as LoanApplicationFinancialProfileFormValues['salaryIncome'],
-  spouseChildrenIncome:
-    '' as unknown as LoanApplicationFinancialProfileFormValues['spouseChildrenIncome'],
-  remittancesIncome:
-    '' as unknown as LoanApplicationFinancialProfileFormValues['remittancesIncome'],
-  otherIncome: '' as unknown as LoanApplicationFinancialProfileFormValues['otherIncome'],
-  businessCostOfSales:
-    '' as unknown as LoanApplicationFinancialProfileFormValues['businessCostOfSales'],
-  foodExpense: '' as unknown as LoanApplicationFinancialProfileFormValues['foodExpense'],
-  healthEducationExpense:
-    '' as unknown as LoanApplicationFinancialProfileFormValues['healthEducationExpense'],
-  utilitiesExpense: '' as unknown as LoanApplicationFinancialProfileFormValues['utilitiesExpense'],
-  loanInstallmentExpense:
-    '' as unknown as LoanApplicationFinancialProfileFormValues['loanInstallmentExpense'],
+  businessIncome: 0,
+  salaryIncome: 0,
+  spouseChildrenIncome: 0,
+  remittancesIncome: 0,
+  otherIncome: 0,
+  businessCostOfSales: 0,
+  foodExpense: 0,
+  healthEducationExpense: 0,
+  utilitiesExpense: 0,
+  loanInstallmentExpense: 0,
 }
 
 const enabledFieldClass =
@@ -66,29 +59,14 @@ export const mapFinancialProfileToFormValues = (
   analysisPeriodType: profile?.analysisPeriodType ?? 'monthly',
   notes: profile?.notes ?? '',
   analysisComments: profile?.analysisComments ?? null,
-  cashAndBanks:
-    profile?.cashAndBanks ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['cashAndBanks']),
-  accountsReceivable:
-    profile?.accountsReceivable ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['accountsReceivable']),
-  inventoryValue:
-    profile?.inventoryValue ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['inventoryValue']),
-  housesAndLand:
-    profile?.housesAndLand ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['housesAndLand']),
-  vehicles:
-    profile?.vehicles ?? ('' as unknown as LoanApplicationFinancialProfileFormValues['vehicles']),
-  householdGoods:
-    profile?.householdGoods ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['householdGoods']),
-  accountsPayableSuppliers:
-    profile?.accountsPayableSuppliers ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['accountsPayableSuppliers']),
-  loansPayable:
-    profile?.loansPayable ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['loansPayable']),
+  cashAndBanks: profile?.cashAndBanks ?? 0,
+  accountsReceivable: profile?.accountsReceivable ?? 0,
+  inventoryValue: profile?.inventoryValue ?? 0,
+  housesAndLand: profile?.housesAndLand ?? 0,
+  vehicles: profile?.vehicles ?? 0,
+  householdGoods: profile?.householdGoods ?? 0,
+  accountsPayableSuppliers: profile?.accountsPayableSuppliers ?? 0,
+  loansPayable: profile?.loansPayable ?? 0,
   otherLiabilities:
     profile?.otherLiabilities
       ?.slice()
@@ -96,41 +74,19 @@ export const mapFinancialProfileToFormValues = (
       .map((item, index) => ({
         id: item.id ?? null,
         description: item.description ?? '',
-        amount:
-          item.amount ??
-          ('' as unknown as LoanApplicationFinancialProfileFormValues['otherLiabilities'][number]['amount']),
+        amount: item.amount ?? 0,
         sortOrder: item.sortOrder ?? index + 1,
       })) ?? [],
-  businessIncome:
-    profile?.businessIncome ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['businessIncome']),
-  salaryIncome:
-    profile?.salaryIncome ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['salaryIncome']),
-  spouseChildrenIncome:
-    profile?.spouseChildrenIncome ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['spouseChildrenIncome']),
-  remittancesIncome:
-    profile?.remittancesIncome ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['remittancesIncome']),
-  otherIncome:
-    profile?.otherIncome ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['otherIncome']),
-  businessCostOfSales:
-    profile?.businessCostOfSales ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['businessCostOfSales']),
-  foodExpense:
-    profile?.foodExpense ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['foodExpense']),
-  healthEducationExpense:
-    profile?.healthEducationExpense ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['healthEducationExpense']),
-  utilitiesExpense:
-    profile?.utilitiesExpense ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['utilitiesExpense']),
-  loanInstallmentExpense:
-    profile?.loanInstallmentExpense ??
-    ('' as unknown as LoanApplicationFinancialProfileFormValues['loanInstallmentExpense']),
+  businessIncome: profile?.businessIncome ?? 0,
+  salaryIncome: profile?.salaryIncome ?? 0,
+  spouseChildrenIncome: profile?.spouseChildrenIncome ?? 0,
+  remittancesIncome: profile?.remittancesIncome ?? 0,
+  otherIncome: profile?.otherIncome ?? 0,
+  businessCostOfSales: profile?.businessCostOfSales ?? 0,
+  foodExpense: profile?.foodExpense ?? 0,
+  healthEducationExpense: profile?.healthEducationExpense ?? 0,
+  utilitiesExpense: profile?.utilitiesExpense ?? 0,
+  loanInstallmentExpense: profile?.loanInstallmentExpense ?? 0,
 })
 
 const toNullableText = (value?: string | null) => {

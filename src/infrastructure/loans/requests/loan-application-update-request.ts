@@ -6,5 +6,6 @@ export interface LoanApplicationUpdateRequest {
   requestedTerm: number
   requestedPaymentFrequencyId: string
   suggestedPaymentFrequencyId?: string | null
+  requestedRateOverride?: number | null
   notes?: string | null
 }

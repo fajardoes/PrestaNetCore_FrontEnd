@@ -12,15 +12,6 @@ import { tokenStorage } from '@/infrastructure/api/tokenStorage'
 import { authService } from '@/infrastructure/services/AuthService'
 import { loginAction } from '@/core/actions/auth/login.action'
 import type { AuthUser, LoginCredentials } from '@/types/auth'
-import { jwtDecode } from 'jwt-decode'
-import type { JwtPayload } from 'jwt-decode'
-
-interface AccessTokenPayload extends JwtPayload {
-  sub?: string
-  email?: string
-  name?: string
-  roles?: string[] | string
-}
 
 interface AuthContextValue {
   user: AuthUser | null
@@ -34,32 +25,6 @@ interface AuthContextValue {
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
-
-const deriveUserFromToken = (token: string): AuthUser | null => {
-  try {
-    const payload = jwtDecode<AccessTokenPayload>(token)
-    if (!payload.sub) {
-      return null
-    }
-    const rolesArray: string[] =
-      payload.roles && Array.isArray(payload.roles)
-        ? payload.roles
-        : typeof payload.roles === 'string'
-          ? payload.roles.split(',').map((role: string) => role.trim())
-          : []
-
-    return {
-      id: payload.sub,
-      email: payload.email ?? '',
-      fullName: payload.name ?? payload.email ?? 'Usuario',
-      roles: rolesArray.filter(
-        (role): role is string => typeof role === 'string' && role.length > 0,
-      ),
-    }
-  } catch {
-    return null
-  }
-}
 
 const extractErrorMessage = (error: unknown): string => {
   if (
@@ -132,21 +97,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const init = async () => {
-      const tokens = tokenStorage.getTokens()
-      if (!tokens?.accessToken) {
-        setIsInitializing(false)
-        return
-      }
-
       try {
+        const refreshed = await authService.refresh()
+        tokenStorage.setTokens({ accessToken: refreshed.accessToken })
         const profile = await authService.getProfile()
         setUser(profile)
       } catch {
-        const derivedUser = deriveUserFromToken(tokens.accessToken)
-        setUser(derivedUser)
-        if (!derivedUser) {
-          tokenStorage.clearTokens()
-        }
+        tokenStorage.clearTokens()
+        setUser(null)
       } finally {
         setIsInitializing(false)
       }
@@ -194,9 +152,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = useCallback(async () => {
     setIsProcessing(true)
     try {
-      if (tokenStorage.getAccessToken()) {
-        await authService.logout()
-      }
+      await authService.logout()
     } catch {
       // ignore logout errors, we want to force the local session to close anyway
     } finally {
@@ -207,13 +163,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   const refreshSession = useCallback(async () => {
-    const tokens = tokenStorage.getTokens()
-    if (!tokens?.accessToken) {
-      setUser(null)
-      return
-    }
-
     try {
+      const refreshed = await authService.refresh()
+      tokenStorage.setTokens({ accessToken: refreshed.accessToken })
       const profile = await authService.getProfile()
       setUser(profile)
     } catch (error) {

@@ -15,6 +15,8 @@ export interface LoanProductUpdateDto {
   termUnitId: string
   interestRateTypeId: string
   nominalRate: number
+  minNominalRate: number
+  maxNominalRate: number
   rateBaseId: string
   amortizationMethodId: string
   paymentFrequencyId: string

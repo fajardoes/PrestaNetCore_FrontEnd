@@ -17,6 +17,9 @@ interface DatePickerProps {
   minDate?: Date
   maxDate?: Date
   allowFutureDates?: boolean
+  referenceDate?: string | null
+  disableSundays?: boolean
+  disabledDates?: string[]
 }
 
 const WEEK_DAYS = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do']
@@ -86,23 +89,31 @@ export const DatePicker = ({
   minDate,
   maxDate,
   allowFutureDates = false,
+  referenceDate,
+  disableSundays = false,
+  disabledDates = [],
 }: DatePickerProps) => {
-  const today = useMemo(() => {
+  const clientToday = useMemo(() => {
     const current = new Date()
     current.setHours(0, 0, 0, 0)
     return current
   }, [])
 
+  const referenceDay = useMemo(
+    () => parseValue(referenceDate) ?? clientToday,
+    [clientToday, referenceDate],
+  )
   const selectedDate = useMemo(() => parseValue(value), [value])
+  const disabledDateSet = useMemo(() => new Set(disabledDates), [disabledDates])
   const normalizedMin = useMemo(() => normalizeDate(minDate), [minDate])
   const normalizedMax = useMemo(() => {
     const explicitMax = normalizeDate(maxDate)
     if (explicitMax) return explicitMax
     if (allowFutureDates) return null
-    return today
-  }, [allowFutureDates, maxDate, today])
+    return referenceDay
+  }, [allowFutureDates, maxDate, referenceDay])
   const minYear = normalizedMin?.getFullYear() ?? 1900
-  const maxYear = normalizedMax?.getFullYear() ?? today.getFullYear()
+  const maxYear = normalizedMax?.getFullYear() ?? referenceDay.getFullYear()
   const yearOptions = useMemo(() => {
     const years: number[] = []
     for (let year = maxYear; year >= minYear; year -= 1) {
@@ -113,7 +124,7 @@ export const DatePicker = ({
 
   const [isOpen, setIsOpen] = useState(false)
   const [currentView, setCurrentView] = useState<Date>(() => {
-    return selectedDate ?? today
+    return selectedDate ?? referenceDay
   })
   const containerRef = useRef<HTMLDivElement>(null)
   const popupRef = useRef<HTMLDivElement>(null)
@@ -121,8 +132,10 @@ export const DatePicker = ({
   useEffect(() => {
     if (selectedDate) {
       setCurrentView(selectedDate)
+      return
     }
-  }, [selectedDate])
+    setCurrentView(referenceDay)
+  }, [referenceDay, selectedDate])
 
   useEffect(() => {
     if (!isOpen) {
@@ -288,7 +301,9 @@ export const DatePicker = ({
 
     if (
       (normalizedMin && candidate < normalizedMin) ||
-      (normalizedMax && candidate > normalizedMax)
+      (normalizedMax && candidate > normalizedMax) ||
+      (disableSundays && candidate.getDay() === 0) ||
+      disabledDateSet.has(formatISODate(candidate))
     ) {
       return
     }
@@ -314,6 +329,8 @@ export const DatePicker = ({
     candidate.setHours(0, 0, 0, 0)
     if (normalizedMin && candidate < normalizedMin) return true
     if (normalizedMax && candidate > normalizedMax) return true
+    if (disableSundays && candidate.getDay() === 0) return true
+    if (disabledDateSet.has(formatISODate(candidate))) return true
     return false
   }
 
@@ -328,9 +345,9 @@ export const DatePicker = ({
 
   const isToday = (day: number) => {
     return (
-      today.getFullYear() === calendarDays.year &&
-      today.getMonth() === calendarDays.month &&
-      today.getDate() === day
+      referenceDay.getFullYear() === calendarDays.year &&
+      referenceDay.getMonth() === calendarDays.month &&
+      referenceDay.getDate() === day
     )
   }
 

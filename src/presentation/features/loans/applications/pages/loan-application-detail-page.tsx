@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { LoanApplicationReport } from '@/presentation/components/reports/loans/loan-application-report'
 import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
@@ -10,6 +10,8 @@ import { LoanApplicationFeesCard } from '@/presentation/features/loans/applicati
 import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applications/components/loan-application-header-card'
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
 import { LoanApplicationRequestedDataCard } from '@/presentation/features/loans/applications/components/loan-application-requested-data-card'
+import { LoanApplicationFirstDueDateCard } from '@/presentation/features/loans/applications/components/loan-application-first-due-date-card'
+import { LoanApplicationRateCard } from '@/presentation/features/loans/applications/components/loan-application-rate-card'
 import { LoanApplicationAnticipatedInstallmentSection } from '@/presentation/features/loans/applications/components/loan-application-anticipated-installment-section'
 import { useGenerateLoanApplicationScoring } from '@/presentation/features/loans/applications/hooks/use-generate-loan-application-scoring'
 import { useLoanApplicationFees } from '@/presentation/features/loans/applications/hooks/use-loan-application-fees'
@@ -37,6 +39,8 @@ import type {
 import type { LoanSchedulePreviewFormValues } from '@/infrastructure/validations/loans/loan-schedule-preview.schema'
 import type { LoanApplicationFeeOverrideFormValues } from '@/infrastructure/validations/loans/loan-application-fee-override.schema'
 import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
+import { useBusinessDate } from '@/presentation/features/system-business-date/hooks/use-business-date'
+import { useHolidays } from '@/presentation/features/organization/hooks/use-holidays'
 import {
   formatLoanApplicationScore,
   formatLoanApplicationScoringDateTime,
@@ -46,6 +50,7 @@ import {
 
 type ConfirmAction =
   | 'generate_scoring'
+  | 'refresh_product_conditions'
   | 'submit'
   | 'approve'
   | 'disburse'
@@ -67,6 +72,12 @@ export const LoanApplicationDetailPage = () => {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const options = useLoanApplicationOptions()
+  const { state: businessDateState } = useBusinessDate()
+  const { holidays } = useHolidays()
+  const activeHolidayDates = useMemo(
+    () => holidays.filter((holiday) => holiday.isActive).map((holiday) => holiday.date),
+    [holidays],
+  )
   const {
     application,
     collaterals,
@@ -109,6 +120,7 @@ export const LoanApplicationDetailPage = () => {
     setFees,
   } = useLoanApplicationFees()
   const {
+    isSaving,
     isWorkflowRunning,
     isCollateralSaving,
     isPreviewLoading,
@@ -123,6 +135,9 @@ export const LoanApplicationDetailPage = () => {
     removeCollateral,
     previewSchedule,
     saveFeeOverrides,
+    refreshProductConditions,
+    setFirstDueDate,
+    setRate,
   } = useLoanApplicationMutations()
   const canViewAnticipatedInstallment = allowedActions.includes('view_anticipated_installment')
   const anticipatedInstallment = useLoanApplicationAnticipatedInstallment(
@@ -148,6 +163,11 @@ export const LoanApplicationDetailPage = () => {
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [disburseModalOpen, setDisburseModalOpen] = useState(false)
   const [settlementPreviewOpen, setSettlementPreviewOpen] = useState(false)
+  const [productRateRange, setProductRateRange] = useState<{
+    nominalRate: number
+    minNominalRate: number
+    maxNominalRate: number
+  } | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -160,6 +180,31 @@ export const LoanApplicationDetailPage = () => {
     clearScoring()
     clearScoringHistory()
   }, [clearScoring, clearScoringHistory, id, loadById, loadFeesByApplicationId])
+
+  useEffect(() => {
+    if (!application?.loanProductId) {
+      setProductRateRange(null)
+      return
+    }
+
+    let active = true
+    void options.getLoanProductDisplayInfo(application.loanProductId).then((display) => {
+      if (!active) return
+      setProductRateRange(
+        display
+          ? {
+              nominalRate: display.nominalRate,
+              minNominalRate: display.minNominalRate,
+              maxNominalRate: display.maxNominalRate,
+            }
+          : null,
+      )
+    })
+
+    return () => {
+      active = false
+    }
+  }, [application?.loanProductId, options.getLoanProductDisplayInfo])
 
   useEffect(() => {
     void loadApprovedLoan(application?.approvedLoanId ?? null)
@@ -176,6 +221,8 @@ export const LoanApplicationDetailPage = () => {
   ].join(':')
   const canPreview = hasAction('preview_schedule')
   const canGenerateScoring = !isDraftApplication && hasAction('generate_scoring')
+  const canSetFirstDueDate = hasAction('set_first_due_date')
+  const canSetRate = hasAction('set_rate')
   const canViewScoring = !isDraftApplication && hasAction('view_scoring')
   const canViewScoringHistory = !isDraftApplication && hasAction('view_scoring_history')
 
@@ -277,6 +324,7 @@ export const LoanApplicationDetailPage = () => {
   }
 
   const canEdit = hasAction('update_draft')
+  const canRefreshProductConditions = hasAction('refresh_product_conditions')
   const canSubmit = hasAction('submit')
   const canApprove = hasAction('approve')
   const canDisburse = hasAction('disburse')
@@ -289,6 +337,9 @@ export const LoanApplicationDetailPage = () => {
   const canPrint = hasAction('print')
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
+  const requiresProductConditionsReview = Boolean(
+    application.productConditionsStale || application.productConditionsReviewRequired,
+  )
   const canManageAnticipatedInstallment = hasAction('manage_anticipated_installment')
   const shouldShowAnticipatedInstallment =
     canViewAnticipatedInstallment || anticipatedInstallment.data !== null
@@ -415,7 +466,7 @@ export const LoanApplicationDetailPage = () => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <LoanApplicationHeaderCard
         application={application}
         canEdit={canEdit}
@@ -457,12 +508,101 @@ export const LoanApplicationDetailPage = () => {
       />
 
       {actionsError ? (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
           No fue posible resolver acciones habilitadas: {actionsError}
         </div>
       ) : null}
 
       <LoanApplicationRequestedDataCard application={application} />
+
+      {applicationStatusCode === 'SUBMITTED' ? (
+        <LoanApplicationRateCard
+          currentRate={application.requestedRateOverride}
+          productNominalRate={productRateRange?.nominalRate}
+          minRate={productRateRange?.minNominalRate}
+          maxRate={productRateRange?.maxNominalRate}
+          canEdit={canSetRate}
+          isSaving={isWorkflowRunning}
+          onSave={async (rate) => {
+            const result = await setRate(id, { requestedRateOverride: rate })
+            if (result.success) {
+              setApplication(result.data)
+              setPreview(null)
+              if (canPreview) {
+                await generatePaymentPlan()
+              }
+              setFeedback({
+                tone: 'success',
+                title: 'Tasa nominal guardada',
+                description: rate == null
+                  ? 'La solicitud volverá a utilizar la tasa nominal del producto.'
+                  : 'La tasa nominal manual quedó registrada y será utilizada en el plan de pagos y el préstamo.',
+              })
+              return
+            }
+            setFeedback({
+              tone: 'error',
+              title: 'No se pudo guardar la tasa nominal',
+              description: result.error,
+            })
+          }}
+        />
+      ) : null}
+
+      {requiresProductConditionsReview && applicationStatusCode !== 'DISBURSED' ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+          <p>
+            {application.productConditionsReviewRequired
+              ? 'Esta solicitud fue registrada antes de activar el control de condiciones del producto.'
+              : 'El producto fue actualizado después de registrar esta solicitud. Sus condiciones comerciales permanecen congeladas para conservar la trazabilidad.'}
+            {isDraftApplication
+              ? ' Revisa y refresca las condiciones antes de enviarla.'
+              : ' Devuélvela a borrador para revisarlas y volver a enviarla.'}
+          </p>
+          {isDraftApplication && canRefreshProductConditions ? (
+            <button
+              type="button"
+              className="btn-secondary px-2.5 py-1 text-xs"
+              disabled={isWorkflowRunning || isSaving}
+              onClick={() => openConfirmModal('refresh_product_conditions')}
+            >
+              Refrescar condiciones
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {(isDraftApplication || applicationStatusCode === 'SUBMITTED' || Boolean(application.firstDueDate)) ? (
+        <LoanApplicationFirstDueDateCard
+          firstDueDate={application.firstDueDate}
+          businessDate={businessDateState?.businessDate}
+          disabledDates={activeHolidayDates}
+          canEdit={canSetFirstDueDate}
+          isSaving={isWorkflowRunning}
+          onSave={async (firstDueDate) => {
+            const result = await setFirstDueDate(id, { firstDueDate })
+            if (result.success) {
+              setApplication(result.data)
+              setPreview(null)
+              await refreshApplicationState()
+              if (canPreview) {
+                await generatePaymentPlan()
+              }
+              setFeedback({
+                tone: 'success',
+                title: 'Primera fecha de cuota guardada',
+                description: 'La fecha quedó registrada y será utilizada al aprobar y desembolsar.',
+              })
+              return
+            }
+            setFeedback({
+              tone: 'error',
+              title: 'No se pudo guardar la primera fecha de cuota',
+              description: result.error,
+            })
+          }}
+        />
+      ) : null}
 
       {shouldShowAnticipatedInstallment ? (
         <LoanApplicationAnticipatedInstallmentSection
@@ -484,8 +624,8 @@ export const LoanApplicationDetailPage = () => {
       ) : null}
 
       {(canViewScoring || canViewScoringHistory) ? (
-        <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+        <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
@@ -493,7 +633,7 @@ export const LoanApplicationDetailPage = () => {
                 </h2>
                 {scoring ? (
                   <span
-                    className={`inline-flex rounded-full border px-2 py-1 text-[11px] font-semibold ${resolveLoanApplicationScoringVariantClasses(
+                    className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${resolveLoanApplicationScoringVariantClasses(
                       scoring.uiVariant,
                     )}`}
                   >
@@ -504,7 +644,7 @@ export const LoanApplicationDetailPage = () => {
                   </span>
                 ) : null}
               </div>
-              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                 {isScoringLoading
                   ? 'Consultando scoring vigente...'
                   : scoring
@@ -514,11 +654,11 @@ export const LoanApplicationDetailPage = () => {
                     : scoringError || 'Disponible para consulta en ventana modal.'}
               </p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {canViewScoring ? (
                 <button
                   type="button"
-                  className="btn-secondary px-3 py-2 text-sm"
+                  className="btn-secondary px-2.5 py-1 text-xs"
                   onClick={() => openScoringModal('current')}
                 >
                   Ver scoring
@@ -527,7 +667,7 @@ export const LoanApplicationDetailPage = () => {
               {canViewScoringHistory ? (
                 <button
                   type="button"
-                  className="btn-secondary px-3 py-2 text-sm"
+                  className="btn-secondary px-2.5 py-1 text-xs"
                   onClick={() => openScoringModal('history')}
                 >
                   Ver historial
@@ -599,7 +739,7 @@ export const LoanApplicationDetailPage = () => {
       <div className="flex justify-end">
         <button
           type="button"
-          className="btn-secondary px-4 py-2 text-sm"
+          className="btn-secondary px-3 py-1.5 text-xs"
           onClick={() => navigate('/loans/applications')}
         >
           Volver al listado
@@ -651,6 +791,8 @@ export const LoanApplicationDetailPage = () => {
           void generatePaymentPlan(values)
         }}
         listPaymentFrequencies={() => options.listPaymentFrequencies()}
+        referenceDate={businessDateState?.businessDate}
+        disabledDates={activeHolidayDates}
         initialValues={{
           principalOverride: application.requestedPrincipal,
           termOverride: application.requestedTerm,
@@ -659,7 +801,7 @@ export const LoanApplicationDetailPage = () => {
             application.requestedRateOverride == null
               ? null
               : mapRateToPercentValue(application.requestedRateOverride),
-          firstDueDateOverride: null,
+          firstDueDateOverride: application.firstDueDate ?? null,
         }}
         termUnitName={application.requestedTermUnitName}
         applicationLabel={application.applicationNo || application.id.slice(0, 8)}
@@ -686,27 +828,43 @@ export const LoanApplicationDetailPage = () => {
         title={
           confirmAction === 'generate_scoring'
             ? 'Generar scoring crediticio'
-            : confirmAction === 'submit'
-            ? 'Enviar solicitud'
-            : confirmAction === 'approve'
-              ? 'Aprobar solicitud'
-              : confirmAction === 'reject'
-                ? 'Rechazar solicitud'
-                : confirmAction === 'return_to_draft'
-                  ? 'Devolver a borrador'
-                : 'Cancelar solicitud'
+            : confirmAction === 'refresh_product_conditions'
+              ? 'Refrescar condiciones del producto'
+              : confirmAction === 'submit'
+                ? 'Enviar solicitud'
+                : confirmAction === 'approve'
+                  ? 'Aprobar solicitud'
+                  : confirmAction === 'reject'
+                    ? 'Rechazar solicitud'
+                    : confirmAction === 'return_to_draft'
+                      ? 'Devolver a borrador'
+                      : 'Cancelar solicitud'
         }
         description={
           confirmAction === 'generate_scoring'
             ? 'Se generará una nueva evaluación crediticia y quedará registrada en el historial de la solicitud'
-            : confirmAction === 'return_to_draft'
-            ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
-            : confirmAction === 'reject' || confirmAction === 'cancel'
-              ? 'Esta acción cambiará el estado de la solicitud y requiere motivo.'
-              : 'Esta acción cambiará el estado de la solicitud. Puedes registrar una nota.'
+            : confirmAction === 'refresh_product_conditions'
+              ? 'Se reemplazará el snapshot de condiciones de la solicitud por la versión vigente del producto y se recalculará la información financiera visible.'
+              : confirmAction === 'return_to_draft'
+                ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
+                : confirmAction === 'reject' || confirmAction === 'cancel'
+                  ? 'Esta acción cambiará el estado de la solicitud y requiere motivo.'
+                  : 'Esta acción cambiará el estado de la solicitud. Puedes registrar una nota.'
         }
-        confirmLabel={confirmAction === 'generate_scoring' ? 'Generar' : 'Confirmar'}
-        isProcessing={confirmAction === 'generate_scoring' ? isScoringGenerating : isWorkflowRunning}
+        confirmLabel={
+          confirmAction === 'generate_scoring'
+            ? 'Generar'
+            : confirmAction === 'refresh_product_conditions'
+              ? 'Refrescar'
+              : 'Confirmar'
+        }
+        isProcessing={
+          confirmAction === 'generate_scoring'
+            ? isScoringGenerating
+            : confirmAction === 'refresh_product_conditions'
+              ? isSaving
+              : isWorkflowRunning
+        }
         onCancel={closeConfirmModal}
         onConfirm={async () => {
           if (!confirmAction) return
@@ -732,6 +890,32 @@ export const LoanApplicationDetailPage = () => {
             setFeedback({
               tone: 'error',
               title: 'No se pudo generar el scoring crediticio',
+              description: result.error,
+            })
+            return
+          }
+          if (confirmAction === 'refresh_product_conditions') {
+            const result = await refreshProductConditions(id)
+            if (result.success) {
+              setApplication(result.data)
+              setConfirmAction(null)
+              setWorkflowInput('')
+              setWorkflowInputError(null)
+              setPreview(null)
+              await refreshApplicationState()
+              if (canPreview) {
+                await generatePaymentPlan()
+              }
+              setFeedback({
+                tone: 'success',
+                title: 'Condiciones del producto refrescadas',
+                description: 'La solicitud ya utiliza la versión vigente del producto.',
+              })
+              return
+            }
+            setFeedback({
+              tone: 'error',
+              title: 'No se pudieron refrescar las condiciones',
               description: result.error,
             })
             return
@@ -804,7 +988,7 @@ export const LoanApplicationDetailPage = () => {
           })
         }}
       >
-        {confirmAction && confirmAction !== 'generate_scoring' ? (
+        {confirmAction && confirmAction !== 'generate_scoring' && confirmAction !== 'refresh_product_conditions' ? (
           <div className="space-y-1">
             <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               {reasonRequiredActions.includes(confirmAction)

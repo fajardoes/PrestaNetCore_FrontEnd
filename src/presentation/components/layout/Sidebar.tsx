@@ -6,6 +6,7 @@ import logoLight from '@/assets/logo_light.svg'
 import logoDark from '@/assets/logo_dark.svg'
 import {
   collectActiveGroups,
+  findActiveRootMenu,
   isItemActive,
   isRouteExact,
   sortMenuTree,
@@ -19,23 +20,26 @@ interface SidebarProps {
   onRetryMenus: () => void
 }
 
-const getIndentClasses = (depth: number, collapsed: boolean) => {
-  if (collapsed || depth === 0) return ''
-  if (depth === 1) {
-    return 'ml-2 border-l border-slate-200 pl-4 dark:border-slate-700/40'
-  }
-  if (depth === 2) {
-    return 'ml-4 border-l border-slate-200 pl-4 dark:border-slate-700/40'
-  }
-  return 'ml-6 border-l border-slate-200 pl-4 dark:border-slate-700/40'
-}
-
 const getSubmenuClasses = (isExpanded: boolean) => {
   return [
-    'space-y-1 overflow-hidden transition-[max-height,opacity,transform] duration-200 ease-out',
+    'grid overflow-hidden transition-[grid-template-rows,opacity] duration-150 ease-out',
     isExpanded
-      ? 'max-h-[80rem] opacity-100 translate-y-0'
-      : 'max-h-0 opacity-0 -translate-y-1 pointer-events-none',
+      ? 'grid-rows-[1fr] opacity-100'
+      : 'grid-rows-[0fr] opacity-0 pointer-events-none',
+  ].join(' ')
+}
+
+const getSubmenuContentClasses = (isExpanded: boolean, collapsed: boolean) => {
+  return [
+    'min-h-0 overflow-hidden',
+    collapsed
+      ? 'ml-1 space-y-1 pl-1'
+      : 'ml-2 space-y-1 pl-2',
+    isExpanded
+      ? collapsed
+        ? 'border-l border-slate-200/60 dark:border-slate-700/50'
+        : 'rounded-r-lg border-l-2 border-slate-200/80 bg-slate-50/60 py-1 dark:border-slate-700/70 dark:bg-slate-900/25'
+      : '',
   ].join(' ')
 }
 
@@ -47,19 +51,28 @@ export const Sidebar = ({
   onRetryMenus,
 }: SidebarProps) => {
   const location = useLocation()
-  const sidebarWidth = collapsed ? 'w-20' : 'w-64'
+  const sidebarWidth = collapsed ? 'w-20' : 'w-60'
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   const sortedMenus = useMemo(() => sortMenuTree(menus), [menus])
+  const activeRootMenu = useMemo(
+    () => findActiveRootMenu(sortedMenus, location.pathname),
+    [location.pathname, sortedMenus],
+  )
 
   useEffect(() => {
     if (!sortedMenus.length) return
     const activeGroups = new Set<string>()
-    sortedMenus.forEach((item) => {
-      collectActiveGroups(item, location.pathname, activeGroups)
-    })
+    if (activeRootMenu) {
+      collectActiveGroups(activeRootMenu, location.pathname, activeGroups)
+    }
     setExpanded((prev) => {
       const next: Record<string, boolean> = { ...prev }
+      sortedMenus.forEach((item) => {
+        if (item.id !== activeRootMenu?.id) {
+          next[item.id] = false
+        }
+      })
       activeGroups.forEach((id) => {
         next[id] = true
       })
@@ -69,7 +82,7 @@ export const Sidebar = ({
       const hasDiff = prevKeys.some((key) => prev[key] !== next[key])
       return hasDiff ? next : prev
     })
-  }, [sortedMenus, location.pathname])
+  }, [activeRootMenu, sortedMenus, location.pathname])
 
   const toggleGroup = useCallback((id: string) => {
     setExpanded((prev) => ({
@@ -79,16 +92,22 @@ export const Sidebar = ({
   }, [])
 
   const baseItemClasses =
-    'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-700 dark:hover:text-white'
+    'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-700 dark:hover:text-white'
 
   const renderItems = (items: MenuItemTreeDto[], depth: number) => {
     return items.map((item) => {
       const hasChildren = item.children.length > 0
       const isGroup = item.route === null
-      const isActive = isItemActive(item, location.pathname)
+      const isActive =
+        depth === 0
+          ? activeRootMenu?.id === item.id
+          : isItemActive(item, location.pathname)
       const isExpanded = Boolean(expanded[item.id])
-      const indentClasses = getIndentClasses(depth, collapsed)
-      const collapsedClasses = collapsed ? 'flex-col gap-2 px-2 py-3 text-xs' : ''
+      const collapsedClasses = collapsed ? 'flex-col gap-1.5 px-2 py-2.5 text-[11px]' : ''
+      const expandedGroupClasses =
+        hasChildren && isExpanded && !isActive
+          ? 'bg-slate-50/80 text-slate-700 dark:bg-slate-800/35 dark:text-slate-100'
+          : ''
       const isExactActive = isRouteExact(item.route, location.pathname)
       const activeClasses = isActive
         ? "relative bg-slate-200/70 text-slate-900 shadow-sm ring-1 ring-slate-200/70 before:absolute before:left-1 before:top-1/2 before:h-5 before:w-1 before:-translate-y-1/2 before:rounded-full before:bg-sky-500 before:content-[''] dark:bg-slate-700/40 dark:text-slate-100 dark:ring-slate-700/50 dark:before:bg-sky-400"
@@ -104,14 +123,14 @@ export const Sidebar = ({
               className={[
                 baseItemClasses,
                 collapsedClasses,
-                indentClasses,
+                expandedGroupClasses,
                 activeClasses,
               ].join(' ')}
               aria-expanded={hasChildren ? isExpanded : undefined}
             >
-              <span className="flex items-center gap-3">
-                <MenuIcon iconName={item.icon} className="h-5 w-5" />
-                {!collapsed ? <span>{item.title}</span> : null}
+              <span className="flex items-center gap-2">
+                <MenuIcon iconName={item.icon} className="h-4 w-4 shrink-0" />
+                {!collapsed ? <span className="min-w-0 truncate">{item.title}</span> : null}
               </span>
               {hasChildren ? (
                 <ChevronIcon
@@ -122,8 +141,13 @@ export const Sidebar = ({
               ) : null}
             </button>
             {hasChildren ? (
-              <div className={getSubmenuClasses(isExpanded)} aria-hidden={!isExpanded}>
-                {renderItems(item.children, depth + 1)}
+              <div
+                className={getSubmenuClasses(isExpanded)}
+                aria-hidden={!isExpanded}
+              >
+                <div className={getSubmenuContentClasses(isExpanded, collapsed)}>
+                  {renderItems(item.children, depth + 1)}
+                </div>
               </div>
             ) : null}
           </div>
@@ -143,17 +167,22 @@ export const Sidebar = ({
               return [
                 baseItemClasses,
                 collapsedClasses,
-                indentClasses,
+                expandedGroupClasses,
                 linkActiveClasses,
               ].join(' ')
             }}
           >
-            <MenuIcon iconName={item.icon} className="h-5 w-5" />
-            {!collapsed ? <span>{item.title}</span> : null}
+            <MenuIcon iconName={item.icon} className="h-4 w-4 shrink-0" />
+            {!collapsed ? <span className="min-w-0 truncate">{item.title}</span> : null}
           </NavLink>
           {hasChildren ? (
-            <div className={getSubmenuClasses(isExpanded)} aria-hidden={!isExpanded}>
-              {renderItems(item.children, depth + 1)}
+            <div
+              className={getSubmenuClasses(isExpanded)}
+              aria-hidden={!isExpanded}
+            >
+              <div className={getSubmenuContentClasses(isExpanded, collapsed)}>
+                {renderItems(item.children, depth + 1)}
+              </div>
             </div>
           ) : null}
         </div>
@@ -167,28 +196,28 @@ export const Sidebar = ({
     >
       <NavLink
         to="/"
-        className={`flex shrink-0 flex-col items-center justify-center px-3 transition-opacity hover:opacity-90 ${collapsed ? 'py-5' : 'py-6'}`}
+        className="flex shrink-0 flex-col items-center justify-center px-2.5 py-4 transition-opacity hover:opacity-90"
         aria-label="Ir al inicio"
       >
         <img
           src={logoLight}
           alt="Prestanet"
-          className={`${collapsed ? 'h-10' : 'h-12'} w-auto dark:hidden`}
+          className={`${collapsed ? 'h-9' : 'h-10'} w-auto dark:hidden`}
         />
         <img
           src={logoDark}
           alt="Prestanet"
-          className={`${collapsed ? 'h-10' : 'h-12'} hidden w-auto dark:block`}
+          className={`${collapsed ? 'h-9' : 'h-10'} hidden w-auto dark:block`}
         />
         <span
-          className={`mt-2 text-center font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-slate-200 ${
-            collapsed ? 'text-[10px]' : 'text-xs'
+          className={`mt-1 text-center font-bold uppercase tracking-[0.16em] text-slate-700 dark:text-slate-200 ${
+            collapsed ? 'text-[9px]' : 'text-[11px]'
           }`}
         >
           PRESTANET
         </span>
       </NavLink>
-      <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-3 pb-4">
+      <nav className="min-h-0 flex-1 space-y-1.5 overflow-y-auto overscroll-contain px-2.5 pb-3">
         {isLoadingMenus ? (
           <SidebarSkeleton collapsed={collapsed} />
         ) : menusError ? (
@@ -208,11 +237,11 @@ const SidebarSkeleton = ({ collapsed }: { collapsed: boolean }) => {
       {items.map((item) => (
         <div
           key={item}
-          className={`flex animate-pulse items-center rounded-md px-3 py-2 ${
-            collapsed ? 'flex-col gap-2 px-2 py-3' : 'gap-3'
+          className={`flex animate-pulse items-center rounded-md px-2.5 py-1.5 ${
+            collapsed ? 'flex-col gap-1.5 px-2 py-2.5' : 'gap-2'
           }`}
         >
-          <div className="h-5 w-5 rounded bg-slate-200 dark:bg-slate-700" />
+          <div className="h-4 w-4 rounded bg-slate-200 dark:bg-slate-700" />
           {!collapsed ? (
             <div className="h-3 w-24 rounded bg-slate-200 dark:bg-slate-700" />
           ) : null}

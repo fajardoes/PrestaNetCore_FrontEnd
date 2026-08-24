@@ -266,7 +266,18 @@ export const LoanProductDetailModal = ({
                   product.interestRateTypeId,
                 )}
               />
-              <DetailItem label="Tasa nominal" value={formatRateAsPercent(product.nominalRate)} />
+              <DetailItem
+                label="Tasa nominal predeterminada"
+                value={formatRateAsPercent(product.nominalRate)}
+              />
+              <DetailItem
+                label="Tasa mínima nominal"
+                value={formatRateAsPercent(product.minNominalRate)}
+              />
+              <DetailItem
+                label="Tasa máxima nominal"
+                value={formatRateAsPercent(product.maxNominalRate)}
+              />
               <DetailItem
                 label="Base de tasa"
                 value={buildCatalogLabel(catalogs.rateBases, product.rateBaseId)}

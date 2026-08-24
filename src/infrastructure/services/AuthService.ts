@@ -1,4 +1,7 @@
-import { httpClient } from '@/infrastructure/api/httpClient'
+import {
+  httpClient,
+  requestRefreshSession,
+} from '@/infrastructure/api/httpClient'
 import type {
   AuthUser,
   ChangePasswordWithCurrentPayload,
@@ -85,10 +88,11 @@ class AuthService {
   }
 
   async refresh(): Promise<RefreshResponse> {
-    const { data } = await httpClient.post<RefreshResponse>('/auth/refresh', undefined, {
-      skipAuthRefresh: true,
-    })
-    return data
+    const refreshed = await requestRefreshSession()
+    if (!refreshed) {
+      throw new Error('La sesión expiró o ya no está disponible.')
+    }
+    return refreshed
   }
 
   async changePasswordWithCurrent(

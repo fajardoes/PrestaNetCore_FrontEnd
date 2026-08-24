@@ -43,26 +43,21 @@ export const authApiEvents = {
   },
 }
 
-let refreshPromise: Promise<string | null> | null = null
+let refreshPromise: Promise<RefreshResponse | null> | null = null
 
-const refreshAccessToken = async (): Promise<string | null> => {
+export const requestRefreshSession = async (): Promise<RefreshResponse | null> => {
   if (refreshPromise) {
     return refreshPromise
   }
 
   refreshPromise = axios
-    .post<RefreshResponse>(
-      '/auth/refresh',
-      undefined,
-      {
-        baseURL,
-        withCredentials: true,
-      },
-    )
+    .post<RefreshResponse>('/auth/refresh', undefined, {
+      baseURL,
+      withCredentials: true,
+    })
     .then((response) => {
-      const { accessToken } = response.data
-      tokenStorage.setTokens({ accessToken })
-      return accessToken
+      tokenStorage.setTokens({ accessToken: response.data.accessToken })
+      return response.data
     })
     .catch(() => {
       tokenStorage.clearTokens()
@@ -74,6 +69,11 @@ const refreshAccessToken = async (): Promise<string | null> => {
     })
 
   return refreshPromise
+}
+
+const refreshAccessToken = async (): Promise<string | null> => {
+  const refreshed = await requestRefreshSession()
+  return refreshed?.accessToken ?? null
 }
 
 httpClient.interceptors.request.use((config) => {

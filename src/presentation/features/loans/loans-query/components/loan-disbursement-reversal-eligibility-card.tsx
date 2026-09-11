@@ -4,6 +4,8 @@ import {
   formatDate,
   formatYesNo,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import { translateDisbursementReversalMessage } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-ui'
+import { CollapsibleSection } from '@/presentation/share/components/collapsible-section'
 
 interface LoanDisbursementReversalEligibilityCardProps {
   eligibility: LoanDisbursementReversalEligibilityResponse | null
@@ -14,6 +16,8 @@ interface LoanDisbursementReversalEligibilityCardProps {
   canReadEligibility: boolean
   isProcessing?: boolean
   onOpenModal: () => void
+  collapsible?: boolean
+  defaultExpanded?: boolean
 }
 
 export const LoanDisbursementReversalEligibilityCard = ({
@@ -25,36 +29,34 @@ export const LoanDisbursementReversalEligibilityCard = ({
   canReadEligibility,
   isProcessing = false,
   onOpenModal,
+  collapsible = false,
+  defaultExpanded = true,
 }: LoanDisbursementReversalEligibilityCardProps) => {
   if (!canReadEligibility) {
     return null
   }
 
   const actionAvailable = allowedActions.includes('reverse_disbursement')
+  const actionButton = eligibility?.isEligible && actionAvailable && canExecute ? (
+    <button
+      type="button"
+      className="btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+      onClick={onOpenModal}
+      disabled={isProcessing}
+    >
+      Revertir desembolso
+    </button>
+  ) : null
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
-            Elegibilidad de reversión de desembolso
-          </h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Verifica si el préstamo puede regresar al estado de desembolso revertido sin romper
-            la trazabilidad contable.
-          </p>
-        </div>
-        {eligibility?.isEligible && actionAvailable && canExecute ? (
-          <button
-            type="button"
-            className="btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-            onClick={onOpenModal}
-            disabled={isProcessing}
-          >
-            Revertir desembolso
-          </button>
-        ) : null}
-      </div>
+    <CollapsibleSection
+      title="Elegibilidad de reversión de desembolso"
+      description="Verifica si el préstamo puede regresar al estado de desembolso revertido sin romper la trazabilidad contable."
+      aside={actionButton}
+      collapsible={collapsible}
+      defaultExpanded={defaultExpanded}
+      contentClassName="mt-0"
+    >
 
       {isLoading ? (
         <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
@@ -89,7 +91,9 @@ export const LoanDisbursementReversalEligibilityCard = ({
                 : 'La reversión está bloqueada para este préstamo.'}
             </p>
             {eligibility.recommendedAction?.trim() ? (
-              <p className="mt-1">{eligibility.recommendedAction.trim()}</p>
+              <p className="mt-1">
+                {translateDisbursementReversalMessage(eligibility.recommendedAction)}
+              </p>
             ) : null}
             {!eligibility.isEligible && !eligibility.blockingReasons.length ? (
               <p className="mt-1">
@@ -101,8 +105,8 @@ export const LoanDisbursementReversalEligibilityCard = ({
 
           {!actionAvailable ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
-              <code>GET /actions</code> no expone <code>reverse_disbursement</code> para este
-              préstamo. La UI no permite ejecutar la acción.
+              No hay una acción de reversión disponible para este préstamo. La UI no permite
+              ejecutar la operación.
             </div>
           ) : null}
 
@@ -147,7 +151,7 @@ export const LoanDisbursementReversalEligibilityCard = ({
               <p className="font-semibold">Motivos de bloqueo</p>
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 {eligibility.blockingReasons.map((reason) => (
-                  <li key={reason}>{reason}</li>
+                  <li key={reason}>{translateDisbursementReversalMessage(reason)}</li>
                 ))}
               </ul>
             </div>
@@ -158,14 +162,14 @@ export const LoanDisbursementReversalEligibilityCard = ({
               <p className="font-semibold">Advertencias</p>
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 {eligibility.warnings.map((warning) => (
-                  <li key={warning}>{warning}</li>
+                  <li key={warning}>{translateDisbursementReversalMessage(warning)}</li>
                 ))}
               </ul>
             </div>
           ) : null}
         </div>
       ) : null}
-    </section>
+    </CollapsibleSection>
   )
 }
 

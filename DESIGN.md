@@ -97,6 +97,11 @@ Las páginas deben usar espacios verticales moderados, tarjetas con `rounded-xl`
 `shadow-sm`, y padding compacto (`p-3` cuando el bloque contenga información densa). Los
 formularios, métricas y encabezados deben priorizar una lectura rápida en monitores pequeños.
 
+La navegación principal se presenta en la parte superior y conserva el árbol autorizado que
+entrega el backend. Los agrupamientos de cada módulo deben definirse en la configuración de
+menús, y el frontend debe representar esa jerarquía sin inventar categorías, rutas o permisos.
+La misma jerarquía se mantiene en escritorio y móvil, usando los iconos Lucide configurados.
+
 Las tablas deben conservar scroll horizontal cuando sea necesario y usar filas compactas,
 bordes visibles y acciones de fila mediante componentes o clases compartidas.
 

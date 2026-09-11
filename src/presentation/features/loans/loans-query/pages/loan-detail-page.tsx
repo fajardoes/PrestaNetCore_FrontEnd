@@ -30,6 +30,7 @@ import {
   translateLoanApplicationStatus,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
+import { CollapsibleSection } from '@/presentation/share/components/collapsible-section'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { TableContainer } from '@/presentation/share/components/table-container'
 
@@ -186,6 +187,8 @@ export const LoanDetailPage = () => {
         <QuerySectionCard
           title="Resumen ejecutivo"
           description="Datos principales para gestión operativa, comercial y de control."
+          collapsible
+          defaultExpanded={false}
         >
           <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3">
             <QueryDetailField label="No. de préstamo" value={loan.loanNo?.trim() || '—'} />
@@ -232,6 +235,8 @@ export const LoanDetailPage = () => {
         <QuerySectionCard
           title="Indicadores de cartera"
           description="Lectura rápida del comportamiento del cronograma."
+          collapsible
+          defaultExpanded={false}
         >
           <div className="space-y-3">
             <div className="grid gap-2.5 sm:grid-cols-2">
@@ -296,15 +301,14 @@ export const LoanDetailPage = () => {
         loan.disbursementReversalReason ||
         loan.disbursementReversalJournalEntryNumber ||
         loan.disbursementReversalJournalEntryId) && (
-        <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm dark:border-amber-500/40 dark:bg-amber-500/10">
-          <h2 className="text-base font-semibold text-amber-900 dark:text-amber-100">
-            Desembolso revertido
-          </h2>
-          <p className="mt-1 text-sm text-amber-800 dark:text-amber-100">
-            Este préstamo quedó en estado final de reversión y debe tratarse como expediente
-            cerrado para operación de cartera.
-          </p>
-          <div className="mt-3 grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
+        <CollapsibleSection
+          title="Desembolso revertido"
+          description="Este préstamo quedó en estado final de reversión y debe tratarse como expediente cerrado para operación de cartera."
+          defaultExpanded={false}
+          className="border-amber-200 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10"
+          contentClassName="mt-3"
+        >
+          <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
             <QueryDetailField
               label="Fecha y hora de reversión"
               value={formatDateTime(loan.disbursementReversedAt)}
@@ -330,10 +334,10 @@ export const LoanDetailPage = () => {
               }
             />
           </div>
-        </section>
+        </CollapsibleSection>
       )}
 
-      <DisbursementSummaryCard data={loan} />
+      <DisbursementSummaryCard data={loan} collapsible defaultExpanded={false} />
 
       {canViewAnticipatedInstallment ? (
         <LoanAnticipatedInstallmentSection
@@ -345,6 +349,8 @@ export const LoanDetailPage = () => {
           canReverse={canReverseAnticipatedInstallment}
           onApply={anticipatedInstallment.apply}
           onReverse={anticipatedInstallment.reverse}
+          collapsible
+          defaultExpanded={false}
           onRefreshActions={async () => {
             await Promise.all([
               loadLoan(id, { includeEligibility: canReadEligibility }),
@@ -367,6 +373,8 @@ export const LoanDetailPage = () => {
             setMutationError(null)
             setReversalModalOpen(true)
           }}
+          collapsible
+          defaultExpanded={false}
         />
       ) : null}
 
@@ -378,11 +386,17 @@ export const LoanDetailPage = () => {
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
         <div className="space-y-4">
-          <DisbursementChargesTable charges={loan.disbursementCharges} />
+          <DisbursementChargesTable
+            charges={loan.disbursementCharges}
+            collapsible
+            defaultExpanded={false}
+          />
 
           <QuerySectionCard
             title="Plan de pagos"
             description="Seguimiento de vencimientos, montos proyectados y acceso al detalle de cada cuota."
+            collapsible
+            defaultExpanded={false}
             aside={
               <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                 <ReceiptText className="h-3.5 w-3.5" />
@@ -497,7 +511,9 @@ export const LoanDetailPage = () => {
           {loan.insurance ? (
             <QuerySectionCard
               title="Seguro programado"
-              description="Resumen del seguro cobrado al desembolso y de los cargos futuros asociados al préstamo."
+              description="Resumen del seguro cobrado al desembolso y de los cargos futuros."
+              collapsible
+              defaultExpanded={false}
             >
               <LoanInsuranceSummaryContent
                 totalDisbursementInsurance={loan.totalDisbursementInsurance}
@@ -510,6 +526,8 @@ export const LoanDetailPage = () => {
           <QuerySectionCard
             title="Políticas informativas"
             description="Referencias de reconocimiento asociadas al préstamo."
+            collapsible
+            defaultExpanded={false}
           >
             <RecognitionPolicyBadges
               interestPolicyCode={loan.interestRecognitionPolicyCode}

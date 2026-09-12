@@ -7,6 +7,7 @@ export interface IncomeStatementFilters {
   toDate?: string
   periodId?: string
   costCenterId?: string
+  withoutCostCenter: boolean
 }
 
 interface UseIncomeStatementState {
@@ -29,6 +30,7 @@ export const useIncomeStatement = () => {
       toDate: filters.toDate || undefined,
       periodId: filters.periodId || undefined,
       costCenterId: filters.costCenterId || undefined,
+      withoutCostCenter: filters.withoutCostCenter,
     })
 
     if (result.success) {

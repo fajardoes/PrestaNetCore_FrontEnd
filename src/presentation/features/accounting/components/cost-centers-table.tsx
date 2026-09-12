@@ -1,4 +1,5 @@
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
+import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
 import { AccountingStatusBadge } from './accounting-status-badge'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
@@ -7,6 +8,7 @@ const COST_CENTERS_PAGE_SIZE = 10
 
 interface CostCentersTableProps {
   costCenters: CostCenter[]
+  agencies: Agency[]
   isLoading: boolean
   error: string | null
   page: number
@@ -17,6 +19,7 @@ interface CostCentersTableProps {
 
 export const CostCentersTable = ({
   costCenters,
+  agencies,
   isLoading,
   error,
   page,
@@ -54,8 +57,25 @@ export const CostCentersTable = ({
       key: 'agency',
       header: 'Agencia',
       className: 'min-w-[165px]',
-      render: (center: CostCenter) => center.agencyId,
-      getTitle: (center: CostCenter) => center.agencyId,
+      render: (center: CostCenter) => {
+        const agency = agencies.find((item) => item.id === center.agencyId)
+        return agency ? (
+          <span className="flex flex-col">
+            <span>{agency.name}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              {agency.code}
+            </span>
+          </span>
+        ) : (
+          <span className="text-slate-500 dark:text-slate-400">
+            Agencia no disponible
+          </span>
+        )
+      },
+      getTitle: (center: CostCenter) => {
+        const agency = agencies.find((item) => item.id === center.agencyId)
+        return agency ? `${agency.name} (${agency.code})` : 'Agencia no disponible'
+      },
     },
     {
       key: 'status',

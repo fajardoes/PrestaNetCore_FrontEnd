@@ -133,6 +133,7 @@ export const CostCentersPage = () => {
 
       <CostCentersTable
         costCenters={costCenters}
+        agencies={agencies}
         isLoading={isLoading}
         error={error}
         page={page}

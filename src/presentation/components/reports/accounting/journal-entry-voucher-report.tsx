@@ -138,6 +138,7 @@ export const JournalEntryVoucherReport = ({
             <Text style={[styles.cell, styles.cellCode]}>Codigo</Text>
             <Text style={[styles.cell, styles.cellName]}>Cuenta</Text>
             <Text style={[styles.cell, styles.cellDescription]}>Descripcion</Text>
+            <Text style={[styles.cell, styles.cellCostCenter]}>Centro de costo</Text>
             <Text style={[styles.cell, styles.cellAmount]}>Debe</Text>
             <Text style={[styles.cell, styles.cellAmount]}>Haber</Text>
           </View>
@@ -155,6 +156,11 @@ export const JournalEntryVoucherReport = ({
               <Text style={[styles.cell, styles.cellDescription]}>
                 {line.description ? line.description : '-'}
               </Text>
+              <Text style={[styles.cell, styles.cellCostCenter]}>
+                {line.costCenterCode || line.costCenterName
+                  ? `${line.costCenterCode ?? ''}${line.costCenterCode && line.costCenterName ? ' - ' : ''}${line.costCenterName ?? ''}`
+                  : 'Sin centro'}
+              </Text>
               <Text style={[styles.cell, styles.cellAmount]}>
                 {formatCurrency(line.debit)}
               </Text>
@@ -169,6 +175,7 @@ export const JournalEntryVoucherReport = ({
             <Text style={[styles.cell, styles.cellDescription, styles.totalLabel]}>
               Totales
             </Text>
+            <Text style={[styles.cell, styles.cellCostCenter]}> </Text>
             <Text style={[styles.cell, styles.cellAmount, styles.totalValue]}>
               {formatCurrency(entry.totalDebit)}
             </Text>
@@ -265,6 +272,9 @@ const styles = StyleSheet.create({
   },
   cellDescription: {
     flex: 2.4,
+  },
+  cellCostCenter: {
+    flex: 1.8,
   },
   cellAmount: {
     flex: 1,

@@ -16,6 +16,7 @@ export interface TrialBalanceResultDto {
   toDate?: string
   periodId?: string | null
   costCenterId?: string | null
+  withoutCostCenter?: boolean
   costCenterName?: string | null
   rows: TrialBalanceRowDto[]
   totalOpeningBalance: number

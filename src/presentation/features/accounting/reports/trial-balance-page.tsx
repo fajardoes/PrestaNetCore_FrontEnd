@@ -22,6 +22,7 @@ const DEFAULT_VALUES: TrialBalanceReportFormValues = {
   fromDate: '',
   toDate: '',
   costCenterId: '',
+  withoutCostCenter: false,
   includeSubaccounts: true,
   includeZeroBalanceAccounts: false,
 }
@@ -30,7 +31,7 @@ export const TrialBalancePage = () => {
   const { notify } = useNotifications()
   const trialBalance = useTrialBalance()
   const periodOptions = usePeriodOptions()
-  const costCenterOptions = useCostCenterOptions()
+  const costCenterOptions = useCostCenterOptions({ isActive: null, includeDeleted: true })
   const [showPdf, setShowPdf] = useState(false)
 
   const form = useForm<TrialBalanceReportFormValues>({
@@ -55,6 +56,7 @@ export const TrialBalancePage = () => {
       fromDate: hasPeriod ? undefined : values.fromDate || undefined,
       toDate: hasPeriod ? undefined : values.toDate || undefined,
       costCenterId: values.costCenterId || undefined,
+      withoutCostCenter: values.withoutCostCenter,
       includeSubaccounts: values.includeSubaccounts,
       includeZeroBalanceAccounts: values.includeZeroBalanceAccounts,
     })
@@ -89,7 +91,9 @@ export const TrialBalancePage = () => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-slate-600 dark:text-slate-400">
-          {trialBalance.data?.costCenterName
+          {trialBalance.data?.withoutCostCenter
+            ? 'Solo líneas sin centro de costo'
+            : trialBalance.data?.costCenterName
             ? `Centro de costo: ${trialBalance.data.costCenterName}`
             : 'Todos los centros de costo'}
         </div>

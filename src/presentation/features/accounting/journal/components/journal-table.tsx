@@ -114,14 +114,14 @@ export const JournalTable = ({
     },
     {
       key: 'debit',
-      header: 'Debe',
+      header: 'Debe (asiento)',
       className: 'min-w-[105px] text-right',
       render: (entry: JournalEntryListItem) => formatAmount(entry.totalDebit),
       getTitle: (entry: JournalEntryListItem) => formatAmount(entry.totalDebit),
     },
     {
       key: 'credit',
-      header: 'Haber',
+      header: 'Haber (asiento)',
       className: 'min-w-[105px] text-right',
       render: (entry: JournalEntryListItem) => formatAmount(entry.totalCredit),
       getTitle: (entry: JournalEntryListItem) => formatAmount(entry.totalCredit),

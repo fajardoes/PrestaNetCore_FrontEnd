@@ -27,6 +27,7 @@ interface AsyncSelectFieldProps<TMeta = unknown, TIsMulti extends boolean = fals
   menuPortalTarget?: HTMLElement | null
   menuPosition?: 'absolute' | 'fixed'
   isMulti?: TIsMulti
+  isOptionDisabled?: (option: AsyncSelectOption<TMeta>) => boolean
 }
 
 const defaultNoOptions = () => 'Sin resultados'
@@ -46,6 +47,7 @@ const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
   menuPortalTarget,
   menuPosition,
   isMulti,
+  isOptionDisabled,
 }: AsyncSelectFieldProps<TMeta, TIsMulti>) => {
   return (
     <AsyncSelect
@@ -64,6 +66,7 @@ const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
       isDisabled={isDisabled}
       isLoading={isLoading}
       isMulti={isMulti}
+      isOptionDisabled={isOptionDisabled}
       classNames={reactSelectClassNames}
       menuPortalTarget={menuPortalTarget}
       menuPosition={menuPosition}

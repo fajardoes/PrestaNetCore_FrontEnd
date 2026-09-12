@@ -17,6 +17,7 @@ export interface BalanceSheetResultDto {
   toDate?: string
   periodId?: string | null
   costCenterId?: string | null
+  withoutCostCenter?: boolean
   costCenterName?: string | null
   groups: BalanceSheetGroupDto[]
   totalAssets: number

@@ -21,6 +21,12 @@ const lineSchema = yup
       .typeError('El haber debe ser un número.')
       .min(0, 'El haber no puede ser negativo.')
       .required('El haber es obligatorio.'),
+    costCenterId: yup
+      .string()
+      .optional()
+      .nullable(),
+    costCenterCode: yup.string().optional().nullable(),
+    costCenterName: yup.string().optional().nullable(),
     reference: yup
       .string()
       .trim()

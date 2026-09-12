@@ -40,6 +40,7 @@ export const JournalPage = () => {
 
   const accountsHook = usePostableAccounts({ enabled: isAdmin })
   const costCentersHook = useCostCenterOptions({ enabled: isAdmin })
+  const journalCostCentersHook = useCostCenterOptions({ enabled: isAdmin, isActive: null, includeDeleted: true })
   const periodOptionsHook = usePeriodOptions({ enabled: isAdmin })
   const postingContextHook = usePostingContext({ enabled: isAdmin })
 
@@ -179,6 +180,7 @@ export const JournalPage = () => {
           ) : null
         }
         periods={periodOptionsHook.periods}
+        costCenters={journalCostCentersHook.costCenters}
       />
 
       <JournalTable

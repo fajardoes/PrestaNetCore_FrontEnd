@@ -168,6 +168,9 @@ export const JournalEntryDetailModal = ({
                         <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                           Referencia
                         </th>
+                        <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                          Centro de costo
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -189,6 +192,11 @@ export const JournalEntryDetailModal = ({
                           </td>
                           <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
                             {line.reference || '—'}
+                          </td>
+                          <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
+                            {line.costCenterCode || line.costCenterName
+                              ? `${line.costCenterCode ?? ''}${line.costCenterCode && line.costCenterName ? ' - ' : ''}${line.costCenterName ?? ''}`
+                              : 'Sin centro'}
                           </td>
                         </tr>
                       ))}

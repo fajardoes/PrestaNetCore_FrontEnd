@@ -7,6 +7,7 @@ interface GetLedgerParams {
   fromDate?: string
   toDate?: string
   costCenterId?: string
+  withoutCostCenter?: boolean
   includeOpeningBalance?: boolean
 }
 

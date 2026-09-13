@@ -6,10 +6,13 @@ import {
   formatDisbursementChargeSource,
   formatChargeRateOrValue,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import { CollapsibleSection } from '@/presentation/share/components/collapsible-section'
 import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface DisbursementChargesTableProps {
   charges?: LoanDisbursementChargeResponse[] | null
+  collapsible?: boolean
+  defaultExpanded?: boolean
 }
 
 const isInsuranceCharge = (item: LoanDisbursementChargeResponse) =>
@@ -22,6 +25,8 @@ const isFeeCharge = (item: LoanDisbursementChargeResponse) =>
 
 export const DisbursementChargesTable = ({
   charges,
+  collapsible = false,
+  defaultExpanded = true,
 }: DisbursementChargesTableProps) => {
   const rows = charges ?? []
   const feeCharges = rows.filter(isFeeCharge)
@@ -33,16 +38,8 @@ export const DisbursementChargesTable = ({
     0,
   )
 
-  return (
-    <section className="space-y-3">
-      <div>
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-          Cargos descontados
-        </h3>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Detalle de cargos aplicados al desembolso.
-        </p>
-      </div>
+  const content = (
+    <div className="space-y-3">
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         <SummaryMetric label="Total cargos" value={formatCurrency(totalAmount)} />
         <SummaryMetric label="Total comisiones" value={formatCurrency(totalFees)} />
@@ -115,6 +112,32 @@ export const DisbursementChargesTable = ({
           </table>
         </div>
       </TableContainer>
+    </div>
+  )
+
+  if (collapsible) {
+    return (
+      <CollapsibleSection
+        title="Cargos descontados"
+        description="Detalle de cargos aplicados al desembolso."
+        defaultExpanded={defaultExpanded}
+      >
+        {content}
+      </CollapsibleSection>
+    )
+  }
+
+  return (
+    <section className="space-y-3">
+      <div>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+          Cargos descontados
+        </h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Detalle de cargos aplicados al desembolso.
+        </p>
+      </div>
+      {content}
     </section>
   )
 }

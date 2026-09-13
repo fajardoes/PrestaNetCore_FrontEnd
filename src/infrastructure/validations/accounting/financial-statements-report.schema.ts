@@ -8,6 +8,7 @@ export const financialStatementsReportSchema = yup.object({
   fromDate: yup.string().transform(emptyToUndefined).optional(),
   toDate: yup.string().transform(emptyToUndefined).optional(),
   costCenterId: yup.string().transform(emptyToUndefined).optional(),
+  withoutCostCenter: yup.boolean().required(),
 })
 
 export type FinancialStatementsReportFormValues = yup.InferType<

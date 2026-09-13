@@ -22,13 +22,14 @@ const DEFAULT_VALUES: FinancialStatementsReportFormValues = {
   fromDate: '',
   toDate: '',
   costCenterId: '',
+  withoutCostCenter: false,
 }
 
 export const IncomeStatementPage = () => {
   const { notify } = useNotifications()
   const incomeStatement = useIncomeStatement()
   const periodOptions = usePeriodOptions()
-  const costCenterOptions = useCostCenterOptions()
+  const costCenterOptions = useCostCenterOptions({ isActive: null, includeDeleted: true })
   const [showPdf, setShowPdf] = useState(false)
 
   const form = useForm<FinancialStatementsReportFormValues>({
@@ -53,6 +54,7 @@ export const IncomeStatementPage = () => {
       fromDate: hasPeriod ? undefined : values.fromDate || undefined,
       toDate: hasPeriod ? undefined : values.toDate || undefined,
       costCenterId: values.costCenterId || undefined,
+      withoutCostCenter: values.withoutCostCenter,
     })
   }
 
@@ -85,7 +87,9 @@ export const IncomeStatementPage = () => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-slate-600 dark:text-slate-400">
-          {incomeStatement.data?.costCenterName
+          {incomeStatement.data?.withoutCostCenter
+            ? 'Solo líneas sin centro de costo'
+            : incomeStatement.data?.costCenterName
             ? `Centro de costo: ${incomeStatement.data.costCenterName}`
             : 'Todos los centros de costo'}
         </div>

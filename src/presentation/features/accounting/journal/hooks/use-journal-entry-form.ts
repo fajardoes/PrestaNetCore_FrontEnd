@@ -32,6 +32,7 @@ const buildLinesPayload = (lines: JournalEntryFormValues['lines']): JournalEntry
     description: line.description?.trim() || undefined,
     debit: normalizeAmount(line.debit),
     credit: normalizeAmount(line.credit),
+    costCenterId: line.costCenterId || null,
     reference: line.reference?.trim() || undefined,
   }))
 }
@@ -41,6 +42,7 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingEntry, setIsLoadingEntry] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [legacyHeaderOnly, setLegacyHeaderOnly] = useState(false)
 
   const defaultValues = useMemo<JournalEntryFormValues>(
     () => ({
@@ -57,6 +59,7 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
           debit: 0,
           credit: 0,
           reference: '',
+          costCenterId: null,
         },
       ],
     }),
@@ -72,6 +75,7 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
     async (id: string) => {
       setIsLoadingEntry(true)
       setError(null)
+      setLegacyHeaderOnly(false)
       const result = await getJournalEntryAction(id)
 
       if (result.success) {
@@ -89,9 +93,17 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
             description: line.description ?? '',
             debit: normalizeAmount(line.debit),
             credit: normalizeAmount(line.credit),
+            costCenterId: line.costCenterId ?? null,
+            costCenterCode: line.costCenterCode ?? null,
+            costCenterName: line.costCenterName ?? null,
             reference: line.reference ?? '',
           })),
         })
+        setLegacyHeaderOnly(
+          Boolean(result.data.costCenterId)
+            && result.data.lines.length > 0
+            && result.data.lines.every((line) => !line.costCenterId),
+        )
         setIsLoadingEntry(false)
         return
       }
@@ -109,6 +121,7 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
     }
     form.reset(defaultValues)
     setError(null)
+    setLegacyHeaderOnly(false)
   }, [entryId, loadEntry, form, defaultValues])
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -130,6 +143,21 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
       }
     }
 
+    if (
+      entryId
+      && legacyHeaderOnly
+      && values.costCenterId
+      && values.lines.every((line) => !line.costCenterId)
+    ) {
+      form.setError('costCenterId', {
+        type: 'manual',
+        message: 'Este borrador histórico tiene el centro solo en la cabecera. Asígnalo a las líneas o limpia la cabecera antes de guardar.',
+      })
+      setError('Corrige la asignación histórica del centro de costo antes de guardar.')
+      setIsSaving(false)
+      return
+    }
+
     const payloadBase: CreateJournalEntryRequest = {
       date: values.date,
       eventDate: values.eventDate?.trim() ? values.eventDate : null,
@@ -139,7 +167,6 @@ export const useJournalEntryForm = (options?: UseJournalEntryFormOptions) => {
           ? values.requestedPostingPeriodId || null
           : null,
       description: values.description.trim(),
-      costCenterId: values.costCenterId ? values.costCenterId : null,
       lines: buildLinesPayload(values.lines),
     }
 

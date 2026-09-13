@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import logoDark from '@/assets/logo_dark.svg'
+import logoLight from '@/assets/logo_light.svg'
 import { ThemeToggle } from '@/presentation/components/theme/ThemeToggle'
 import { BusinessDateIndicator } from '@/presentation/components/topbar/business-date-indicator'
 import type { AuthUser } from '@/types/auth'
@@ -10,8 +12,6 @@ interface TopbarProps {
   isProcessing?: boolean
   loginPromptId?: number | null
   onLoginPromptConsumed?: () => void
-  onToggleSidebar: () => void
-  isSidebarCollapsed: boolean
 }
 
 const getInitials = (fullName: string) => {
@@ -29,8 +29,6 @@ export const Topbar = ({
   isProcessing,
   loginPromptId,
   onLoginPromptConsumed,
-  onToggleSidebar,
-  isSidebarCollapsed,
 }: TopbarProps) => {
   const navigate = useNavigate()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
@@ -80,34 +78,23 @@ export const Topbar = ({
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-300 bg-white/80 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-900/80">
-      <div
-        className="flex h-16 items-center justify-between px-4 lg:px-8"
-      >
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onToggleSidebar}
-            className="btn-icon"
-            aria-label={
-              isSidebarCollapsed
-                ? 'Expandir barra lateral'
-                : 'Colapsar barra lateral'
-            }
-          >
-            <SidebarToggleIcon
-              collapsed={isSidebarCollapsed}
-              className="h-5 w-5"
-            />
-          </button>
-          <div>
-            <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+      <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between gap-4 px-4 lg:px-8">
+        <Link
+          to="/"
+          className="flex min-w-0 items-center gap-2.5 rounded-lg px-1 py-1 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+          aria-label="Ir al inicio de PrestaNet"
+        >
+          <img src={logoLight} alt="" className="h-9 w-9 dark:hidden" />
+          <img src={logoDark} alt="" className="hidden h-9 w-9 dark:block" />
+          <span className="min-w-0">
+            <span className="block truncate text-base font-semibold text-slate-900 dark:text-slate-100">
               prestanet
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            </span>
+            <span className="hidden text-[11px] text-slate-500 dark:text-slate-400 sm:block">
               Core Financiero
-            </p>
-          </div>
-        </div>
+            </span>
+          </span>
+        </Link>
         <div className="flex items-center gap-3">
           {user ? <BusinessDateIndicator /> : null}
           <ThemeToggle />
@@ -173,48 +160,6 @@ export const Topbar = ({
         </div>
       </div>
     </header>
-  )
-}
-
-const SidebarToggleIcon = ({
-  collapsed,
-  className,
-}: {
-  collapsed: boolean
-  className?: string
-}) => {
-  if (collapsed) {
-    return (
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        className={className}
-        aria-hidden="true"
-      >
-        <path d="M9 5l7 7-7 7" />
-      </svg>
-    )
-  }
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M15 5l-7 7 7 7" />
-    </svg>
   )
 }
 

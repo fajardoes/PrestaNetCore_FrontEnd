@@ -8,6 +8,7 @@ export interface JournalFilter {
   periodId?: string
   state?: JournalEntryState
   costCenterId?: string
+  withoutCostCenter?: boolean
   source?: JournalEntrySource
   search?: string
 }

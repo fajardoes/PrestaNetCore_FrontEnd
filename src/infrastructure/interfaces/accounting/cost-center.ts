@@ -5,4 +5,5 @@ export interface CostCenter {
   slug: string
   agencyId: string
   isActive: boolean
+  isDeleted: boolean
 }

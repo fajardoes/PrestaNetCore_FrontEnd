@@ -8,6 +8,7 @@ export const trialBalanceReportSchema = yup.object({
   fromDate: yup.string().transform(emptyToUndefined).optional(),
   toDate: yup.string().transform(emptyToUndefined).optional(),
   costCenterId: yup.string().transform(emptyToUndefined).optional(),
+  withoutCostCenter: yup.boolean().required(),
   includeSubaccounts: yup.boolean().required(),
   includeZeroBalanceAccounts: yup.boolean().required(),
 })

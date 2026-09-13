@@ -3,7 +3,7 @@ import type { ChangeEvent, KeyboardEvent } from 'react'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
 import type { JournalEntryFormValues } from '@/infrastructure/validations/accounting/journal-entry.schema'
-import AsyncSelect from '@/presentation/share/components/async-select'
+import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
 import { formatAccountingDate, getPeriodLabel } from '@/presentation/features/accounting/accounting-ui'
@@ -101,7 +101,23 @@ export const JournalEntryFormModal = ({
   const costCenterOptions = costCenters.map((center) => ({
     value: center.id,
     label: `${center.code} - ${center.name}`,
+    meta: { selectable: true },
   }))
+  const lineCostCenterOptions: Array<AsyncSelectOption<{ selectable: boolean }>> = [
+    ...costCenterOptions,
+    ...watchedLines.flatMap((line) => {
+      if (!line?.costCenterId) return []
+      return [{
+        value: line.costCenterId,
+        label: line.costCenterCode || line.costCenterName
+          ? `${line.costCenterCode ?? ''}${line.costCenterCode && line.costCenterName ? ' - ' : ''}${line.costCenterName ?? ''} (histórico)`
+          : 'Centro histórico (metadata no disponible)',
+        meta: { selectable: false },
+      }]
+    }),
+  ].filter((option, index, options) =>
+    options.findIndex((candidate) => candidate.value === option.value) === index,
+  )
   const postingModeOptions = [
     { value: 'MANUAL_REGULAR', label: 'Asiento manual regular' },
     { value: 'MANUAL_ADJUSTMENT', label: 'Ajuste manual' },
@@ -276,18 +292,26 @@ export const JournalEntryFormModal = ({
                   htmlFor="costCenterId"
                   className="block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
-                  Centro de costo (opcional)
+                  Aplicar centro a todas las líneas
                 </label>
                 <AsyncSelect
                   value={
                     costCenterOptions.find((option) => option.value === selectedCostCenterId) ??
                     null
                   }
-                  onChange={(option) =>
-                    setValue('costCenterId', option?.value ?? '', {
+                  onChange={(option) => {
+                    const nextCostCenterId = option?.value ?? null
+                    setValue('costCenterId', nextCostCenterId ?? '', {
                       shouldValidate: true,
+                      shouldDirty: true,
                     })
-                  }
+                    watchedLines.forEach((_, lineIndex) => {
+                      setValue(`lines.${lineIndex}.costCenterId` as const, nextCostCenterId, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    })
+                  }}
                   loadOptions={(inputValue) => filterOptions(costCenterOptions, inputValue)}
                   inputId="costCenterId"
                   instanceId="accounting-journal-entry-cost-center-id"
@@ -298,6 +322,9 @@ export const JournalEntryFormModal = ({
                   noOptionsMessage="Sin centros de costo"
                 />
                 <input type="hidden" {...register('costCenterId')} />
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Solo modifica las líneas actuales; las nuevas líneas comienzan sin centro. Un borrador histórico con centro solo en cabecera debe corregirse en las líneas.
+                </p>
                 {errors.costCenterId ? (
                   <p className="text-xs text-red-500">
                     {errors.costCenterId.message}
@@ -388,6 +415,9 @@ export const JournalEntryFormModal = ({
                       </th>
                       <th className="w-[220px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Referencia
+                      </th>
+                      <th className="w-[260px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Centro de costo
                       </th>
                       <th className="w-[96px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Acción
@@ -496,6 +526,38 @@ export const JournalEntryFormModal = ({
                               disabled={isSaving}
                             />
                           </td>
+                          <td className="min-w-[260px] px-4 py-3 text-sm">
+                            <AsyncSelect<{ selectable: boolean }>
+                              value={
+                                lineCostCenterOptions.find(
+                                  (option) => option.value === watchedLines[index]?.costCenterId,
+                                ) ?? null
+                              }
+                              onChange={(option) =>
+                                setValue(
+                                  `lines.${index}.costCenterId` as const,
+                                  option?.value ?? null,
+                                  { shouldValidate: true, shouldDirty: true },
+                                )
+                              }
+                              loadOptions={(inputValue) =>
+                                filterOptions(lineCostCenterOptions, inputValue)
+                              }
+                              isOptionDisabled={(option) => option.meta?.selectable === false}
+                              instanceId={`accounting-journal-entry-line-cost-center-${index}`}
+                              isDisabled={isSaving}
+                              defaultOptions={lineCostCenterOptions}
+                              isClearable
+                              menuPortalTarget={menuPortalTarget}
+                              menuPosition="fixed"
+                              placeholder="Sin centro"
+                              noOptionsMessage="Sin centros de costo"
+                            />
+                            <input
+                              type="hidden"
+                              {...register(`lines.${index}.costCenterId` as const)}
+                            />
+                          </td>
                           <td className="px-4 py-3 text-right text-sm">
                             <button
                               type="button"
@@ -530,6 +592,7 @@ export const JournalEntryFormModal = ({
                     debit: 0,
                     credit: 0,
                     reference: '',
+                    costCenterId: null,
                   })
                 }
                 className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"

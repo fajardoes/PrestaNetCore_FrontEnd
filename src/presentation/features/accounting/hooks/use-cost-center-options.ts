@@ -10,8 +10,10 @@ interface UseCostCenterOptionsState {
   error: string | null
 }
 
-export const useCostCenterOptions = (options?: { enabled?: boolean }) => {
+export const useCostCenterOptions = (options?: { enabled?: boolean; isActive?: boolean | null; includeDeleted?: boolean }) => {
   const enabled = options?.enabled ?? true
+  const isActive = options?.isActive === null ? undefined : options?.isActive ?? true
+  const includeDeleted = options?.includeDeleted ?? false
   const [state, setState] = useState<UseCostCenterOptionsState>({
     items: [],
     isLoading: false,
@@ -25,18 +27,31 @@ export const useCostCenterOptions = (options?: { enabled?: boolean }) => {
     }
 
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
-    const result = await listCostCentersAction({
-      page: 1,
-      pageSize: DEFAULT_PAGE_SIZE,
-      isActive: true,
-    })
+    const items: CostCenter[] = []
+    let page = 1
+    let totalCount = 0
 
-    if (result.success) {
-      setState({ items: result.data.items, isLoading: false, error: null })
-    } else {
-      setState({ items: [], isLoading: false, error: result.error })
+    while (page === 1 || items.length < totalCount) {
+      const result = await listCostCentersAction({
+        page,
+        pageSize: DEFAULT_PAGE_SIZE,
+        ...(isActive === undefined ? {} : { isActive }),
+        ...(includeDeleted ? { includeDeleted: true } : {}),
+      })
+
+      if (!result.success) {
+        setState({ items: [], isLoading: false, error: result.error })
+        return
+      }
+
+      items.push(...result.data.items)
+      totalCount = result.data.totalCount
+      if (result.data.items.length === 0) break
+      page += 1
     }
-  }, [enabled])
+
+    setState({ items, isLoading: false, error: null })
+  }, [enabled, includeDeleted, isActive])
 
   useEffect(() => {
     void fetchCostCenters()

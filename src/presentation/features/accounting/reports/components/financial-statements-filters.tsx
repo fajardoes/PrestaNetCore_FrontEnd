@@ -36,6 +36,7 @@ export const FinancialStatementsFilters = ({
   } = form
   const selectedPeriod = watch('periodId')
   const selectedCostCenterId = watch('costCenterId')
+  const withoutCostCenter = watch('withoutCostCenter')
   const fromDate = watch('fromDate')
   const toDate = watch('toDate')
   const disableDates = Boolean(selectedPeriod)
@@ -49,10 +50,14 @@ export const FinancialStatementsFilters = ({
   )
   const costCenterOptions = useMemo(
     () =>
-      costCenters.map((center) => ({
-        value: center.id,
-        label: `${center.code} - ${center.name}`,
-      })),
+      [
+        { value: '', label: 'Todos los centros de costo' },
+        { value: '__without_cost_center__', label: 'Sin centro de costo' },
+        ...costCenters.map((center) => ({
+          value: center.id,
+          label: `${center.code} - ${center.name}${center.isActive ? '' : ' (Inactivo)'}${center.isDeleted ? ' (Eliminado)' : ''}`,
+        })),
+      ],
     [costCenters],
   )
   const filterOptions = async (
@@ -164,12 +169,21 @@ export const FinancialStatementsFilters = ({
           </label>
           <AsyncSelect
             value={
-              costCenterOptions.find((option) => option.value === selectedCostCenterId) ??
-              null
+              costCenterOptions.find((option) =>
+                withoutCostCenter
+                  ? option.value === '__without_cost_center__'
+                  : option.value === selectedCostCenterId,
+              ) ?? null
             }
-            onChange={(option) =>
-              setValue('costCenterId', option?.value ?? '', { shouldValidate: true })
-            }
+            onChange={(option) => {
+              const value = option?.value ?? ''
+              setValue('costCenterId', value === '__without_cost_center__' ? '' : value, {
+                shouldValidate: true,
+              })
+              setValue('withoutCostCenter', value === '__without_cost_center__', {
+                shouldValidate: true,
+              })
+            }}
             loadOptions={(inputValue) => filterOptions(costCenterOptions, inputValue)}
             inputId="costCenterId"
             instanceId="accounting-financial-statements-cost-center-id"
@@ -180,6 +194,7 @@ export const FinancialStatementsFilters = ({
             noOptionsMessage="Sin centros de costo"
           />
           <input type="hidden" {...register('costCenterId')} />
+          <input type="hidden" {...register('withoutCostCenter')} />
         </div>
       </div>
 

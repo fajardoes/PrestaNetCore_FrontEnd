@@ -13,6 +13,8 @@ export interface JournalFiltersState {
   periodId: string
   state: JournalStateFilter
   source: JournalSourceFilter
+  costCenterId: string
+  withoutCostCenter: boolean
   search: string
 }
 
@@ -30,6 +32,8 @@ const defaultFilters: JournalFiltersState = {
   periodId: '',
   state: 'all',
   source: 'all',
+  costCenterId: '',
+  withoutCostCenter: false,
   search: '',
 }
 
@@ -68,6 +72,8 @@ export const useJournalList = (options?: { enabled?: boolean }) => {
         periodId: nextFilters.periodId || undefined,
         state: nextFilters.state === 'all' ? undefined : nextFilters.state,
         source: nextFilters.source === 'all' ? undefined : nextFilters.source,
+        costCenterId: nextFilters.costCenterId || undefined,
+        withoutCostCenter: nextFilters.withoutCostCenter || undefined,
         search: nextFilters.search.trim() || undefined,
       })
 

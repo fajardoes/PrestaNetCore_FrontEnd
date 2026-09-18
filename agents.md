@@ -171,3 +171,10 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
 - Para módulos futuros (ej. contabilidad), seguir el mismo patrón con su endpoint `GET /api/<modulo>/.../actions`.
 - En UI de frontend, evitar mostrar textos funcionales en ingles al usuario final. Si backend envia nombres/descripciones de permisos o estados en ingles (ej. `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`, `CANCELLED`), mostrar su equivalente en espanol en la interfaz.
 - En `security/role-permissions`, mantener visible el `permission.code` como dato tecnico, pero el `name/description` y labels de agrupacion deben presentarse en espanol.
+
+## Historial de menús recientes
+
+- La navegación autenticada integra una barra secundaria de menús recientes debajo del menú horizontal.
+- `useRecentMenus` toma sus elementos exclusivamente del árbol autorizado `MenuItemTreeDto[]`, identifica la mejor coincidencia de ruta y conserva como máximo seis accesos por usuario en `localStorage` bajo `prestanet:recent-menus:{userId}`.
+- La visibilidad de la barra se conserva de forma independiente por usuario bajo `prestanet:recent-menus-visibility:{userId}`.
+- Las rutas profundas (detalles, edición y creación) se asocian a la opción autorizada más específica disponible; los accesos almacenados se vuelven a validar contra el árbol actual antes de mostrarse.

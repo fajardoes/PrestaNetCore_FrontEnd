@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react'
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useState, type MouseEvent, type ReactNode } from 'react'
 
 interface CollapsibleSectionProps {
   title: string
@@ -8,8 +8,10 @@ interface CollapsibleSectionProps {
   children: ReactNode
   collapsible?: boolean
   defaultExpanded?: boolean
+  surfaceClassName?: string
   className?: string
   contentClassName?: string
+  titleClassName?: string
 }
 
 export const CollapsibleSection = ({
@@ -19,15 +21,37 @@ export const CollapsibleSection = ({
   children,
   collapsible = true,
   defaultExpanded = true,
+  surfaceClassName,
   className,
   contentClassName,
+  titleClassName,
 }: CollapsibleSectionProps) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const contentId = useId()
+  const toggleExpanded = () => setIsExpanded((expanded) => !expanded)
+  const handleSectionClick = (event: MouseEvent<HTMLElement>) => {
+    if (!collapsible) return
+
+    const target = event.target
+    if (
+      target instanceof Element &&
+      target.closest(
+        'button, a, input, select, textarea, [role="button"], [data-collapsible-content]',
+      )
+    ) {
+      return
+    }
+
+    toggleExpanded()
+  }
 
   const headerContent = (
     <div className="min-w-0">
-      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+      <h2
+        className={`${titleClassName ?? 'text-base'} font-semibold text-slate-900 dark:text-slate-100`}
+      >
+        {title}
+      </h2>
       {description ? (
         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{description}</p>
       ) : null}
@@ -36,8 +60,10 @@ export const CollapsibleSection = ({
 
   return (
     <section
+      onClick={handleSectionClick}
       className={[
-        'rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950',
+        'rounded-xl border border-slate-200 p-4 shadow-sm dark:border-slate-800',
+        surfaceClassName ?? 'bg-white dark:bg-slate-950',
         className ?? '',
       ]
         .filter(Boolean)
@@ -50,7 +76,7 @@ export const CollapsibleSection = ({
             className="min-w-0 flex-1 cursor-pointer rounded-md text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
             aria-expanded={isExpanded}
             aria-controls={contentId}
-            onClick={() => setIsExpanded((expanded) => !expanded)}
+            onClick={toggleExpanded}
           >
             {headerContent}
           </button>
@@ -67,7 +93,7 @@ export const CollapsibleSection = ({
               aria-label={`${isExpanded ? 'Contraer' : 'Expandir'} ${title}`}
               aria-expanded={isExpanded}
               aria-controls={contentId}
-              onClick={() => setIsExpanded((expanded) => !expanded)}
+              onClick={toggleExpanded}
             >
               <span className="hidden sm:inline">{isExpanded ? 'Contraer' : 'Expandir'}</span>
               <ChevronDown
@@ -82,7 +108,11 @@ export const CollapsibleSection = ({
       </div>
 
       {!collapsible || isExpanded ? (
-        <div id={collapsible ? contentId : undefined} className={contentClassName ?? 'mt-3'}>
+        <div
+          id={collapsible ? contentId : undefined}
+          data-collapsible-content={collapsible ? true : undefined}
+          className={contentClassName ?? 'mt-3'}
+        >
           {children}
         </div>
       ) : null}

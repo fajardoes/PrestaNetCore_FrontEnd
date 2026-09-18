@@ -11,6 +11,7 @@ import { FeesEditor } from '@/presentation/features/loans/products/components/fe
 import { InsurancesEditor } from '@/presentation/features/loans/products/components/insurances-editor'
 import { CollateralRulesEditor } from '@/presentation/features/loans/products/components/collateral-rules-editor'
 import { GlAccountsSelector } from '@/presentation/features/loans/products/components/gl-accounts-selector'
+import { CollapsibleSection } from '@/presentation/share/components/collapsible-section'
 import AsyncSelect, {
   type AsyncSelectOption,
 } from '@/presentation/share/components/async-select'
@@ -170,7 +171,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.termUnits.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.termUnits],
@@ -179,7 +180,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.interestRateTypes.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.interestRateTypes],
@@ -188,7 +189,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.rateBases.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.rateBases],
@@ -197,7 +198,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.amortizationMethods.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.amortizationMethods],
@@ -206,7 +207,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.paymentFrequencies.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.paymentFrequencies],
@@ -215,7 +216,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.portfolioTypes.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.portfolioTypes],
@@ -224,7 +225,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.dayRules.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.dayRules],
@@ -233,7 +234,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.roundingModes.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.roundingModes],
@@ -242,7 +243,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.holidayAdjustmentRules.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.holidayAdjustmentRules],
@@ -309,24 +310,28 @@ export const LoanProductForm = ({
   })
 
   return (
-    <form className="space-y-4" onSubmit={submitHandler} noValidate>
+    <form className="space-y-3" onSubmit={submitHandler} noValidate>
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-100">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-100">
           {error}
         </div>
       ) : null}
 
       {catalogsError ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/10 dark:text-amber-100">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/10 dark:text-amber-100">
           {catalogsError}
         </div>
       ) : null}
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Datos generales
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <CollapsibleSection
+        title="Datos generales"
+        defaultExpanded
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-sky-50/70 via-white/90 to-slate-50/80 dark:from-sky-950/30 dark:via-slate-950/80 dark:to-slate-900/80"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2"
+      >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Código
@@ -380,13 +385,17 @@ export const LoanProductForm = ({
             </label>
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Condiciones
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <CollapsibleSection
+        title="Condiciones"
+        defaultExpanded={false}
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-slate-50/90 via-white/85 to-sky-50/40 dark:from-slate-900/85 dark:via-slate-950/80 dark:to-sky-950/20"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2"
+      >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Moneda
@@ -496,13 +505,17 @@ export const LoanProductForm = ({
             ) : null}
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Interés y amortización
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <CollapsibleSection
+        title="Interés y amortización"
+        defaultExpanded={false}
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-sky-50/50 via-white/90 to-slate-50/75 dark:from-sky-950/20 dark:via-slate-950/85 dark:to-slate-900/75"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2 space-y-2"
+      >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Tipo de tasa
@@ -719,13 +732,17 @@ export const LoanProductForm = ({
           La tasa nominal predeterminada debe estar entre la tasa mínima y la máxima. Para una
           tasa fija, usa el mismo valor en los tres campos.
         </p>
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Garantías y seguros
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <CollapsibleSection
+        title="Garantías y seguros"
+        defaultExpanded={false}
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-slate-50/80 via-white/85 to-sky-50/35 dark:from-slate-900/80 dark:via-slate-950/85 dark:to-sky-950/15"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2 space-y-2"
+      >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200">
               <input
@@ -773,13 +790,17 @@ export const LoanProductForm = ({
             Has marcado que tiene seguro, pero no hay seguros agregados.
           </p>
         ) : null}
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Regulación
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <CollapsibleSection
+        title="Regulación"
+        defaultExpanded={false}
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-sky-50/45 via-white/90 to-slate-50/70 dark:from-sky-950/20 dark:via-slate-950/85 dark:to-slate-900/70"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2"
+      >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Tipo de cartera
@@ -899,13 +920,17 @@ export const LoanProductForm = ({
             ) : null}
           </div>
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Mapeo contable (GL)
-        </h3>
-        <div className="grid grid-cols-1 gap-3">
+      <CollapsibleSection
+        title="Mapeo contable (GL)"
+        defaultExpanded={false}
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-slate-100/70 via-white/85 to-slate-50/80 dark:from-slate-900/90 dark:via-slate-950/85 dark:to-slate-900/80"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2"
+      >
+        <div className="grid grid-cols-1 gap-2">
           <input type="hidden" {...register('glLoanPortfolioAccountId')} />
           <input type="hidden" {...register('glInterestIncomeAccountId')} />
           <input type="hidden" {...register('glInterestReceivableAccountId')} />
@@ -1029,9 +1054,17 @@ export const LoanProductForm = ({
             </p>
           ) : null}
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <CollapsibleSection
+        title="Comisiones/Cargos"
+        description="Agrega comisiones y activa o inactiva según aplique."
+        defaultExpanded={false}
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-sky-50/40 via-white/90 to-slate-50/70 dark:from-sky-950/15 dark:via-slate-950/85 dark:to-slate-900/70"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2"
+      >
         <FeesEditor
           control={control}
           errors={errors}
@@ -1042,9 +1075,17 @@ export const LoanProductForm = ({
           feeValueTypes={catalogs.feeValueTypes}
           feeChargeTimings={catalogs.feeChargeTimings}
         />
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <CollapsibleSection
+        title="Seguros"
+        description="Configura seguros y activa o inactiva según el producto."
+        defaultExpanded={false}
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-slate-50/85 via-white/85 to-sky-50/30 dark:from-slate-900/85 dark:via-slate-950/85 dark:to-sky-950/15"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2"
+      >
         <InsurancesEditor
           control={control}
           errors={errors}
@@ -1055,9 +1096,17 @@ export const LoanProductForm = ({
           insuranceValueTypes={catalogs.insuranceValueTypes}
           insuranceChargeTimings={catalogs.insuranceChargeTimings}
         />
-      </section>
+      </CollapsibleSection>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <CollapsibleSection
+        title="Reglas de garantías"
+        description="Define ratio mínimo y estado para cada tipo."
+        defaultExpanded={false}
+        titleClassName="text-xs"
+        surfaceClassName="bg-gradient-to-br from-sky-50/35 via-white/90 to-slate-50/65 dark:from-sky-950/15 dark:via-slate-950/85 dark:to-slate-900/65"
+        className="rounded-lg p-2 shadow-none"
+        contentClassName="mt-2"
+      >
         <CollateralRulesEditor
           control={control}
           errors={errors}
@@ -1065,12 +1114,12 @@ export const LoanProductForm = ({
           allowRemove={!isEdit}
           collateralTypes={catalogs.collateralTypes}
         />
-      </section>
+      </CollapsibleSection>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
-          className="btn-secondary px-4 py-2 text-sm"
+          className="btn-secondary px-4 py-1.5 text-sm"
           onClick={onCancel}
           disabled={isSaving}
         >
@@ -1078,7 +1127,7 @@ export const LoanProductForm = ({
         </button>
         <button
           type="submit"
-          className="btn-primary px-4 py-2 text-sm"
+          className="btn-primary px-4 py-1.5 text-sm"
           disabled={isSaving}
         >
           {isSaving ? 'Guardando...' : 'Guardar'}

@@ -31,7 +31,7 @@ const defaultValues: FeeFormValues = {
 }
 
 const toNumberValue = (value: string) => (value === '' ? undefined : Number(value))
-const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
+const getOptionLabel = (item: LoanCatalogItemDto) => item.name
 const filterOptions = (
   options: AsyncSelectOption<LoanCatalogItemDto>[],
   inputValue: string,

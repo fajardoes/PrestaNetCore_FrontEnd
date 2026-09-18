@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import type { MenuItemTreeDto } from '@/infrastructure/interfaces/security/menu'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
-import { isRouteActive, sortMenuTree } from './menu-tree'
+import { findBestMenuItem, sortMenuTree } from './menu-tree'
 
 interface HorizontalModuleMenuProps {
   menus: MenuItemTreeDto[]
@@ -31,7 +31,7 @@ export const HorizontalModuleMenu = ({
 
   const sortedMenus = useMemo(() => sortMenuTree(menus), [menus])
   const activeMenuItemId = useMemo(
-    () => findBestActiveMenuItemId(sortedMenus, location.pathname),
+    () => findBestMenuItem(sortedMenus, location.pathname)?.id ?? null,
     [location.pathname, sortedMenus],
   )
 
@@ -126,7 +126,7 @@ export const HorizontalModuleMenu = ({
   if (!sortedMenus.length) return null
 
   return (
-    <div className="sticky top-16 z-30 border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+    <div className="border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
       <div ref={containerRef} className="mx-auto w-full max-w-screen-2xl px-4 lg:px-8">
         <nav
           aria-label="Navegación principal"
@@ -472,31 +472,6 @@ const MobileMenuEntries = ({
     })}
   </>
 )
-
-const findBestActiveMenuItemId = (
-  items: MenuItemTreeDto[],
-  pathname: string,
-): string | null => {
-  let activeItemId: string | null = null
-  let bestRouteLength = -1
-
-  const visit = (nodes: MenuItemTreeDto[]) => {
-    nodes.forEach((item) => {
-      if (isRouteActive(item.route, pathname)) {
-        const routeLength = item.route?.length ?? 0
-        if (routeLength > bestRouteLength) {
-          activeItemId = item.id
-          bestRouteLength = routeLength
-        }
-      }
-
-      visit(item.children)
-    })
-  }
-
-  visit(items)
-  return activeItemId
-}
 
 const containsMenuItem = (
   item: MenuItemTreeDto,

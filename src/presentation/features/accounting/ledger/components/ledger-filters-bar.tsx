@@ -36,10 +36,14 @@ export const LedgerFiltersBar = ({
   )
   const costCenterOptions = useMemo(
     () =>
-      costCenters.map((center) => ({
-        value: center.id,
-        label: `${center.code} - ${center.name}`,
-      })),
+      [
+        { value: '', label: 'Todos los centros de costo' },
+        { value: '__without_cost_center__', label: 'Sin centro de costo' },
+        ...costCenters.map((center) => ({
+          value: center.id,
+          label: `${center.code} - ${center.name}${center.isActive ? '' : ' (Inactivo)'}${center.isDeleted ? ' (Eliminado)' : ''}`,
+        })),
+      ],
     [costCenters],
   )
   const filterSelectOptions = async (
@@ -113,9 +117,19 @@ export const LedgerFiltersBar = ({
           </label>
           <AsyncSelect
             value={
-              costCenterOptions.find((option) => option.value === filters.costCenterId) ?? null
+              costCenterOptions.find((option) =>
+                filters.withoutCostCenter
+                  ? option.value === '__without_cost_center__'
+                  : option.value === filters.costCenterId,
+              ) ?? null
             }
-            onChange={(option) => onFiltersChange({ costCenterId: option?.value ?? '' })}
+            onChange={(option) => {
+              const value = option?.value ?? ''
+              onFiltersChange({
+                costCenterId: value === '__without_cost_center__' ? '' : value,
+                withoutCostCenter: value === '__without_cost_center__',
+              })
+            }}
             loadOptions={(inputValue) => filterSelectOptions(costCenterOptions, inputValue)}
             defaultOptions={costCenterOptions}
             isClearable
@@ -144,7 +158,7 @@ export const LedgerFiltersBar = ({
         <button
           type="button"
           onClick={onSubmit}
-          className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isLoading}
         >
           {isLoading ? 'Consultando...' : 'Consultar'}

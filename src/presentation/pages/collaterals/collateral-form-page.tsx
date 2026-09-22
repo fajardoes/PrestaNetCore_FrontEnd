@@ -483,7 +483,7 @@ export const CollateralFormPage = () => {
               </p>
               <button
                 type="button"
-                className="btn-secondary px-3 py-1.5 text-xs"
+                className="btn-secondary btn-list-action"
                 onClick={() => openPicker('owner')}
                 disabled={isSaving || isEdit}
               >
@@ -534,7 +534,7 @@ export const CollateralFormPage = () => {
                 </p>
                 <button
                   type="button"
-                  className="btn-secondary px-3 py-1.5 text-xs"
+                  className="btn-secondary btn-list-action"
                   onClick={() => openPicker('guarantor')}
                   disabled={isSaving || !ownerClientId}
                 >

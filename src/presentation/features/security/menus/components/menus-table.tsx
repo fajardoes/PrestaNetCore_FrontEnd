@@ -1,5 +1,6 @@
 import type { MenuItemAdminDto } from '@/infrastructure/interfaces/security/menu'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
 interface VisibleMenuRow {
@@ -64,6 +65,7 @@ export const MenusTable = ({
                 onClick={() => onToggleExpand(item.id)}
                 className="btn-table-action w-7 px-0"
                 aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
+                title={isExpanded ? 'Colapsar' : 'Expandir'}
               >
                 {isExpanded ? (
                   <ChevronDownIcon className="h-4 w-4" />
@@ -123,18 +125,17 @@ export const MenusTable = ({
       className: 'min-w-[120px]',
       render: ({ item }: VisibleMenuRow) => (
         <span className="flex items-center gap-2">
-          <button
-            type="button"
+          <TableActionButton
+            icon="edit"
+            label="Editar menú"
             onClick={() => onEdit(item)}
-            className="btn-table-action"
-          >
-            Editar
-          </button>
+          />
           <button
             type="button"
             onClick={() => onDelete(item)}
             className="btn-table-action w-7 px-0"
             aria-label="Eliminar menu"
+            title="Eliminar menú"
           >
             <TrashIcon className="h-4 w-4" />
           </button>

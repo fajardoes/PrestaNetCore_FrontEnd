@@ -1,6 +1,7 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import { Fragment, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import type { ApiResult } from '@/core/helpers/api-result'
 import type {
   ApplyAnticipatedInstallmentRequest,
@@ -17,6 +18,7 @@ import {
   type AnticipatedInstallmentReasonValues,
 } from '@/infrastructure/validations/loans/anticipated-installment.schema'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
+import { CollapsibleSection } from '@/presentation/share/components/collapsible-section'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import {
   formatCurrency,
@@ -40,6 +42,8 @@ interface Props {
   onApply: (payload: ApplyAnticipatedInstallmentRequest) => Promise<ApiResult<AnticipatedInstallmentApplicationResponse>>
   onReverse: (applicationId: string, payload: ReverseAnticipatedInstallmentApplicationRequest) => Promise<ApiResult<AnticipatedInstallmentApplicationResponse>>
   onRefreshActions: () => Promise<void>
+  collapsible?: boolean
+  defaultExpanded?: boolean
 }
 
 export const LoanAnticipatedInstallmentSection = ({
@@ -52,6 +56,8 @@ export const LoanAnticipatedInstallmentSection = ({
   onApply,
   onReverse,
   onRefreshActions,
+  collapsible = false,
+  defaultExpanded = true,
 }: Props) => {
   const [applyOpen, setApplyOpen] = useState(false)
   const [reverseTarget, setReverseTarget] = useState<AnticipatedInstallmentApplicationResponse | null>(null)
@@ -114,20 +120,26 @@ export const LoanAnticipatedInstallmentSection = ({
   const installment = detail?.anticipatedInstallment
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Cuota anticipada</h2>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Saldo contabilizado al desembolso y aplicaciones distribuidas por el servidor.
-          </p>
-        </div>
-        {canApply && installment && installment.pendingAmount > 0 ? (
-          <button type="button" className="btn-primary px-4 py-2 text-sm" onClick={() => setApplyOpen(true)}>
-            Aplicar cuota anticipada
-          </button>
-        ) : null}
-      </div>
+    <>
+      <CollapsibleSection
+        title="Cuota anticipada"
+        description="Saldo contabilizado al desembolso y aplicaciones distribuidas por el servidor."
+        collapsible={collapsible}
+        defaultExpanded={defaultExpanded}
+        className="rounded-2xl p-5"
+        contentClassName="mt-0"
+        aside={
+          canApply && installment && installment.pendingAmount > 0 ? (
+            <button
+              type="button"
+              className="btn-primary px-4 py-2 text-sm"
+              onClick={() => setApplyOpen(true)}
+            >
+              Aplicar cuota anticipada
+            </button>
+          ) : null
+        }
+      >
       {isLoading ? <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Consultando cuota anticipada...</p> : null}
       {error ? <p className="mt-4 text-sm text-red-700 dark:text-red-300">{error}</p> : null}
       {!isLoading && !error && !installment ? (
@@ -167,11 +179,13 @@ export const LoanAnticipatedInstallmentSection = ({
                         <td>{anticipatedInstallmentStatusLabel(application.applicationStatusCode)}</td>
                         <td>{application.reason?.trim() || '—'}</td>
                         <td className="space-x-2 text-right">
-                          <button type="button" className="btn-table-action" onClick={() => setExpanded((items) => items.includes(application.id) ? items.filter((id) => id !== application.id) : [...items, application.id])}>
-                            {expanded.includes(application.id) ? 'Ocultar' : 'Distribución'}
-                          </button>
+                          <TableActionButton
+                            icon={expanded.includes(application.id) ? 'collapse' : 'expand'}
+                            label={expanded.includes(application.id) ? 'Ocultar distribución' : 'Ver distribución'}
+                            onClick={() => setExpanded((items) => items.includes(application.id) ? items.filter((id) => id !== application.id) : [...items, application.id])}
+                          />
                           {canReverse && application.applicationStatusCode === 'APPLIED' ? (
-                            <button type="button" className="btn-table-action" onClick={() => setReverseTarget(application)}>Reversar</button>
+                            <TableActionButton icon="reverse" label="Reversar aplicación" onClick={() => setReverseTarget(application)} />
                           ) : null}
                         </td>
                       </tr>
@@ -201,6 +215,7 @@ export const LoanAnticipatedInstallmentSection = ({
         </>
       ) : null}
 
+      </CollapsibleSection>
       <ConfirmModal open={applyOpen} title="Aplicar cuota anticipada" description="El backend determina las cuotas y componentes que reciben la aplicación." confirmLabel="Aplicar" isProcessing={isSaving} onCancel={() => setApplyOpen(false)} onConfirm={() => void submitApply()}>
         <form className="space-y-3" onSubmit={submitApply}>
           <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
@@ -236,7 +251,7 @@ export const LoanAnticipatedInstallmentSection = ({
           {operationError ? <p className="mt-2 text-sm text-red-600 dark:text-red-300">{operationError}</p> : null}
         </form>
       </ConfirmModal>
-    </section>
+    </>
   )
 }
 

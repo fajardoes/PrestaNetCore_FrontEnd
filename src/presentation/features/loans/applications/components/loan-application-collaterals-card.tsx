@@ -1,6 +1,6 @@
-import { Trash2 } from 'lucide-react'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
 import { formatMoney } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 interface LoanApplicationCollateralsCardProps {
   collaterals: LoanApplicationCollateralResponse[]
@@ -26,7 +26,7 @@ export const LoanApplicationCollateralsCard = ({
         {canAddCollateral ? (
           <button
             type="button"
-            className="btn-primary px-2.5 py-1 text-xs"
+            className="btn-primary btn-list-action"
             onClick={onAdd}
             disabled={isProcessing}
           >
@@ -67,15 +67,12 @@ export const LoanApplicationCollateralsCard = ({
                   <td className="px-2 py-1.5">{item.notes || '—'}</td>
                   <td className="px-2 py-1.5 text-right">
                     {canRemoveCollateral ? (
-                      <button
-                        type="button"
-                        className="btn-table-action w-7 px-0"
+                      <TableActionButton
+                        icon="delete"
+                        label="Eliminar garantía"
                         onClick={() => onRemove(item)}
                         disabled={isProcessing}
-                        aria-label="Eliminar garantía"
-                      >
-                        <Trash2 className="mx-auto h-4 w-4" />
-                      </button>
+                      />
                     ) : null}
                   </td>
                 </tr>

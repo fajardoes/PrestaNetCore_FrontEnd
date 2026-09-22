@@ -7,6 +7,7 @@ import {
   formatInsuranceValue,
   getCatalogItemCodeById,
 } from '@/core/helpers/insurance-value'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 interface InsurancesEditorProps {
   control: Control<LoanProductFormValues>
@@ -19,7 +20,7 @@ interface InsurancesEditorProps {
   insuranceChargeTimings: LoanCatalogItemDto[]
 }
 
-const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
+const getOptionLabel = (item: LoanCatalogItemDto) => item.name
 
 export const InsurancesEditor = ({
   control,
@@ -67,19 +68,11 @@ export const InsurancesEditor = ({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Seguros
-          </h4>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Configura seguros y activa o inactiva según el producto.
-          </p>
-        </div>
+    <div className="space-y-2">
+      <div className="flex items-center justify-end">
         <button
           type="button"
-          className="btn-primary px-3 py-1.5 text-xs shadow"
+          className="btn-primary btn-list-action shadow"
           onClick={openNewInsuranceModal}
           disabled={disabled}
         >
@@ -88,7 +81,7 @@ export const InsurancesEditor = ({
       </div>
 
       {fields.length ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {fields.map((field, index) => {
             const insurance = insurances[index]
             if (!insurance) return null
@@ -112,13 +105,13 @@ export const InsurancesEditor = ({
             return (
               <div
                 key={field.id}
-                className={`space-y-2 rounded-xl border p-3 ${
+                className={`space-y-2 rounded-lg border p-2.5 ${
                   isInactive
                     ? 'border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-500/10'
                     : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900'
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                       {insuranceType ? getOptionLabel(insuranceType) : 'Seguro sin tipo'}
@@ -151,31 +144,26 @@ export const InsurancesEditor = ({
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="btn-table-action"
+                  <TableActionButton
+                    icon="edit"
+                    label="Editar seguro"
                     onClick={() => openEditInsuranceModal(index)}
                     disabled={disabled}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-table-action"
+                  />
+                  <TableActionButton
+                    icon="toggle"
+                    label={insurance.isActive === false ? 'Activar seguro' : 'Desactivar seguro'}
                     onClick={() => handleToggleInsurance(index)}
                     disabled={disabled}
-                  >
-                    {insurance.isActive === false ? 'Activar' : 'Desactivar'}
-                  </button>
+                  />
                   {allowRemove ? (
-                    <button
-                      type="button"
-                      className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                    <TableActionButton
+                      icon="delete"
+                      label="Eliminar seguro"
+                      className="text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       onClick={() => remove(index)}
                       disabled={disabled}
-                    >
-                      Eliminar
-                    </button>
+                    />
                   ) : null}
                 </div>
               </div>

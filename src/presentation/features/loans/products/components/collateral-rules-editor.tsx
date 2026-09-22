@@ -3,6 +3,7 @@ import { useFieldArray, useWatch, type Control, type FieldErrors } from 'react-h
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { CollateralRuleModal } from '@/presentation/features/loans/products/components/collateral-rule-modal'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 interface CollateralRulesEditorProps {
   control: Control<LoanProductFormValues>
@@ -57,19 +58,11 @@ export const CollateralRulesEditor = ({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-            Reglas de garantías
-          </h4>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Define ratio mínimo y estado para cada tipo.
-          </p>
-        </div>
+    <div className="space-y-2">
+      <div className="flex items-center justify-end">
         <button
           type="button"
-          className="btn-primary px-3 py-1.5 text-xs shadow"
+          className="btn-primary btn-list-action shadow"
           onClick={openNewRuleModal}
           disabled={disabled}
         >
@@ -78,7 +71,7 @@ export const CollateralRulesEditor = ({
       </div>
 
       {fields.length ? (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {fields.map((field, index) => {
             const rule = collateralRules[index]
             if (!rule) return null
@@ -90,13 +83,13 @@ export const CollateralRulesEditor = ({
             return (
               <div
                 key={field.id}
-                className={`space-y-2 rounded-xl border p-3 ${
+                className={`space-y-2 rounded-lg border p-2.5 ${
                   isInactive
                     ? 'border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-500/10'
                     : 'border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900'
                 }`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
                       {collateralType
@@ -121,31 +114,26 @@ export const CollateralRulesEditor = ({
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="btn-table-action"
+                  <TableActionButton
+                    icon="edit"
+                    label="Editar regla de garantía"
                     onClick={() => openEditRuleModal(index)}
                     disabled={disabled}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-table-action"
+                  />
+                  <TableActionButton
+                    icon="toggle"
+                    label={rule.isActive === false ? 'Activar regla de garantía' : 'Desactivar regla de garantía'}
                     onClick={() => handleToggleRule(index)}
                     disabled={disabled}
-                  >
-                    {rule.isActive === false ? 'Activar' : 'Desactivar'}
-                  </button>
+                  />
                   {allowRemove ? (
-                    <button
-                      type="button"
-                      className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                    <TableActionButton
+                      icon="delete"
+                      label="Eliminar regla de garantía"
+                      className="text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       onClick={() => remove(index)}
                       disabled={disabled}
-                    >
-                      Eliminar
-                    </button>
+                    />
                   ) : null}
                 </div>
               </div>

@@ -57,7 +57,9 @@ export const IncomeStatementReport = ({
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Centro:</Text>
           <Text style={styles.summaryValue}>
-            {result.costCenterName ? result.costCenterName : 'Todos'}
+            {result.withoutCostCenter
+              ? 'Sin centro de costo'
+              : result.costCenterName ?? 'Todos'}
           </Text>
         </View>
       </View>

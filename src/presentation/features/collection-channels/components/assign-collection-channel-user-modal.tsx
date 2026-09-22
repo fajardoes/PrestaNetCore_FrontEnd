@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { EligibleCollectionChannelUserResponse } from '@/infrastructure/collection-channels/responses/eligible-collection-channel-user-response'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 const PAGE_SIZE = 8
@@ -132,13 +133,12 @@ export const AssignCollectionChannelUserModal = ({
                       return (
                         <tr key={user.userId} className={isSelected ? 'bg-primary/5 dark:bg-primary/10' : ''}>
                           <td>
-                            <button
-                              type="button"
-                              className="btn-table-action border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
+                            <TableActionButton
+                              icon="select"
+                              label={isSelected ? 'Seleccionado' : 'Seleccionar'}
+                              className="border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
                               onClick={() => setSelectedUserId(user.userId)}
-                            >
-                              {isSelected ? 'Seleccionado' : 'Seleccionar'}
-                            </button>
+                            />
                           </td>
                           <td className="font-medium text-slate-800 dark:text-slate-100">
                             {user.userName}
@@ -217,14 +217,14 @@ export const AssignCollectionChannelUserModal = ({
           <button
             type="button"
             onClick={onClose}
-            className="btn-secondary px-4 py-2 text-sm"
+            className="btn-secondary btn-list-action"
             disabled={isAssigning || isLoadingUsers}
           >
             Cancelar
           </button>
           <button
             type="button"
-            className="btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary btn-list-action disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isAssigning || isLoadingUsers || !selectedUserId || !isLimitValid}
             onClick={() => {
               if (!selectedUserId || !isLimitValid) return

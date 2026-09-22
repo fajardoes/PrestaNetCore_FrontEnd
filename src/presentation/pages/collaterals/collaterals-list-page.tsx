@@ -6,6 +6,7 @@ import AsyncSelect, {
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import type { StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import {
   TableTabular,
@@ -217,21 +218,17 @@ export const CollateralsListPage = () => {
       className: 'min-w-[120px]',
       render: (item) => (
         <span className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            className="btn-table-action"
+          <TableActionButton
+            icon="view"
+            label="Ver garantía"
             onClick={() => navigate(`/clients/collaterals/${item.id}`)}
-          >
-            Ver
-          </button>
+          />
           {canUpdateCollaterals ? (
-            <button
-              type="button"
-              className="btn-table-action"
+            <TableActionButton
+              icon="edit"
+              label="Editar garantía"
               onClick={() => navigate(`/clients/collaterals/${item.id}/edit`)}
-            >
-              Editar
-            </button>
+            />
           ) : null}
         </span>
       ),
@@ -271,7 +268,7 @@ export const CollateralsListPage = () => {
         {canCreateCollaterals ? (
           <button
             type="button"
-            className="btn-primary px-4 py-2 text-sm"
+            className="btn-primary btn-list-action"
             onClick={() => navigate('/clients/collaterals/new')}
           >
             Nueva Garantía
@@ -291,7 +288,7 @@ export const CollateralsListPage = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="rounded-md border border-slate-300 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="btn-secondary btn-list-action"
                 onClick={() => {
                   setSearch('')
                   setStatusFilter('active')
@@ -306,7 +303,7 @@ export const CollateralsListPage = () => {
               </button>
               <button
                 type="button"
-                className="btn-primary rounded-md px-2.5 py-1.5 text-xs font-medium"
+                className="btn-primary btn-list-action"
                 onClick={applyCurrentFilters}
               >
                 Buscar

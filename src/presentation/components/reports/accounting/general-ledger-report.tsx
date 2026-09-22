@@ -16,6 +16,7 @@ export interface GeneralLedgerReportProps {
   accountName: string
   currencyCode: string
   periodLabel: string
+  costCenterLabel?: string
   openingBalance: number
   lines: GeneralLedgerLine[]
   totals: {
@@ -37,6 +38,7 @@ export const GeneralLedgerReport = ({
   accountName,
   currencyCode,
   periodLabel,
+  costCenterLabel,
   openingBalance,
   lines,
   totals,
@@ -67,6 +69,10 @@ export const GeneralLedgerReport = ({
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Periodo:</Text>
           <Text style={styles.summaryValue}>{periodLabel}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Centro:</Text>
+          <Text style={styles.summaryValue}>{costCenterLabel ?? 'Todos'}</Text>
         </View>
         <View style={styles.summaryRow}>
           <Text style={styles.summaryLabel}>Saldo inicial:</Text>

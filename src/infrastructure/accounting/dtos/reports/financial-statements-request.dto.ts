@@ -3,4 +3,5 @@ export interface FinancialStatementsRequestDto {
   toDate?: string
   periodId?: string
   costCenterId?: string
+  withoutCostCenter?: boolean
 }

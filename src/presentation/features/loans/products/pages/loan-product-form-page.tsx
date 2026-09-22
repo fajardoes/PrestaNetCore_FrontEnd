@@ -151,13 +151,13 @@ export const LoanProductFormPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-4">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
           {isEdit ? 'Editar Producto' : 'Nuevo Producto'}
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Define condiciones, reglas y contabilidad del producto.
+          Configura las condiciones financieras, la regulación y la contabilidad del producto.
         </p>
       </div>
 

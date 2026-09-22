@@ -7,6 +7,7 @@ export interface LedgerFiltersState {
   fromDate: string
   toDate: string
   costCenterId: string
+  withoutCostCenter: boolean
   includeOpeningBalance: boolean
 }
 
@@ -22,6 +23,7 @@ const defaultFilters: LedgerFiltersState = {
   fromDate: '',
   toDate: '',
   costCenterId: '',
+  withoutCostCenter: false,
   includeOpeningBalance: true,
 }
 
@@ -52,6 +54,7 @@ export const useLedger = () => {
       fromDate: filters.fromDate || undefined,
       toDate: filters.toDate || undefined,
       costCenterId: filters.costCenterId || undefined,
+      withoutCostCenter: filters.withoutCostCenter || undefined,
       includeOpeningBalance: filters.includeOpeningBalance,
     })
 

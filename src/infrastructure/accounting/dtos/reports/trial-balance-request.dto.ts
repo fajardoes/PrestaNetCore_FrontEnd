@@ -3,6 +3,7 @@ export interface TrialBalanceRequestDto {
   toDate?: string
   periodId?: string
   costCenterId?: string
+  withoutCostCenter?: boolean
   includeSubaccounts?: boolean
   includeZeroBalanceAccounts?: boolean
 }

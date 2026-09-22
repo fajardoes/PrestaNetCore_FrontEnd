@@ -1,4 +1,5 @@
 import type { Department } from '@/infrastructure/interfaces/organization/geography'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
@@ -72,13 +73,11 @@ export const DepartmentsTable = ({
       className: 'min-w-[90px]',
       render: (department: Department) => (
         <span className="flex justify-end">
-          <button
-            type="button"
+          <TableActionButton
+            icon="edit"
+            label="Editar departamento"
             onClick={() => onEdit(department)}
-            className="btn-table-action"
-          >
-            Editar
-          </button>
+          />
         </span>
       ),
     },

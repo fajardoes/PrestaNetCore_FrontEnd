@@ -114,7 +114,7 @@ export const CollectionChannelTypesPage = () => {
           canUpdate ? (
             <button
               type="button"
-              className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm"
+              className="btn-primary btn-list-action gap-2"
               onClick={() => {
                 mutations.setError(null)
                 setEditingItem(null)

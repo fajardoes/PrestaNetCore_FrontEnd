@@ -5,6 +5,7 @@ import type { CollectionChannelResponse } from '@/infrastructure/collection-chan
 import type { CollectionChannelUserResponse } from '@/infrastructure/collection-channels/responses/collection-channel-user-response'
 import type { CollectionChannelTypeResponse } from '@/infrastructure/collection-channels/responses/collection-channel-type-response'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import {
   formatChannelDateTime,
   formatChannelMoney,
@@ -359,27 +360,30 @@ export const CollectionChannelDetailView = ({
                       <td className="px-4 py-3 text-sm">
                         {canManageUsers ? (
                           <div className="flex flex-wrap gap-2">
-                            <button
-                              type="button"
-                              className="btn-table-action disabled:cursor-not-allowed disabled:opacity-50"
+                            <TableActionButton
+                              icon="edit"
+                              label="Editar límite"
+                              tooltip={updatingUserLimitId === user.userId ? 'Guardando...' : 'Editar límite'}
+                              className="disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={!channel.isActive || !user.isActive || updatingUserLimitId === user.userId}
                               onClick={() => onEditUserLimit(user)}
-                            >
-                              {updatingUserLimitId === user.userId ? 'Guardando...' : 'Editar límite'}
-                            </button>
-                            <button
-                              type="button"
-                              className="btn-table-action disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                            <TableActionButton
+                              icon="delete"
+                              label="Remover usuario"
+                              tooltip={
+                                user.currentOutstandingAmount > 0
+                                  ? 'No se puede remover mientras exista saldo pendiente.'
+                                  : removingUserId === user.userId
+                                    ? 'Removiendo...'
+                                    : 'Remover usuario'
+                              }
+                              className="disabled:cursor-not-allowed disabled:opacity-50"
                               disabled={
                                 !channel.isActive ||
                                 !user.isActive ||
                                 removingUserId === user.userId ||
                                 user.currentOutstandingAmount > 0
-                              }
-                              title={
-                                user.currentOutstandingAmount > 0
-                                  ? 'No se puede remover mientras exista saldo pendiente.'
-                                  : 'Remover usuario'
                               }
                               onClick={() =>
                                 setPendingUserRemoval({
@@ -387,9 +391,7 @@ export const CollectionChannelDetailView = ({
                                   userLabel: user.email,
                                 })
                               }
-                            >
-                              {removingUserId === user.userId ? 'Removiendo...' : 'Remover'}
-                            </button>
+                            />
                           </div>
                         ) : (
                           <span className="text-xs text-slate-400 dark:text-slate-500">

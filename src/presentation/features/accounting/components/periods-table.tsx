@@ -1,5 +1,6 @@
 import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
 import { AccountingStatusBadge } from './accounting-status-badge'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 import type { PeriodPostingOperation } from '@/core/actions/accounting/update-period-posting-settings.action'
@@ -136,26 +137,25 @@ export const PeriodsTable = ({
       render: (period: AccountingPeriodDto) => (
         <span className="flex flex-wrap justify-end gap-2">
           {period.state === 'open' && onClosePeriod ? (
-            <button
-              type="button"
+            <TableActionButton
+              icon="lock"
+              label="Cerrar período"
               onClick={() => onClosePeriod(period)}
-              className="btn-table-action"
               disabled={
                 isApplyingAction ||
                 (automaticPostingBlocked && period.id === operationalPeriodId)
               }
-              title={
+              tooltip={
                 automaticPostingBlocked && period.id === operationalPeriodId
                   ? automaticPostingBlockedReason
                   : undefined
               }
-            >
-              Cerrar
-            </button>
+            />
           ) : null}
           {onRowAction ? (
-            <button
-              type="button"
+            <TableActionButton
+              icon="toggle"
+              label={period.allowAdjustments ? 'Quitar ajustes' : 'Habilitar ajustes'}
               onClick={() =>
                 onRowAction(
                   period,
@@ -164,15 +164,13 @@ export const PeriodsTable = ({
                     : 'enable-adjustments',
                 )
               }
-              className="btn-table-action"
               disabled={isApplyingAction}
-            >
-              {period.allowAdjustments ? 'Quitar ajustes' : 'Habilitar ajustes'}
-            </button>
+            />
           ) : null}
           {onRowAction ? (
-            <button
-              type="button"
+            <TableActionButton
+              icon="toggle"
+              label={period.allowAutomaticPosting ? 'Bloquear automático' : 'Habilitar automático'}
               onClick={() =>
                 onRowAction(
                   period,
@@ -181,22 +179,18 @@ export const PeriodsTable = ({
                     : 'enable-automatic-posting',
                 )
               }
-              className="btn-table-action"
               disabled={isApplyingAction || Boolean(period.isLocked)}
-              title={period.isLocked ? 'El periodo esta bloqueado para acciones de posteo.' : undefined}
-            >
-              {period.allowAutomaticPosting ? 'Bloquear automatico' : 'Habilitar automatico'}
-            </button>
+              tooltip={period.isLocked ? 'El periodo esta bloqueado para acciones de posteo.' : undefined}
+            />
           ) : null}
           {!period.isLocked && onRowAction ? (
-            <button
-              type="button"
+            <TableActionButton
+              icon="lock"
+              label="Bloquear período"
               onClick={() => onRowAction(period, 'lock')}
-              className="btn-table-action border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-600/60 dark:text-amber-100 dark:hover:bg-amber-500/10"
+              className="border-amber-200 text-amber-700 hover:bg-amber-50 dark:border-amber-600/60 dark:text-amber-100 dark:hover:bg-amber-500/10"
               disabled={isApplyingAction}
-            >
-              Bloquear
-            </button>
+            />
           ) : null}
           {!period.state || (period.isLocked && !onClosePeriod && !onRowAction) ? (
             <span className="text-xs text-slate-500 dark:text-slate-400">—</span>

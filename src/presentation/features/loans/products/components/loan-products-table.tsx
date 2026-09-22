@@ -1,5 +1,6 @@
 import type { LoanProductListItemDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-list-item.dto'
 import { AccountingStatusBadge } from '@/presentation/features/accounting/components/accounting-status-badge'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
 interface LoanProductsTableProps {
@@ -87,28 +88,22 @@ export const LoanProductsTable = ({
       className: 'min-w-[230px]',
       render: (item: LoanProductListItemDto) => (
         <span className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            className="btn-table-action"
+          <TableActionButton
+            icon="view"
+            label="Ver detalle del producto"
             onClick={() => onViewDetail(item)}
-          >
-            Detalle
-          </button>
-          <button
-            type="button"
-            className="btn-table-action"
+          />
+          <TableActionButton
+            icon="edit"
+            label="Editar producto"
             onClick={() => onEdit(item)}
-          >
-            Editar
-          </button>
-          <button
-            type="button"
-            className="btn-table-action"
+          />
+          <TableActionButton
+            icon="toggle"
+            label={`${item.isActive ? 'Desactivar' : 'Activar'} producto`}
             onClick={() => onToggleStatus(item)}
             disabled={isProcessingId === item.id}
-          >
-            {item.isActive ? 'Desactivar' : 'Activar'}
-          </button>
+          />
         </span>
       ),
     },

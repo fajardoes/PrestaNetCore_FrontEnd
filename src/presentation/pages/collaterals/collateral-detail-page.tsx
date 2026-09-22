@@ -137,7 +137,7 @@ export const CollateralDetailPage = () => {
             {canUpdateCollaterals ? (
               <button
                 type="button"
-                className="btn-primary px-4 py-2 text-sm"
+                className="btn-primary btn-list-action"
                 onClick={() => navigate(`/clients/collaterals/${collateral.id}/edit`)}
               >
                 Editar

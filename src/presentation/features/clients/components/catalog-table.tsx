@@ -1,4 +1,5 @@
 import type { ClientCatalogItem } from '@/infrastructure/interfaces/clients/catalog'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
@@ -76,27 +77,22 @@ export const CatalogTable = ({
       className: 'min-w-[250px]',
       render: (catalog: ClientCatalogItem) => (
         <span className="flex items-center justify-end gap-2">
-          <button
-            type="button"
+          <TableActionButton
+            icon="toggle"
+            label={`${catalog.activo ? 'Desactivar' : 'Activar'} catálogo`}
             onClick={() => onToggle(catalog)}
-            className="btn-table-action"
-          >
-            {catalog.activo ? 'Desactivar' : 'Activar'}
-          </button>
-          <button
-            type="button"
+          />
+          <TableActionButton
+            icon="edit"
+            label="Editar catálogo"
             onClick={() => onEdit(catalog)}
-            className="btn-table-action"
-          >
-            Editar
-          </button>
-          <button
-            type="button"
+          />
+          <TableActionButton
+            icon="delete"
+            label="Borrar catálogo"
             onClick={() => onDelete(catalog)}
-            className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
-          >
-            Borrar
-          </button>
+            className="text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+          />
         </span>
       ),
     },

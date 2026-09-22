@@ -33,6 +33,7 @@ export interface CostCenterFilters {
   pageSize: number
   search?: string
   isActive?: boolean
+  includeDeleted?: boolean
 }
 
 export interface PeriodFilters {
@@ -233,6 +234,7 @@ export const accountingApi = {
     fromDate?: string
     toDate?: string
     costCenterId?: string
+    withoutCostCenter?: boolean
     includeOpeningBalance?: boolean
   }): Promise<LedgerResponse> {
     const { data } = await httpClient.get<LedgerResponse | LedgerEntry[]>(

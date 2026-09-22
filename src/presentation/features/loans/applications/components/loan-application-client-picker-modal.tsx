@@ -2,6 +2,7 @@ import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 
 interface LoanApplicationClientPickerModalProps {
@@ -49,7 +50,7 @@ export const LoanApplicationClientPickerModal = ({
               Busca por nombre o identidad y selecciona un cliente activo.
             </p>
           </div>
-          <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={onClose}>
+          <button type="button" className="btn-secondary btn-list-action" onClick={onClose}>
             Cerrar
           </button>
         </div>
@@ -100,13 +101,12 @@ export const LoanApplicationClientPickerModal = ({
                       return (
                         <tr key={client.id} className={isSelected ? 'bg-primary/5 dark:bg-primary/10' : ''}>
                           <td>
-                            <button
-                              type="button"
-                              className="btn-table-action border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
+                            <TableActionButton
+                              icon="select"
+                              label={isSelected ? 'Seleccionado' : 'Seleccionar'}
+                              className="border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
                               onClick={() => onSelect(client)}
-                            >
-                              {isSelected ? 'Seleccionado' : 'Seleccionar'}
-                            </button>
+                            />
                           </td>
                           <td className="font-medium text-slate-800 dark:text-slate-100">
                             {client.nombreCompleto}

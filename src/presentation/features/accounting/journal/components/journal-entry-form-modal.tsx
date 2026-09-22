@@ -3,10 +3,12 @@ import type { ChangeEvent, KeyboardEvent } from 'react'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
 import type { JournalEntryFormValues } from '@/infrastructure/validations/accounting/journal-entry.schema'
-import AsyncSelect from '@/presentation/share/components/async-select'
+import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
 import { formatAccountingDate, getPeriodLabel } from '@/presentation/features/accounting/accounting-ui'
+import { Copy, Eraser } from 'lucide-react'
 
 interface JournalEntryFormModalProps {
   open: boolean
@@ -101,7 +103,23 @@ export const JournalEntryFormModal = ({
   const costCenterOptions = costCenters.map((center) => ({
     value: center.id,
     label: `${center.code} - ${center.name}`,
+    meta: { selectable: true },
   }))
+  const lineCostCenterOptions: Array<AsyncSelectOption<{ selectable: boolean }>> = [
+    ...costCenterOptions,
+    ...watchedLines.flatMap((line) => {
+      if (!line?.costCenterId) return []
+      return [{
+        value: line.costCenterId,
+        label: line.costCenterCode || line.costCenterName
+          ? `${line.costCenterCode ?? ''}${line.costCenterCode && line.costCenterName ? ' - ' : ''}${line.costCenterName ?? ''} (histórico)`
+          : 'Centro histórico (metadata no disponible)',
+        meta: { selectable: false },
+      }]
+    }),
+  ].filter((option, index, options) =>
+    options.findIndex((candidate) => candidate.value === option.value) === index,
+  )
   const postingModeOptions = [
     { value: 'MANUAL_REGULAR', label: 'Asiento manual regular' },
     { value: 'MANUAL_ADJUSTMENT', label: 'Ajuste manual' },
@@ -141,17 +159,56 @@ export const JournalEntryFormModal = ({
     event.currentTarget.value = normalized
   }
 
+  const clearLine = (lineIndex: number) => {
+    setValue(`lines.${lineIndex}.accountId` as const, '', {
+      shouldValidate: true,
+      shouldDirty: true,
+    })
+    setValue(`lines.${lineIndex}.description` as const, '', {
+      shouldValidate: true,
+      shouldDirty: true,
+    })
+    setValue(`lines.${lineIndex}.debit` as const, 0, {
+      shouldValidate: true,
+      shouldDirty: true,
+    })
+    setValue(`lines.${lineIndex}.credit` as const, 0, {
+      shouldValidate: true,
+      shouldDirty: true,
+    })
+    setValue(`lines.${lineIndex}.reference` as const, '', {
+      shouldValidate: true,
+      shouldDirty: true,
+    })
+    setValue(`lines.${lineIndex}.costCenterId` as const, null, {
+      shouldValidate: true,
+      shouldDirty: true,
+    })
+  }
+
+  const duplicateLine = (lineIndex: number) => {
+    const line = watchedLines[lineIndex]
+    append({
+      accountId: line?.accountId ?? '',
+      description: line?.description ?? '',
+      debit: Number(line?.debit) || 0,
+      credit: Number(line?.credit) || 0,
+      reference: line?.reference ?? '',
+      costCenterId: line?.costCenterId ?? null,
+    })
+  }
+
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur">
-      <div className="flex max-h-[92vh] w-full max-w-[92rem] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
-        <div className="mb-4 flex items-start justify-between gap-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-2 backdrop-blur sm:p-4">
+      <div className="flex h-[calc(100vh-1rem)] max-h-[calc(100vh-1rem)] w-full max-w-[96rem] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950 sm:h-[calc(100vh-2rem)] sm:max-h-[calc(100vh-2rem)]">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-3 dark:border-slate-800">
           <div>
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
               {isEdit ? 'Editar asiento contable' : 'Nuevo asiento contable'}
             </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
+            <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-400">
               Completa la cabecera y las líneas del asiento antes de guardar en borrador.
             </p>
           </div>
@@ -166,19 +223,35 @@ export const JournalEntryFormModal = ({
         </div>
 
         {isLoading ? (
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+          <div className="m-5 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
             Cargando información del asiento...
           </div>
         ) : (
-          <form className="flex min-h-0 flex-1 flex-col gap-5" onSubmit={onSubmit} noValidate>
-            <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-900/50 dark:bg-sky-500/10 dark:text-sky-100">
-              <p className="font-semibold">
-                Fecha de negocio: {formatAccountingDate(businessDate)}
-              </p>
-              <p>Periodo operativo resuelto: {operationalPeriodLabel || '—'}</p>
-            </div>
+          <form className="flex min-h-0 flex-1 flex-col" onSubmit={onSubmit} noValidate>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:border-sky-900/50 dark:bg-sky-500/10 dark:text-sky-100">
+                  <span>
+                    <span className="font-semibold">Fecha de negocio:</span>{' '}
+                    {formatAccountingDate(businessDate)}
+                  </span>
+                  <span>
+                    <span className="font-semibold">Periodo operativo resuelto:</span>{' '}
+                    {operationalPeriodLabel || '—'}
+                  </span>
+                </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
+                <section className="rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                  <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      Cabecera del asiento
+                    </h4>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                      Define el contexto del asiento antes de capturar sus líneas.
+                    </p>
+                  </div>
+                  <div className="space-y-4 p-4">
+            <div className="grid gap-3 md:grid-cols-3">
               <div className="space-y-2">
                 <label
                   htmlFor="date"
@@ -276,18 +349,26 @@ export const JournalEntryFormModal = ({
                   htmlFor="costCenterId"
                   className="block text-sm font-medium text-slate-700 dark:text-slate-200"
                 >
-                  Centro de costo (opcional)
+                  Aplicar centro a todas las líneas
                 </label>
                 <AsyncSelect
                   value={
                     costCenterOptions.find((option) => option.value === selectedCostCenterId) ??
                     null
                   }
-                  onChange={(option) =>
-                    setValue('costCenterId', option?.value ?? '', {
+                  onChange={(option) => {
+                    const nextCostCenterId = option?.value ?? null
+                    setValue('costCenterId', nextCostCenterId ?? '', {
                       shouldValidate: true,
+                      shouldDirty: true,
                     })
-                  }
+                    watchedLines.forEach((_, lineIndex) => {
+                      setValue(`lines.${lineIndex}.costCenterId` as const, nextCostCenterId, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    })
+                  }}
                   loadOptions={(inputValue) => filterOptions(costCenterOptions, inputValue)}
                   inputId="costCenterId"
                   instanceId="accounting-journal-entry-cost-center-id"
@@ -298,6 +379,9 @@ export const JournalEntryFormModal = ({
                   noOptionsMessage="Sin centros de costo"
                 />
                 <input type="hidden" {...register('costCenterId')} />
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Solo modifica las líneas actuales; las nuevas líneas comienzan sin centro. Un borrador histórico con centro solo en cabecera debe corregirse en las líneas.
+                </p>
                 {errors.costCenterId ? (
                   <p className="text-xs text-red-500">
                     {errors.costCenterId.message}
@@ -305,7 +389,7 @@ export const JournalEntryFormModal = ({
                 ) : null}
               </div>
 
-              <div className="space-y-2 md:col-span-3">
+              <div className="space-y-2 md:col-span-2">
                 {postingMode === 'MANUAL_ADJUSTMENT' ? (
                   <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/10 dark:text-amber-100">
                     <div className="space-y-3">
@@ -369,28 +453,56 @@ export const JournalEntryFormModal = ({
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
-              <div className="h-full overflow-auto">
-                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                  <thead className="bg-slate-50 dark:bg-slate-900">
+                  </div>
+                </section>
+
+                <section className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/70">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                        Líneas del asiento
+                      </h4>
+                      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                        Captura cuentas, importes y distribución de cada movimiento.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                      {fields.length} {fields.length === 1 ? 'línea' : 'líneas'}
+                    </span>
+                  </div>
+                  <div className="max-h-[45vh] overflow-auto">
+                <table className="min-w-[1120px] w-full table-fixed divide-y divide-slate-200 dark:divide-slate-800">
+                  <colgroup>
+                    <col className="w-[30%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[10%]" />
+                    <col className="w-[11%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[8%]" />
+                  </colgroup>
+                  <thead className="sticky top-0 z-10 bg-slate-100/95 backdrop-blur dark:bg-slate-900/95">
                     <tr>
-                      <th className="w-[440px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Cuenta
                       </th>
-                      <th className="w-[340px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Descripción
                       </th>
-                      <th className="w-[150px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Debe
+                      <th className="px-2 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Debe (débito)
                       </th>
-                      <th className="w-[150px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Haber
+                      <th className="px-2 py-2.5 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Haber (crédito)
                       </th>
-                      <th className="w-[220px] px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                         Referencia
                       </th>
-                      <th className="w-[96px] px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
-                        Acción
+                      <th className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Centro de costo
+                      </th>
+                      <th className="px-1 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        Acciones
                       </th>
                     </tr>
                   </thead>
@@ -404,7 +516,7 @@ export const JournalEntryFormModal = ({
                           key={field.id}
                           className="hover:bg-slate-50/70 dark:hover:bg-slate-900"
                         >
-                          <td className="min-w-[440px] px-4 py-3 text-sm">
+                          <td className="min-w-[320px] px-3 py-1 align-top text-sm">
                             <AsyncSelect
                               value={
                                 accountOptions.find(
@@ -437,18 +549,18 @@ export const JournalEntryFormModal = ({
                               </p>
                             ) : null}
                           </td>
-                          <td className="min-w-[340px] px-4 py-3 text-sm">
+                          <td className="min-w-[200px] px-3 py-1 align-top text-sm">
                             <input
                               type="text"
-                              className="w-full min-w-[300px] rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                               {...register(`lines.${index}.description` as const)}
                               disabled={isSaving}
                             />
                           </td>
-                          <td className="px-4 py-3 text-right text-sm">
+                          <td className="px-2 py-1 align-top text-right text-sm">
                             <input
                               type="text"
-                              className="w-32 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              className="w-full min-w-[96px] rounded-md border border-slate-300 bg-white px-2 py-1 text-right text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                               inputMode="decimal"
                               pattern="[0-9]*[.,]?[0-9]*"
                               onKeyDown={handleNumericKeyDown}
@@ -469,10 +581,10 @@ export const JournalEntryFormModal = ({
                               </p>
                             ) : null}
                           </td>
-                          <td className="px-4 py-3 text-right text-sm">
+                          <td className="px-2 py-1 align-top text-right text-sm">
                             <input
                               type="text"
-                              className="w-32 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              className="w-full min-w-[96px] rounded-md border border-slate-300 bg-white px-2 py-1 text-right text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                               inputMode="decimal"
                               pattern="[0-9]*[.,]?[0-9]*"
                               onKeyDown={handleNumericKeyDown}
@@ -488,24 +600,76 @@ export const JournalEntryFormModal = ({
                               </p>
                             ) : null}
                           </td>
-                          <td className="px-4 py-3 text-sm">
+                          <td className="min-w-[150px] px-3 py-1 align-top text-sm">
                             <input
                               type="text"
-                              className="w-full min-w-[180px] rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                              className="w-full rounded-md border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                               {...register(`lines.${index}.reference` as const)}
                               disabled={isSaving}
                             />
                           </td>
-                          <td className="px-4 py-3 text-right text-sm">
-                            <button
-                              type="button"
-                              onClick={() => remove(index)}
-                              className="btn-icon"
-                              aria-label="Eliminar línea"
-                              disabled={isSaving || fields.length === 1}
-                            >
-                              <TrashIcon className="h-4 w-4" />
-                            </button>
+                          <td className="min-w-[190px] px-3 py-1 align-top text-sm">
+                            <AsyncSelect<{ selectable: boolean }>
+                              value={
+                                lineCostCenterOptions.find(
+                                  (option) => option.value === watchedLines[index]?.costCenterId,
+                                ) ?? null
+                              }
+                              onChange={(option) =>
+                                setValue(
+                                  `lines.${index}.costCenterId` as const,
+                                  option?.value ?? null,
+                                  { shouldValidate: true, shouldDirty: true },
+                                )
+                              }
+                              loadOptions={(inputValue) =>
+                                filterOptions(lineCostCenterOptions, inputValue)
+                              }
+                              isOptionDisabled={(option) => option.meta?.selectable === false}
+                              instanceId={`accounting-journal-entry-line-cost-center-${index}`}
+                              isDisabled={isSaving}
+                              defaultOptions={lineCostCenterOptions}
+                              isClearable
+                              menuPortalTarget={menuPortalTarget}
+                              menuPosition="fixed"
+                              placeholder="Sin centro"
+                              noOptionsMessage="Sin centros de costo"
+                            />
+                            <input
+                              type="hidden"
+                              {...register(`lines.${index}.costCenterId` as const)}
+                            />
+                          </td>
+                          <td className="px-1 py-1 align-top text-right text-sm">
+                            <div className="flex items-center justify-start gap-0.5">
+                              <button
+                                type="button"
+                                onClick={() => duplicateLine(index)}
+                                className="btn-table-action !h-6 !w-6 !px-0"
+                                aria-label="Duplicar línea"
+                                title="Duplicar línea"
+                                disabled={isSaving}
+                              >
+                                <Copy className="h-3 w-3" aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => clearLine(index)}
+                                className="btn-table-action !h-6 !w-6 !px-0"
+                                aria-label="Limpiar línea"
+                                title="Limpiar línea"
+                                disabled={isSaving}
+                              >
+                                <Eraser className="h-3 w-3" aria-hidden="true" />
+                              </button>
+                              <TableActionButton
+                                icon="delete"
+                                label="Eliminar línea"
+                                onClick={() => remove(index)}
+                                className="!h-6 !w-6 !px-0"
+                                disabled={isSaving || fields.length === 1}
+                              />
+                            </div>
                           </td>
                         </tr>
                       )
@@ -518,9 +682,9 @@ export const JournalEntryFormModal = ({
                   {linesError}
                 </div>
               ) : null}
-            </div>
+            </section>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center justify-between gap-3 border-t border-slate-200 px-1 pt-3 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() =>
@@ -530,60 +694,75 @@ export const JournalEntryFormModal = ({
                     debit: 0,
                     credit: 0,
                     reference: '',
+                    costCenterId: null,
                   })
                 }
-                className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="inline-flex items-center rounded-md border border-primary/40 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary transition hover:border-primary hover:bg-primary/10 focus:outline-none focus:ring-2 focus:ring-primary/40 dark:border-primary/50 dark:bg-primary/10 dark:text-sky-300 dark:hover:bg-primary/20"
                 disabled={isSaving}
               >
-                Agregar línea
+                + Agregar línea
               </button>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-300">
-                <span>
-                  Total Debe: <strong>{formatAmount(totals.debit)}</strong>
-                </span>
-                <span>
-                  Total Haber: <strong>{formatAmount(totals.credit)}</strong>
-                </span>
-                <span
-                  className={
-                    diff === 0
-                      ? 'text-sky-600 dark:text-sky-300'
-                      : 'text-amber-600 dark:text-amber-300'
-                  }
-                >
-                  Diferencia: <strong>{formatAmount(Math.abs(diff))}</strong>
-                </span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Usa duplicar para repetir una línea con sus valores actuales.
+              </span>
+            </div>
               </div>
             </div>
 
-            {diff !== 0 ? (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-200">
-                El asiento está desbalanceado. Revisa los montos antes de guardar.
-              </div>
-            ) : null}
+            <div className="sticky bottom-0 z-20 shrink-0 border-t border-slate-200 bg-white/95 px-5 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+              {diff !== 0 ? (
+                <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-200">
+                  El asiento está desbalanceado. Revisa los montos antes de guardar.
+                </div>
+              ) : null}
 
-            {error ? (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
-                {error}
-              </div>
-            ) : null}
+              {error ? (
+                <div className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+                  {error}
+                </div>
+              ) : null}
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                    <span className="mr-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Debe (débito)</span>
+                    <strong className="text-slate-900 dark:text-slate-100">{formatAmount(totals.debit)}</strong>
+                  </span>
+                  <span className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                    <span className="mr-1 text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Haber (crédito)</span>
+                    <strong className="text-slate-900 dark:text-slate-100">{formatAmount(totals.credit)}</strong>
+                  </span>
+                  <span
+                    aria-live="polite"
+                    className={
+                      diff === 0
+                        ? 'rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-500/10 dark:text-emerald-200'
+                        : 'rounded-md border border-amber-200 bg-amber-50 px-3 py-1.5 text-amber-700 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-200'
+                    }
+                  >
+                    <span className="mr-1 text-xs uppercase tracking-wide">Diferencia</span>
+                    <strong>{formatAmount(Math.abs(diff))}</strong>
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="btn-secondary px-4 py-2"
                 disabled={isSaving}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="btn-primary px-6 py-2 text-sm shadow-lg shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-primary px-6 py-2 text-sm shadow-sm shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
                 disabled={isSaving}
               >
                 {isSaving ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Guardar borrador'}
               </button>
+                </div>
+              </div>
             </div>
           </form>
         )}
@@ -609,22 +788,3 @@ const CloseIcon = ({ className }: { className?: string }) => (
   </svg>
 )
 
-const TrashIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-    aria-hidden="true"
-  >
-    <path d="M3 6h18" />
-    <path d="M8 6V4h8v2" />
-    <path d="M19 6l-1 14H6L5 6" />
-    <path d="M10 11v6" />
-    <path d="M14 11v6" />
-  </svg>
-)

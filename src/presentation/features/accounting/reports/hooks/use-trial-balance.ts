@@ -7,6 +7,7 @@ export interface TrialBalanceFilters {
   toDate?: string
   periodId?: string
   costCenterId?: string
+  withoutCostCenter: boolean
   includeSubaccounts: boolean
   includeZeroBalanceAccounts: boolean
 }
@@ -31,6 +32,7 @@ export const useTrialBalance = () => {
       toDate: filters.toDate || undefined,
       periodId: filters.periodId || undefined,
       costCenterId: filters.costCenterId || undefined,
+      withoutCostCenter: filters.withoutCostCenter,
       includeSubaccounts: filters.includeSubaccounts,
       includeZeroBalanceAccounts: filters.includeZeroBalanceAccounts,
     })

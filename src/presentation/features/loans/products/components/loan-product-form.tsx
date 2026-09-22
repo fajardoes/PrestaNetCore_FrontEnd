@@ -1,5 +1,16 @@
-import { useEffect, useMemo } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useEffect, useMemo, useState } from 'react'
+import {
+  FileText,
+  Landmark,
+  Percent,
+  Receipt,
+  Scale,
+  Shield,
+  ShieldCheck,
+  SlidersHorizontal,
+  Umbrella,
+} from 'lucide-react'
+import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
@@ -11,9 +22,12 @@ import { FeesEditor } from '@/presentation/features/loans/products/components/fe
 import { InsurancesEditor } from '@/presentation/features/loans/products/components/insurances-editor'
 import { CollateralRulesEditor } from '@/presentation/features/loans/products/components/collateral-rules-editor'
 import { GlAccountsSelector } from '@/presentation/features/loans/products/components/gl-accounts-selector'
-import AsyncSelect, {
-  type AsyncSelectOption,
-} from '@/presentation/share/components/async-select'
+import { ProductFormSection } from '@/presentation/features/loans/products/components/product-form-section'
+import {
+  ProductFormSectionNav,
+  type ProductFormSectionNavItem,
+} from '@/presentation/features/loans/products/components/product-form-section-nav'
+import Select from '@/presentation/share/components/select'
 
 interface LoanCatalogOptions {
   termUnits: LoanCatalogItemDto[]
@@ -99,15 +113,80 @@ const toOptionalText = (value?: string | null) => {
   const trimmed = value?.trim()
   return trimmed ? trimmed : null
 }
-const getOptionLabel = (item: LoanCatalogItemDto) => `${item.code} - ${item.name}`
-const filterOptions = (
-  options: AsyncSelectOption<LoanCatalogItemDto>[],
-  inputValue: string,
-) => {
-  const term = inputValue.trim().toLowerCase()
-  if (!term) return options
-  return options.filter((option) => option.label.toLowerCase().includes(term))
+type ProductFormSectionId =
+  | 'general'
+  | 'conditions'
+  | 'interest'
+  | 'collateral'
+  | 'regulation'
+  | 'accounting'
+  | 'fees'
+  | 'insurance'
+  | 'collateralRules'
+
+const productFormSections: Array<ProductFormSectionNavItem & { id: ProductFormSectionId }> = [
+  { id: 'general', title: 'Datos generales', icon: FileText },
+  { id: 'conditions', title: 'Condiciones', icon: SlidersHorizontal },
+  { id: 'interest', title: 'Interés y amortización', icon: Percent },
+  { id: 'collateral', title: 'Garantías y seguros', icon: ShieldCheck },
+  { id: 'regulation', title: 'Regulación', icon: Scale },
+  { id: 'accounting', title: 'Mapeo contable', icon: Landmark },
+  { id: 'fees', title: 'Comisiones y cargos', icon: Receipt },
+  { id: 'insurance', title: 'Seguros', icon: Umbrella },
+  { id: 'collateralRules', title: 'Reglas de garantías', icon: Shield },
+]
+
+const sectionErrorFields: Record<
+  ProductFormSectionId,
+  Array<keyof LoanProductFormValues>
+> = {
+  general: ['code', 'name', 'description', 'isActive'],
+  conditions: [
+    'currencyCode',
+    'minAmount',
+    'maxAmount',
+    'minTerm',
+    'maxTerm',
+    'termUnitId',
+  ],
+  interest: [
+    'interestRateTypeId',
+    'nominalRate',
+    'minNominalRate',
+    'maxNominalRate',
+    'rateBaseId',
+    'amortizationMethodId',
+    'paymentFrequencyId',
+    'gracePrincipal',
+    'graceInterest',
+  ],
+  collateral: ['requiresCollateral', 'minCollateralRatio', 'hasInsurance'],
+  regulation: [
+    'portfolioTypeId',
+    'dayRuleId',
+    'roundingModeId',
+    'holidayAdjustmentRuleId',
+  ],
+  accounting: [
+    'glLoanPortfolioAccountId',
+    'glInterestIncomeAccountId',
+    'glInterestReceivableAccountId',
+    'glInterestSuspenseAccountId',
+    'glFeeIncomeAccountId',
+    'glDeferredFeeAccountId',
+    'glInsurancePayableAccountId',
+  ],
+  fees: ['fees', 'hasActiveDisbursementFees'],
+  insurance: ['insurances', 'hasActiveDisbursementInsurances'],
+  collateralRules: ['collateralRules'],
 }
+
+const getFirstSectionWithErrors = (
+  validationErrors: FieldErrors<LoanProductFormValues>,
+): ProductFormSectionId | undefined =>
+  productFormSections.find((section) =>
+    sectionErrorFields[section.id].some((field) => Boolean(validationErrors[field])),
+  )?.id
 
 export const LoanProductForm = ({
   initialValues,
@@ -124,17 +203,24 @@ export const LoanProductForm = ({
   isLoadingCatalogs,
   catalogsError,
 }: LoanProductFormProps) => {
+  const [activeSection, setActiveSection] = useState<ProductFormSectionId>('general')
   const {
     register,
     handleSubmit,
     control,
     reset,
     setValue,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<LoanProductFormValues>({
     resolver: yupResolver(loanProductFormSchema),
     defaultValues,
+    shouldUnregister: false,
   })
+
+  const hasSectionError = (sectionId: string) => {
+    const fields = sectionErrorFields[sectionId as ProductFormSectionId]
+    return fields?.some((field) => Boolean(errors[field])) ?? false
+  }
 
   useEffect(() => {
     if (initialValues) {
@@ -170,7 +256,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.termUnits.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.termUnits],
@@ -179,7 +265,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.interestRateTypes.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.interestRateTypes],
@@ -188,7 +274,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.rateBases.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.rateBases],
@@ -197,7 +283,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.amortizationMethods.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.amortizationMethods],
@@ -206,7 +292,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.paymentFrequencies.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.paymentFrequencies],
@@ -215,7 +301,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.portfolioTypes.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.portfolioTypes],
@@ -224,7 +310,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.dayRules.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.dayRules],
@@ -233,7 +319,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.roundingModes.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.roundingModes],
@@ -242,7 +328,7 @@ export const LoanProductForm = ({
     () =>
       catalogs.holidayAdjustmentRules.map((item) => ({
         value: item.id,
-        label: getOptionLabel(item),
+        label: item.name,
         meta: item,
       })),
     [catalogs.holidayAdjustmentRules],
@@ -306,27 +392,41 @@ export const LoanProductForm = ({
         : undefined,
     }
     void onSubmit(normalized)
+  }, (validationErrors) => {
+    const firstSectionWithErrors = getFirstSectionWithErrors(validationErrors)
+    if (firstSectionWithErrors) {
+      setActiveSection(firstSectionWithErrors)
+    }
   })
 
   return (
-    <form className="space-y-4" onSubmit={submitHandler} noValidate>
+    <form className="space-y-3" onSubmit={submitHandler} noValidate>
       {error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-100">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-100">
           {error}
         </div>
       ) : null}
 
       {catalogsError ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/10 dark:text-amber-100">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-sm text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/10 dark:text-amber-100">
           {catalogsError}
         </div>
       ) : null}
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Datos generales
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-[minmax(220px,250px)_minmax(0,1fr)] lg:items-start">
+        <ProductFormSectionNav
+          items={productFormSections}
+          activeSection={activeSection}
+          onSelect={(sectionId) => setActiveSection(sectionId as ProductFormSectionId)}
+          hasError={hasSectionError}
+        />
+        <div className="min-w-0 space-y-4">
+      <div hidden={activeSection !== 'general'}>
+        <ProductFormSection
+          title="Datos generales"
+          description="Identifica el producto y define su disponibilidad."
+        >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Código
@@ -380,13 +480,15 @@ export const LoanProductForm = ({
             </label>
           </div>
         </div>
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Condiciones
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <div hidden={activeSection !== 'conditions'}>
+        <ProductFormSection
+          title="Condiciones"
+          description="Define moneda, montos y plazo del producto."
+        >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Moneda
@@ -437,19 +539,19 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Unidad de plazo
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={termUnitOptions.find((option) => option.value === termUnitId) ?? null}
               onChange={(option) =>
-                setValue('termUnitId', option?.value ?? '', { shouldValidate: true })
+                setValue('termUnitId', option?.value ?? '', {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(termUnitOptions, inputValue))
-              }
+              options={termUnitOptions}
               placeholder="Selecciona una unidad"
               inputId="termUnitId"
               instanceId="loan-product-term-unit-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={termUnitOptions}
               noOptionsMessage="Sin unidades"
             />
             <input type="hidden" {...register('termUnitId')} />
@@ -496,18 +598,20 @@ export const LoanProductForm = ({
             ) : null}
           </div>
         </div>
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Interés y amortización
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div hidden={activeSection !== 'interest'}>
+        <ProductFormSection
+          title="Interés y amortización"
+          description="Configura la tasa, la frecuencia y el método de amortización."
+        >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Tipo de tasa
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={
                 interestRateTypeOptions.find((option) => option.value === interestRateTypeId) ??
                 null
@@ -515,16 +619,14 @@ export const LoanProductForm = ({
               onChange={(option) =>
                 setValue('interestRateTypeId', option?.value ?? '', {
                   shouldValidate: true,
+                  shouldDirty: true,
                 })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(interestRateTypeOptions, inputValue))
-              }
+              options={interestRateTypeOptions}
               placeholder="Selecciona un tipo"
               inputId="interestRateTypeId"
               instanceId="loan-product-interest-rate-type-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={interestRateTypeOptions}
               noOptionsMessage="Sin tipos de tasa"
             />
             <input type="hidden" {...register('interestRateTypeId')} />
@@ -595,19 +697,19 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Base de tasa
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={rateBaseOptions.find((option) => option.value === rateBaseId) ?? null}
               onChange={(option) =>
-                setValue('rateBaseId', option?.value ?? '', { shouldValidate: true })
+                setValue('rateBaseId', option?.value ?? '', {
+                  shouldValidate: true,
+                  shouldDirty: true,
+                })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(rateBaseOptions, inputValue))
-              }
+              options={rateBaseOptions}
               placeholder="Selecciona una base"
               inputId="rateBaseId"
               instanceId="loan-product-rate-base-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={rateBaseOptions}
               noOptionsMessage="Sin bases de tasa"
             />
             <input type="hidden" {...register('rateBaseId')} />
@@ -619,7 +721,7 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Método amortización
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={
                 amortizationMethodOptions.find(
                   (option) => option.value === amortizationMethodId,
@@ -628,16 +730,14 @@ export const LoanProductForm = ({
               onChange={(option) =>
                 setValue('amortizationMethodId', option?.value ?? '', {
                   shouldValidate: true,
+                  shouldDirty: true,
                 })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(amortizationMethodOptions, inputValue))
-              }
+              options={amortizationMethodOptions}
               placeholder="Selecciona un método"
               inputId="amortizationMethodId"
               instanceId="loan-product-amortization-method-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={amortizationMethodOptions}
               noOptionsMessage="Sin métodos de amortización"
             />
             <input type="hidden" {...register('amortizationMethodId')} />
@@ -651,7 +751,7 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Frecuencia de pago
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={
                 paymentFrequencyOptions.find((option) => option.value === paymentFrequencyId) ??
                 null
@@ -659,16 +759,14 @@ export const LoanProductForm = ({
               onChange={(option) =>
                 setValue('paymentFrequencyId', option?.value ?? '', {
                   shouldValidate: true,
+                  shouldDirty: true,
                 })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(paymentFrequencyOptions, inputValue))
-              }
+              options={paymentFrequencyOptions}
               placeholder="Selecciona una frecuencia"
               inputId="paymentFrequencyId"
               instanceId="loan-product-payment-frequency-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={paymentFrequencyOptions}
               noOptionsMessage="Sin frecuencias"
             />
             <input type="hidden" {...register('paymentFrequencyId')} />
@@ -719,13 +817,15 @@ export const LoanProductForm = ({
           La tasa nominal predeterminada debe estar entre la tasa mínima y la máxima. Para una
           tasa fija, usa el mismo valor en los tres campos.
         </p>
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Garantías y seguros
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+      <div hidden={activeSection !== 'collateral'}>
+        <ProductFormSection
+          title="Garantías y seguros"
+          description="Indica si el producto requiere garantías o seguros."
+        >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           <div className="flex items-center gap-2">
             <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200">
               <input
@@ -773,34 +873,34 @@ export const LoanProductForm = ({
             Has marcado que tiene seguro, pero no hay seguros agregados.
           </p>
         ) : null}
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Regulación
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+      <div hidden={activeSection !== 'regulation'}>
+        <ProductFormSection
+          title="Regulación"
+          description="Define las reglas regulatorias y operativas del producto."
+        >
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
           <div className="space-y-2">
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Tipo de cartera
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={
                 portfolioTypeOptions.find((option) => option.value === portfolioTypeId) ?? null
               }
               onChange={(option) =>
                 setValue('portfolioTypeId', option?.value ?? '', {
                   shouldValidate: true,
+                  shouldDirty: true,
                 })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(portfolioTypeOptions, inputValue))
-              }
+              options={portfolioTypeOptions}
               placeholder="Selecciona un tipo"
               inputId="portfolioTypeId"
               instanceId="loan-product-portfolio-type-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={portfolioTypeOptions}
               noOptionsMessage="Sin tipos de cartera"
             />
             <input type="hidden" {...register('portfolioTypeId')} />
@@ -814,21 +914,19 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Regla de días
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={dayRuleOptions.find((option) => option.value === dayRuleId) ?? null}
               onChange={(option) =>
                 setValue('dayRuleId', option?.value ?? '', {
                   shouldValidate: true,
+                  shouldDirty: true,
                 })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(dayRuleOptions, inputValue))
-              }
+              options={dayRuleOptions}
               placeholder="Selecciona una regla"
               inputId="dayRuleId"
               instanceId="loan-product-day-rule-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={dayRuleOptions}
               noOptionsMessage="Sin reglas de días"
             />
             <input type="hidden" {...register('dayRuleId')} />
@@ -840,23 +938,21 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Modo de redondeo
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={
                 roundingModeOptions.find((option) => option.value === roundingModeId) ?? null
               }
               onChange={(option) =>
                 setValue('roundingModeId', option?.value ?? '', {
                   shouldValidate: true,
+                  shouldDirty: true,
                 })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(roundingModeOptions, inputValue))
-              }
+              options={roundingModeOptions}
               placeholder="Selecciona un modo"
               inputId="roundingModeId"
               instanceId="loan-product-rounding-mode-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={roundingModeOptions}
               noOptionsMessage="Sin modos de redondeo"
             />
             <input type="hidden" {...register('roundingModeId')} />
@@ -868,7 +964,7 @@ export const LoanProductForm = ({
             <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               Regla de ajuste por feriado
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+            <Select<LoanCatalogItemDto>
               value={
                 holidayAdjustmentRuleOptions.find(
                   (option) => option.value === holidayAdjustmentRuleId,
@@ -877,18 +973,14 @@ export const LoanProductForm = ({
               onChange={(option) =>
                 setValue('holidayAdjustmentRuleId', option?.value ?? '', {
                   shouldValidate: true,
+                  shouldDirty: true,
                 })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(
-                  filterOptions(holidayAdjustmentRuleOptions, inputValue),
-                )
-              }
+              options={holidayAdjustmentRuleOptions}
               placeholder="Selecciona una regla"
               inputId="holidayAdjustmentRuleId"
               instanceId="loan-product-holiday-adjustment-rule-id"
               isDisabled={isSaving || isLoadingCatalogs}
-              defaultOptions={holidayAdjustmentRuleOptions}
               noOptionsMessage="Sin reglas de ajuste"
             />
             <input type="hidden" {...register('holidayAdjustmentRuleId')} />
@@ -899,13 +991,15 @@ export const LoanProductForm = ({
             ) : null}
           </div>
         </div>
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h3 className="text-base font-semibold text-slate-900 dark:text-slate-50">
-          Mapeo contable (GL)
-        </h3>
-        <div className="grid grid-cols-1 gap-3">
+      <div hidden={activeSection !== 'accounting'}>
+        <ProductFormSection
+          title="Mapeo contable"
+          description="Define las cuentas contables que utilizará automáticamente este producto cuando genere movimientos financieros."
+        >
+        <div className="space-y-4">
           <input type="hidden" {...register('glLoanPortfolioAccountId')} />
           <input type="hidden" {...register('glInterestIncomeAccountId')} />
           <input type="hidden" {...register('glInterestReceivableAccountId')} />
@@ -915,10 +1009,22 @@ export const LoanProductForm = ({
           <input type="hidden" {...register('glFeeIncomeAccountId')} />
           <input type="hidden" {...register('glDeferredFeeAccountId')} />
           <input type="hidden" {...register('glInsurancePayableAccountId')} />
+          <div className="border-b border-slate-200 pb-2 dark:border-slate-800">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+              Cuentas principales
+            </h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Son necesarias para registrar el capital y los intereses del préstamo.
+            </p>
+          </div>
           <GlAccountsSelector
-            label="Cuenta cartera (requerida)"
+            label="Capital del préstamo"
+            description="Cuenta donde se registra el saldo de capital entregado al cliente."
+            required
             value={useWatch({ control, name: 'glLoanPortfolioAccountId' })}
-            onChange={(accountId) => setValue('glLoanPortfolioAccountId', accountId)}
+            onChange={(accountId) =>
+              setValue('glLoanPortfolioAccountId', accountId, { shouldDirty: true })
+            }
             onSearch={onSearchAccounts}
             onResolveAccount={onResolveAccount}
             isSearching={isSearchingAccounts}
@@ -931,9 +1037,13 @@ export const LoanProductForm = ({
           ) : null}
 
           <GlAccountsSelector
-            label="Cuenta ingresos por intereses (requerida)"
+            label="Ingresos por intereses"
+            description="Cuenta donde se reconocen los intereses generados por el préstamo."
+            required
             value={useWatch({ control, name: 'glInterestIncomeAccountId' })}
-            onChange={(accountId) => setValue('glInterestIncomeAccountId', accountId)}
+            onChange={(accountId) =>
+              setValue('glInterestIncomeAccountId', accountId, { shouldDirty: true })
+            }
             onSearch={onSearchAccounts}
             onResolveAccount={onResolveAccount}
             isSearching={isSearchingAccounts}
@@ -946,11 +1056,14 @@ export const LoanProductForm = ({
           ) : null}
 
           <GlAccountsSelector
-            label="Cuenta de interés por cobrar (requerida)"
+            label="Intereses por cobrar"
+            description="Cuenta para intereses ya generados que todavía no han sido cobrados."
+            required
             value={useWatch({ control, name: 'glInterestReceivableAccountId' })}
             onChange={(accountId) =>
               setValue('glInterestReceivableAccountId', accountId, {
                 shouldValidate: true,
+                shouldDirty: true,
               })
             }
             onSearch={onSearchAccounts}
@@ -958,19 +1071,29 @@ export const LoanProductForm = ({
             isSearching={isSearchingAccounts}
             error={accountsError ?? undefined}
           />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Cuenta utilizada para registrar el interés devengado pendiente de cobro.
-          </p>
           {errors.glInterestReceivableAccountId ? (
             <p className="text-xs text-red-500">
               {errors.glInterestReceivableAccountId.message}
             </p>
           ) : null}
 
+          <div className="border-b border-slate-200 pb-2 pt-1 dark:border-slate-800">
+            <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+              Otras cuentas y reconocimiento
+            </h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Úsalas solo cuando el producto maneje intereses suspendidos, comisiones o seguros.
+            </p>
+          </div>
+
           <GlAccountsSelector
-            label="Cuenta intereses suspendidos (opcional)"
+            label="Intereses suspendidos"
+            description="Cuenta para intereses que deben separarse temporalmente de los ingresos normales."
+            required={false}
             value={useWatch({ control, name: 'glInterestSuspenseAccountId' })}
-            onChange={(accountId) => setValue('glInterestSuspenseAccountId', accountId)}
+            onChange={(accountId) =>
+              setValue('glInterestSuspenseAccountId', accountId, { shouldDirty: true })
+            }
             onSearch={onSearchAccounts}
             onResolveAccount={onResolveAccount}
             isSearching={isSearchingAccounts}
@@ -978,10 +1101,15 @@ export const LoanProductForm = ({
           />
 
           <GlAccountsSelector
-            label="Cuenta ingresos por comisiones"
+            label="Ingresos por comisiones"
+            description="Cuenta donde se reconocen los ingresos generados por cargos y comisiones."
+            required={false}
             value={useWatch({ control, name: 'glFeeIncomeAccountId' })}
             onChange={(accountId) =>
-              setValue('glFeeIncomeAccountId', accountId, { shouldValidate: true })
+              setValue('glFeeIncomeAccountId', accountId, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
             }
             onSearch={onSearchAccounts}
             onResolveAccount={onResolveAccount}
@@ -993,29 +1121,34 @@ export const LoanProductForm = ({
           ) : null}
 
           <GlAccountsSelector
-            label="Cuenta de comisión diferida"
+            label="Comisiones diferidas"
+            description="Cuenta temporal para comisiones descontadas al desembolso antes de reconocerlas."
+            required={false}
             value={useWatch({ control, name: 'glDeferredFeeAccountId' })}
             onChange={(accountId) =>
-              setValue('glDeferredFeeAccountId', accountId, { shouldValidate: true })
+              setValue('glDeferredFeeAccountId', accountId, {
+                shouldValidate: true,
+                shouldDirty: true,
+              })
             }
             onSearch={onSearchAccounts}
             onResolveAccount={onResolveAccount}
             isSearching={isSearchingAccounts}
             error={accountsError ?? undefined}
           />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Cuenta utilizada para registrar inicialmente las comisiones descontadas al desembolso.
-          </p>
           {errors.glDeferredFeeAccountId ? (
             <p className="text-xs text-red-500">{errors.glDeferredFeeAccountId.message}</p>
           ) : null}
 
           <GlAccountsSelector
-            label="Cuenta seguros por pagar"
+            label="Seguros por pagar"
+            description="Cuenta donde queda pendiente el pago de las primas a la aseguradora."
+            required={false}
             value={useWatch({ control, name: 'glInsurancePayableAccountId' })}
             onChange={(accountId) =>
               setValue('glInsurancePayableAccountId', accountId, {
                 shouldValidate: true,
+                shouldDirty: true,
               })
             }
             onSearch={onSearchAccounts}
@@ -1029,9 +1162,14 @@ export const LoanProductForm = ({
             </p>
           ) : null}
         </div>
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div hidden={activeSection !== 'fees'}>
+        <ProductFormSection
+          title="Comisiones y cargos"
+          description="Configura los cargos que aplican al producto y cuándo se cobran."
+        >
         <FeesEditor
           control={control}
           errors={errors}
@@ -1042,9 +1180,14 @@ export const LoanProductForm = ({
           feeValueTypes={catalogs.feeValueTypes}
           feeChargeTimings={catalogs.feeChargeTimings}
         />
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div hidden={activeSection !== 'insurance'}>
+        <ProductFormSection
+          title="Seguros"
+          description="Configura los seguros asociados y sus condiciones de cobro."
+        >
         <InsurancesEditor
           control={control}
           errors={errors}
@@ -1055,9 +1198,14 @@ export const LoanProductForm = ({
           insuranceValueTypes={catalogs.insuranceValueTypes}
           insuranceChargeTimings={catalogs.insuranceChargeTimings}
         />
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div hidden={activeSection !== 'collateralRules'}>
+        <ProductFormSection
+          title="Reglas de garantías"
+          description="Define el ratio mínimo y el estado de cada tipo de garantía."
+        >
         <CollateralRulesEditor
           control={control}
           errors={errors}
@@ -1065,24 +1213,48 @@ export const LoanProductForm = ({
           allowRemove={!isEdit}
           collateralTypes={catalogs.collateralTypes}
         />
-      </section>
+        </ProductFormSection>
+      </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          className="btn-secondary px-4 py-2 text-sm"
-          onClick={onCancel}
-          disabled={isSaving}
+        </div>
+      </div>
+
+      <div className="sticky bottom-3 z-20 mt-4 flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-lg shadow-slate-900/5 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-950/95 dark:shadow-black/20 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          aria-live="polite"
+          className={`inline-flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 ${
+            isDirty
+              ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-200'
+              : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+          }`}
         >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          className="btn-primary px-4 py-2 text-sm"
-          disabled={isSaving}
-        >
-          {isSaving ? 'Guardando...' : 'Guardar'}
-        </button>
+          <span
+            className={`h-2 w-2 rounded-full ${
+              isDirty ? 'bg-amber-500 dark:bg-amber-400' : 'bg-slate-400 dark:bg-slate-500'
+            }`}
+            aria-hidden="true"
+          />
+          <span className="text-xs font-medium">
+            {isDirty ? 'Cambios pendientes' : 'Sin cambios pendientes'}
+          </span>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            className="btn-secondary px-4 py-1.5 text-sm"
+            onClick={onCancel}
+            disabled={isSaving}
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className="btn-primary px-4 py-1.5 text-sm"
+            disabled={isSaving}
+          >
+            {isSaving ? 'Guardando...' : 'Guardar'}
+          </button>
+        </div>
       </div>
     </form>
   )

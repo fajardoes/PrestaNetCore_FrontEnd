@@ -22,13 +22,14 @@ const DEFAULT_VALUES: FinancialStatementsReportFormValues = {
   fromDate: '',
   toDate: '',
   costCenterId: '',
+  withoutCostCenter: false,
 }
 
 export const BalanceSheetPage = () => {
   const { notify } = useNotifications()
   const balanceSheet = useBalanceSheet()
   const periodOptions = usePeriodOptions()
-  const costCenterOptions = useCostCenterOptions()
+  const costCenterOptions = useCostCenterOptions({ isActive: null, includeDeleted: true })
   const [showPdf, setShowPdf] = useState(false)
 
   const form = useForm<FinancialStatementsReportFormValues>({
@@ -53,6 +54,7 @@ export const BalanceSheetPage = () => {
       fromDate: hasPeriod ? undefined : values.fromDate || undefined,
       toDate: hasPeriod ? undefined : values.toDate || undefined,
       costCenterId: values.costCenterId || undefined,
+      withoutCostCenter: values.withoutCostCenter,
     })
   }
 
@@ -85,14 +87,16 @@ export const BalanceSheetPage = () => {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="text-sm text-slate-600 dark:text-slate-400">
-          {balanceSheet.data?.costCenterName
+          {balanceSheet.data?.withoutCostCenter
+            ? 'Solo líneas sin centro de costo'
+            : balanceSheet.data?.costCenterName
             ? `Centro de costo: ${balanceSheet.data.costCenterName}`
             : 'Todos los centros de costo'}
         </div>
         <button
           type="button"
           onClick={handleExportPdf}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+          className="btn-secondary btn-list-action disabled:cursor-not-allowed disabled:opacity-60"
           disabled={!reportProps}
         >
           Exportar a PDF

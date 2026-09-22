@@ -40,7 +40,7 @@ export const AnticipatedInstallmentTransitAccountCard = ({
             Cuenta utilizada al contabilizar la cuota anticipada durante el desembolso.
           </p>
         </div>
-        <button type="button" className="btn-primary px-4 py-2 text-sm" disabled={isLoading || isSaving} onClick={openModal}>
+        <button type="button" className="btn-primary btn-list-action" disabled={isLoading || isSaving} onClick={openModal}>
           Configurar cuenta
         </button>
       </div>

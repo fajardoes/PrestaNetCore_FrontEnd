@@ -1,4 +1,5 @@
 import type { HolidayListItemDto } from '@/infrastructure/interfaces/organization/holidays/holiday-list-item.dto'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
@@ -80,31 +81,24 @@ export const HolidaysTable = ({
       className: 'min-w-[250px]',
       render: (holiday: HolidayListItemDto) => (
         <span className="flex justify-end gap-2">
-          <button
-            type="button"
-            className="btn-table-action"
+          <TableActionButton
+            icon="view"
+            label="Ver feriado"
             onClick={() => onView(holiday)}
-          >
-            Ver
-          </button>
-          <button
-            type="button"
-            className="btn-table-action"
+          />
+          <TableActionButton
+            icon="edit"
+            label="Editar feriado"
             onClick={() => onEdit(holiday)}
-          >
-            Editar
-          </button>
-          <button
-            type="button"
-            className={`btn-table-action ${
-              holiday.isActive
-                ? 'border border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-500/50 dark:text-amber-200 dark:hover:bg-amber-500/10'
-                : 'border border-sky-300 text-sky-700 hover:bg-sky-50 dark:border-sky-500/50 dark:text-sky-200 dark:hover:bg-sky-500/10'
-            }`}
+          />
+          <TableActionButton
+            icon="toggle"
+            label={`${holiday.isActive ? 'Desactivar' : 'Activar'} feriado`}
+            className={holiday.isActive
+              ? 'border border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-500/50 dark:text-amber-200 dark:hover:bg-amber-500/10'
+              : 'border border-sky-300 text-sky-700 hover:bg-sky-50 dark:border-sky-500/50 dark:text-sky-200 dark:hover:bg-sky-500/10'}
             onClick={() => onToggleStatus(holiday)}
-          >
-            {holiday.isActive ? 'Desactivar' : 'Activar'}
-          </button>
+          />
         </span>
       ),
     },

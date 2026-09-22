@@ -7,6 +7,7 @@ export interface BalanceSheetFilters {
   toDate?: string
   periodId?: string
   costCenterId?: string
+  withoutCostCenter: boolean
 }
 
 interface UseBalanceSheetState {
@@ -29,6 +30,7 @@ export const useBalanceSheet = () => {
       toDate: filters.toDate || undefined,
       periodId: filters.periodId || undefined,
       costCenterId: filters.costCenterId || undefined,
+      withoutCostCenter: filters.withoutCostCenter,
     })
 
     if (result.success) {

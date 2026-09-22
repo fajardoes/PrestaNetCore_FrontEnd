@@ -13,11 +13,12 @@ export const reactSelectClassNames = {
   singleValue: () => 'text-sm text-slate-900 dark:text-slate-100',
   indicatorsContainer: () => 'text-slate-400',
   menu: () =>
-    'mt-2 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900',
+    'z-50 mt-1 rounded-lg border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-900',
+  menuList: () => 'max-h-[300px] overflow-y-auto p-1',
   option: (state: { isFocused: boolean; isSelected: boolean }) =>
     [
-      'px-3 py-2 text-sm',
-      state.isFocused ? 'bg-slate-100 dark:bg-slate-800' : '',
+      'rounded-md px-3 py-1.5 text-sm transition-colors',
+      state.isFocused ? 'bg-slate-100 dark:bg-slate-800' : 'bg-white dark:bg-slate-900',
       state.isSelected
         ? 'font-semibold text-slate-900 dark:text-slate-50'
         : 'text-slate-700 dark:text-slate-200',

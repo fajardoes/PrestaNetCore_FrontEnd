@@ -12,6 +12,7 @@ import { useGlAccountsSearch } from '@/presentation/features/loans/products/hook
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { formatCurrency } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import {
   anticipatedInstallmentStrategyLabel,
@@ -83,7 +84,7 @@ export const AnticipatedInstallmentSettingsPage = () => {
               <p className="text-sm text-slate-600 dark:text-slate-400">Reglas globales o asignadas a producto.</p>
             </div>
             {canManageSettings ? (
-              <button type="button" className="btn-primary px-4 py-2 text-sm" onClick={() => setEditing(null)}>
+              <button type="button" className="btn-primary btn-list-action" onClick={() => setEditing(null)}>
                 Crear regla
               </button>
             ) : null}
@@ -107,8 +108,8 @@ export const AnticipatedInstallmentSettingsPage = () => {
                       <td>{formatAnticipatedInstallmentDate(item.effectiveFrom)} - {formatAnticipatedInstallmentDate(item.effectiveTo)}</td>
                       <td>{item.isActive ? (item.isEnabled ? 'Activa' : 'Deshabilitada') : 'Inactiva'}</td>
                       <td className="space-x-2 text-right">
-                        {canManageSettings ? <button type="button" className="btn-table-action" onClick={() => setEditing(item)}>Editar</button> : null}
-                        {canManageSettings && item.isActive ? <button type="button" className="btn-table-action" onClick={() => setDeactivating(item)}>Desactivar</button> : null}
+                        {canManageSettings ? <TableActionButton icon="edit" label="Editar regla de cuota anticipada" onClick={() => setEditing(item)} /> : null}
+                        {canManageSettings && item.isActive ? <TableActionButton icon="toggle" label="Desactivar regla de cuota anticipada" onClick={() => setDeactivating(item)} /> : null}
                       </td>
                     </tr>
                   ))}

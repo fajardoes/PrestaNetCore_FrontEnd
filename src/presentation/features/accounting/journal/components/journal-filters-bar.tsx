@@ -4,6 +4,7 @@ import type { JournalFiltersState, JournalSourceFilter, JournalStateFilter } fro
 import AsyncSelect from '@/presentation/share/components/async-select'
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting/accounting-period'
+import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
 import { getPeriodLabel } from '@/presentation/features/accounting/accounting-ui'
 
 interface JournalFiltersBarProps {
@@ -12,6 +13,7 @@ interface JournalFiltersBarProps {
   actions?: ReactNode
   onReset?: () => void
   periods?: AccountingPeriodDto[]
+  costCenters?: CostCenter[]
 }
 
 export const JournalFiltersBar = ({
@@ -20,6 +22,7 @@ export const JournalFiltersBar = ({
   actions,
   onReset,
   periods = [],
+  costCenters = [],
 }: JournalFiltersBarProps) => {
   const stateOptions = [
     { value: 'all', label: 'Todos' },
@@ -37,6 +40,14 @@ export const JournalFiltersBar = ({
     ...periods.map((period) => ({
       value: period.id,
       label: getPeriodLabel(period),
+    })),
+  ]
+  const costCenterOptions = [
+    { value: '', label: 'Todos los centros de costo' },
+    { value: '__without_cost_center__', label: 'Sin centro de costo' },
+    ...costCenters.map((center) => ({
+      value: center.id,
+      label: `${center.code} - ${center.name}${center.isActive ? '' : ' (Inactivo)'}${center.isDeleted ? ' (Eliminado)' : ''}`,
     })),
   ]
   const filterOptions = async (
@@ -72,6 +83,33 @@ export const JournalFiltersBar = ({
               placeholder="Selecciona fecha inicial"
               maxDate={filters.toDate ? new Date(filters.toDate) : undefined}
             />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Centro de costo
+            </label>
+            <div className="w-full">
+              <AsyncSelect
+                value={
+                  costCenterOptions.find((option) =>
+                    filters.withoutCostCenter
+                      ? option.value === '__without_cost_center__'
+                      : option.value === filters.costCenterId,
+                  ) ?? costCenterOptions[0]}
+                onChange={(option) => {
+                  const value = option?.value ?? ''
+                  onFiltersChange({
+                    costCenterId: value === '__without_cost_center__' ? '' : value,
+                    withoutCostCenter: value === '__without_cost_center__',
+                  })
+                }}
+                loadOptions={(inputValue) => filterOptions(costCenterOptions, inputValue)}
+                defaultOptions={costCenterOptions}
+                isClearable={false}
+                instanceId="accounting-journal-cost-center-filter"
+                noOptionsMessage="Sin centros de costo"
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -147,7 +185,7 @@ export const JournalFiltersBar = ({
               <button
                 type="button"
                 onClick={onReset}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="btn-secondary btn-list-action w-full sm:w-auto"
               >
                 Limpiar filtros
               </button>

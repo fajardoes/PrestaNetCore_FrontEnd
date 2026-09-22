@@ -25,7 +25,7 @@ export const AdvancedPeriodActions = ({ onOpenPeriod }: AdvancedPeriodActionsPro
     <div ref={containerRef} className="relative">
       <button
         type="button"
-        className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+        className="btn-secondary btn-list-action"
         onClick={() => setOpen((prev) => !prev)}
         aria-haspopup="menu"
         aria-expanded={open}

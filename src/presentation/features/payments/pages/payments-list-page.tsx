@@ -17,8 +17,8 @@ import { useUserPermissions } from '@/presentation/features/security/hooks/use-u
 import { useNotifications } from '@/providers/NotificationProvider'
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/components/async-select'
-import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import SelectField from '@/presentation/share/components/select'
+import { PaymentFiltersCard } from '@/presentation/features/payments/components/payment-filters-card'
 import { PaymentsTable } from '@/presentation/features/payments/components/payments-table'
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50]
@@ -108,6 +108,21 @@ export const PaymentsListPage = () => {
       label: `${client.nombreCompleto} - ${client.identidad}`,
       meta: client,
     }))
+  }
+
+  const formatClientOptionLabel = (option: AsyncSelectOption<ClientListItem>) => {
+    const fallbackParts = option.label.split(' - ')
+    const name = option.meta?.nombreCompleto || fallbackParts[0] || option.label
+    const identity = option.meta?.identidad || fallbackParts[1]
+
+    return (
+      <span className="flex min-w-0 flex-col leading-tight">
+        <span className="truncate font-medium text-slate-800 dark:text-slate-100">{name}</span>
+        {identity ? (
+          <span className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">{identity}</span>
+        ) : null}
+      </span>
+    )
   }
 
   const loadUserOptions = async (inputValue: string) => {
@@ -202,125 +217,85 @@ export const PaymentsListPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+          <h1 className="text-2xl font-semibold leading-8 text-slate-900 dark:text-slate-50">
             Pagos en efectivo
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             Consulta efectivo cobrado por cobradores, liquidación por caja y reversas.
           </p>
         </div>
         <button
           type="button"
-          className="btn-primary px-4 py-2 text-sm"
+          className="btn-primary btn-list-action"
           onClick={() => navigate('/cash-collections/payments/new')}
         >
           Registrar efectivo
         </button>
       </div>
 
-      <ListFiltersBar
-        layout="two-rows"
-        search={loanCode}
-        onSearchChange={setLoanCode}
-        placeholder="Código del préstamo (búsqueda exacta)"
-        status="all"
-        onStatusChange={() => undefined}
-        showStatus={false}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" className="btn-secondary px-3 py-2 text-sm" onClick={resetFilters}>
-              Limpiar filtros
-            </button>
-            <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={() => void handleSearch()}>
-              Buscar
-            </button>
-          </div>
+      <PaymentFiltersCard
+        loanCode={loanCode}
+        onLoanCodeChange={setLoanCode}
+        clientFilter={
+          <AsyncSelect<ClientListItem>
+            value={clientOption}
+            onChange={(option) => setClientOption(option)}
+            loadOptions={loadClientOptions}
+            defaultOptions
+            isClearable
+            isLoading={supportData.isLoadingClients}
+            inputId="payments-filter-client"
+            instanceId="payments-filter-client"
+            placeholder="Buscar cliente"
+            formatOptionLabel={formatClientOptionLabel}
+            maxMenuHeight={300}
+          />
         }
-      >
-        <div className="grid w-full grid-cols-1 gap-3 lg:grid-cols-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Cliente
-            </label>
-            <AsyncSelect<ClientListItem>
-              value={clientOption}
-              onChange={(option) => setClientOption(option)}
-              loadOptions={loadClientOptions}
+        thirdFilter={
+          <SelectField
+            inputId="payments-filter-channel"
+            instanceId="payments-filter-channel"
+            value={channelOptions.find((option) => option.value === channelId) ?? null}
+            onChange={(option) => setChannelId(option?.value ?? '')}
+            options={channelOptions}
+            placeholder="Todos"
+            isLoading={supportData.isLoadingChannels}
+          />
+        }
+        thirdFilterLabel="Canal"
+        statusFilter={
+          <SelectField
+            inputId="payments-filter-status"
+            instanceId="payments-filter-status"
+            value={STATUS_OPTIONS.find((option) => option.value === statusCode) ?? null}
+            onChange={(option) => setStatusCode(option?.value ?? '')}
+            options={STATUS_OPTIONS}
+            placeholder="Todos"
+          />
+        }
+        registeredByFilter={
+          canReadAll ? (
+            <AsyncSelect<SecurityUser>
+              value={registeredByOption}
+              onChange={(option) => setRegisteredByOption(option)}
+              loadOptions={loadUserOptions}
               defaultOptions
               isClearable
-              isLoading={supportData.isLoadingClients}
-              inputId="payments-filter-client"
-              instanceId="payments-filter-client"
-              placeholder="Buscar cliente"
+              isLoading={supportData.isLoadingUsers}
+              inputId="payments-filter-user"
+              instanceId="payments-filter-user"
+              placeholder="Buscar usuario"
             />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Canal
-            </label>
-            <SelectField
-              inputId="payments-filter-channel"
-              instanceId="payments-filter-channel"
-              value={channelOptions.find((option) => option.value === channelId) ?? null}
-              onChange={(option) => setChannelId(option?.value ?? '')}
-              options={channelOptions}
-              placeholder="Todos"
-              isLoading={supportData.isLoadingChannels}
-            />
-          </div>
-
-          {canReadAll ? (
-            <div className="space-y-1">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Usuario registrador
-              </label>
-              <AsyncSelect<SecurityUser>
-                value={registeredByOption}
-                onChange={(option) => setRegisteredByOption(option)}
-                loadOptions={loadUserOptions}
-                defaultOptions
-                isClearable
-                isLoading={supportData.isLoadingUsers}
-                inputId="payments-filter-user"
-                instanceId="payments-filter-user"
-                placeholder="Buscar usuario"
-              />
-            </div>
-          ) : null}
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Estado
-            </label>
-            <SelectField
-              inputId="payments-filter-status"
-              instanceId="payments-filter-status"
-              value={STATUS_OPTIONS.find((option) => option.value === statusCode) ?? null}
-              onChange={(option) => setStatusCode(option?.value ?? '')}
-              options={STATUS_OPTIONS}
-              placeholder="Todos"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Desde
-            </label>
-            <DatePicker value={from} onChange={setFrom} />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Hasta
-            </label>
-            <DatePicker value={to} onChange={setTo} />
-          </div>
-        </div>
-      </ListFiltersBar>
+          ) : undefined
+        }
+        fromFilter={<DatePicker value={from} onChange={setFrom} />}
+        toFilter={<DatePicker value={to} onChange={setTo} />}
+        onReset={resetFilters}
+        onSearch={() => void handleSearch()}
+      />
 
       {supportData.error ? (
         <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
@@ -328,8 +303,13 @@ export const PaymentsListPage = () => {
         </div>
       ) : null}
 
-      <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
-        <span>{payments.totalCount} pagos en efectivo encontrados</span>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="font-semibold text-slate-800 dark:text-slate-100">Pagos registrados</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {payments.totalCount} {payments.totalCount === 1 ? 'registro encontrado' : 'registros encontrados'}
+          </span>
+        </div>
         <div className="flex items-center gap-2">
           <span>Registros por página</span>
           <select

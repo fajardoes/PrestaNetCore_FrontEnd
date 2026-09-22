@@ -20,7 +20,7 @@ export const LedgerPage = () => {
 
   const ledgerHook = useLedger()
   const accountsHook = usePostableAccounts({ enabled: isAdmin })
-  const costCentersHook = useCostCenterOptions({ enabled: isAdmin })
+  const costCentersHook = useCostCenterOptions({ enabled: isAdmin, isActive: null, includeDeleted: true })
   const [showLedgerPdf, setShowLedgerPdf] = useState(false)
 
   const canShowRestriction = useMemo(() => !isAdmin, [isAdmin])
@@ -77,6 +77,18 @@ export const LedgerPage = () => {
       accountName: selectedAccount.name,
       currencyCode: 'HNL',
       periodLabel,
+      costCenterLabel: ledgerHook.filters.withoutCostCenter
+        ? 'Sin centro de costo'
+        : ledgerHook.filters.costCenterId
+        ? (() => {
+            const selectedCostCenter = costCentersHook.costCenters.find(
+              (center) => center.id === ledgerHook.filters.costCenterId,
+            )
+            return selectedCostCenter
+              ? `${selectedCostCenter.code} - ${selectedCostCenter.name}${selectedCostCenter.isDeleted ? ' (Eliminado)' : selectedCostCenter.isActive ? '' : ' (Inactivo)'}`
+              : ledgerHook.filters.costCenterId
+          })()
+        : 'Todos',
       openingBalance: ledgerHook.openingBalance ?? 0,
       lines: ledgerHook.entries.map((entry) => ({
         date: formatDate(entry.date),
@@ -99,6 +111,9 @@ export const LedgerPage = () => {
     ledgerHook.filters.fromDate,
     ledgerHook.filters.toDate,
     ledgerHook.openingBalance,
+    ledgerHook.filters.costCenterId,
+    ledgerHook.filters.withoutCostCenter,
+    costCentersHook.costCenters,
     selectedAccount,
   ])
 
@@ -143,7 +158,7 @@ export const LedgerPage = () => {
         <button
           type="button"
           onClick={handleExportPdf}
-          className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+          className="btn-secondary btn-list-action disabled:cursor-not-allowed disabled:opacity-60"
           disabled={!ledgerReportProps}
         >
           Exportar a PDF

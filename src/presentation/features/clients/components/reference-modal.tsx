@@ -177,7 +177,7 @@ export const ReferenceModal = ({
             </button>
             <button
               type="submit"
-              className="btn-primary px-5 py-2 text-sm shadow"
+              className="btn-primary btn-list-action shadow"
             >
               {initialValues ? 'Guardar cambios' : 'Agregar'}
             </button>

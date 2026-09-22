@@ -197,7 +197,7 @@ export const CollectionChannelDetailPage = () => {
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-red-800 shadow-sm dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-100">
           {detail.error ?? 'No se encontró el canal.'}
         </div>
-        <button type="button" className="btn-secondary px-4 py-2 text-sm" onClick={() => navigate(returnTo)}>
+        <button type="button" className="btn-secondary btn-list-action" onClick={() => navigate(returnTo)}>
           Volver a canales
         </button>
       </div>

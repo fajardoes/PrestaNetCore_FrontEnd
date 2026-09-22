@@ -211,16 +211,16 @@ export const CollectionChannelsPage = () => {
           placeholder="Buscar por código o nombre..."
           actions={
             <div className="flex flex-wrap items-center justify-end gap-2">
-              <button type="button" className="btn-secondary px-3 py-2 text-sm" onClick={resetFilters}>
+              <button type="button" className="btn-secondary btn-list-action" onClick={resetFilters}>
                 Limpiar filtros
               </button>
-              <button type="button" className="btn-primary px-3 py-2 text-sm" onClick={handleApplyFilters}>
+              <button type="button" className="btn-primary btn-list-action" onClick={handleApplyFilters}>
                 Buscar
               </button>
               {canCreate ? (
                 <button
                   type="button"
-                  className="btn-primary inline-flex items-center gap-2 px-3 py-2 text-sm"
+                  className="btn-primary btn-list-action gap-2"
                   onClick={() => {
                     mutations.setFormError(null)
                     setEditingChannel(null)
@@ -234,7 +234,7 @@ export const CollectionChannelsPage = () => {
               {canUpdate ? (
                 <button
                   type="button"
-                  className="btn-secondary px-3 py-2 text-sm"
+                  className="btn-secondary btn-list-action"
                   onClick={() => navigate('/collection-channels/channel-types')}
                 >
                   Tipos de canal

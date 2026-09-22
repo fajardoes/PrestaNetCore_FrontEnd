@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { LoanClientSearchItemResponse } from '@/infrastructure/loans/responses/loan-client-search-response'
@@ -163,10 +164,17 @@ export const PaymentsRegisterPage = () => {
     )
   }
 
+  const handleChangeLoan = () => {
+    setSelectedClient(null)
+    setSelectedLoan(null)
+    setLoanCode('')
+    clearLookup()
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+    <div className="space-y-3 pb-1">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
           Registro de pagos en efectivo
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -174,123 +182,105 @@ export const PaymentsRegisterPage = () => {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Fecha operativa
-            </p>
-            <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-50">
-              {isLoadingBusinessDate ? 'Cargando...' : formatDate(businessDateState?.businessDate)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Estado del día
-            </p>
-            <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-50">
-              {isLoadingBusinessDate ? 'Cargando...' : isDayOpen ? 'Abierto' : 'Cerrado'}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Flujo operativo
-            </p>
-            <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-50">
-              Pago en efectivo
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Canal
-            </p>
-            <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-50">
-              Resuelto por backend
-            </p>
-          </div>
+      <section className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="grid divide-y divide-slate-200 md:grid-cols-[minmax(9rem,0.8fr)_minmax(9rem,0.8fr)_minmax(11rem,1fr)_minmax(11rem,1fr)] md:divide-x md:divide-y-0 dark:divide-slate-800">
+          <ContextItem
+            label="Fecha operativa"
+            value={isLoadingBusinessDate ? 'Cargando...' : formatDate(businessDateState?.businessDate)}
+          />
+          <ContextItem
+            label="Estado del día"
+            value={
+              isLoadingBusinessDate ? (
+                'Cargando...'
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      isDayOpen ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  {isDayOpen ? 'Abierto' : 'Cerrado'}
+                </span>
+              )
+            }
+          />
+          <ContextItem label="Flujo operativo" value="Pago en efectivo" />
+          <ContextItem label="Canal" value="Resuelto por backend" />
         </div>
 
         {businessDateError ? (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+          <div className="mt-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
             {businessDateError}
           </div>
         ) : null}
 
         {!isDayOpen && !isLoadingBusinessDate ? (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+          <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
             El día operativo está cerrado. No se puede registrar pagos mientras la fecha operativa no esté abierta.
           </div>
         ) : null}
 
         {!isLoadingPermissions && !canOperateCollectionChannels ? (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+          <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
             Debes contar con permisos de operación de canales de recaudo para guardar pagos.
           </div>
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex flex-col gap-3">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-            Resolver préstamo
-          </h2>
-          <p className="text-sm text-slate-600 dark:text-slate-400">
-            Busca un cliente o escribe el número visible del préstamo. El registro solo queda disponible para préstamos vigentes, morosos o vencidos.
-          </p>
-
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    Buscar por cliente
-                  </p>
-                  <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                    Selecciona un cliente y se consultarán sus préstamos disponibles para pago.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2 sm:min-w-[10rem] sm:items-stretch">
+      <section className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        {selectedLoan ? (
+          <PaymentLookupLoanSummaryCard
+            businessDate={lookup?.businessDate ?? businessDateState?.businessDate}
+            clientName={lookup?.client?.fullName ?? selectedClient?.clientFullName}
+            clientIdentityNo={lookup?.client?.identityNo ?? selectedClient?.clientIdentityNo}
+            loan={selectedLoan}
+            compact
+            onChange={handleChangeLoan}
+          />
+        ) : (
+          <div className="grid gap-2 md:grid-cols-2">
+            <div className="min-w-0 md:border-r md:border-slate-200 md:pr-4 md:dark:border-slate-800">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Buscar por cliente
+              </p>
+              <p className="mt-0 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                Selecciona un cliente para consultar sus préstamos disponibles.
+              </p>
+              <div className="mt-1.5 flex min-h-9 flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="btn-primary px-3 py-1.5 text-sm"
+                  onClick={() => setClientPickerOpen(true)}
+                >
+                  Buscar cliente
+                </button>
+                {selectedClient ? (
+                  <span className="min-w-0 truncate text-xs text-slate-600 dark:text-slate-300">
+                    {selectedClient.clientFullName} · <HnIdentityText value={selectedClient.clientIdentityNo} fallback="—" />
+                  </span>
+                ) : null}
+                {selectedClient || lookup ? (
                   <button
                     type="button"
-                    className="btn-primary px-4 py-2 text-sm"
-                    onClick={() => setClientPickerOpen(true)}
+                    className="btn-secondary px-3 py-1.5 text-xs"
+                    onClick={handleChangeLoan}
                   >
-                    Buscar cliente
+                    Limpiar
                   </button>
-                  {selectedClient || lookup || selectedLoan ? (
-                    <button
-                      type="button"
-                      className="btn-secondary px-4 py-2 text-sm"
-                      onClick={() => {
-                        setSelectedClient(null)
-                        setSelectedLoan(null)
-                        setLoanCode('')
-                        clearLookup()
-                      }}
-                    >
-                      Limpiar
-                    </button>
-                  ) : null}
-                </div>
+                ) : null}
               </div>
-
-              {selectedClient ? (
-                <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                    {selectedClient.clientFullName}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                    <HnIdentityText value={selectedClient.clientIdentityNo} fallback="—" />
-                  </p>
-                </div>
-              ) : null}
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="min-w-0 md:pl-4">
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Buscar por número de préstamo
               </p>
-              <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+              <p className="mt-0 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                Usa el número visible en el comprobante o contrato.
+              </p>
+              <div className="mt-1.5 flex gap-2">
                 <input
                   type="text"
                   value={loanCode}
@@ -302,11 +292,11 @@ export const PaymentsRegisterPage = () => {
                     }
                   }}
                   placeholder="PRE-2026-000001"
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
+                  className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
                 />
                 <button
                   type="button"
-                  className="btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary shrink-0 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => void handleResolveLoan()}
                   disabled={!loanCode.trim() || isLookingUp}
                 >
@@ -315,16 +305,14 @@ export const PaymentsRegisterPage = () => {
               </div>
             </div>
           </div>
+        )}
 
-          {lookupError ? (
-            <p className="text-sm text-red-600 dark:text-red-300">{lookupError}</p>
-          ) : null}
-          {lookup && lookup.loans.length === 0 ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
-              No se encontraron préstamos disponibles para la consulta.
-            </div>
-          ) : null}
-        </div>
+        {lookupError ? <p className="mt-1.5 text-sm text-red-600 dark:text-red-300">{lookupError}</p> : null}
+        {lookup && lookup.loans.length === 0 ? (
+          <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+            No se encontraron préstamos disponibles para la consulta.
+          </div>
+        ) : null}
 
         {lookup && lookup.loans.length > 1 ? (
           <PaymentLookupLoanSelector
@@ -333,34 +321,26 @@ export const PaymentsRegisterPage = () => {
             loans={lookup.loans}
             selectedLoanId={selectedLoan?.id}
             onSelect={setSelectedLoan}
-          />
-        ) : null}
-
-        {selectedLoan ? (
-          <PaymentLookupLoanSummaryCard
-            businessDate={lookup?.businessDate ?? businessDateState?.businessDate}
-            clientName={lookup?.client?.fullName ?? selectedClient?.clientFullName}
-            clientIdentityNo={lookup?.client?.identityNo ?? selectedClient?.clientIdentityNo}
-            loan={selectedLoan}
+            compact
           />
         ) : null}
 
         {selectedLoan && !isLoanEligible ? (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+          <div className="mt-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
             Solo se pueden registrar pagos sobre préstamos vigentes, morosos o vencidos.
           </div>
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">Captura del pago</h2>
-        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+      <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50">Captura del pago</h2>
+        <p className="mt-0 text-[11px] leading-4 text-slate-600 dark:text-slate-400">
           El canal, usuario asignado, fecha y tipo CASH los define backend. No se envían datos bancarios desde esta pantalla.
         </p>
 
-        <form className="mt-4 space-y-4" onSubmit={onSubmit} noValidate>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="space-y-2">
+        <form className="mt-2 space-y-2" onSubmit={onSubmit} noValidate>
+          <div className="grid grid-cols-1 gap-x-3 gap-y-3 md:grid-cols-2 lg:grid-cols-3">
+            <div className="space-y-1.5">
               <label
                 htmlFor="payment-amount"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
@@ -379,7 +359,7 @@ export const PaymentsRegisterPage = () => {
               {errors.amount ? <p className="text-xs text-red-500">{errors.amount.message}</p> : null}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label
                 htmlFor="payment-reference"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
@@ -398,7 +378,7 @@ export const PaymentsRegisterPage = () => {
               ) : null}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <label
                 htmlFor="payment-external-receipt"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
@@ -417,7 +397,7 @@ export const PaymentsRegisterPage = () => {
               ) : null}
             </div>
 
-            <div className="space-y-2 md:col-span-2">
+            <div className="space-y-1.5 md:col-span-2 lg:col-span-3">
               <label
                 htmlFor="payment-notes"
                 className="block text-sm font-medium text-slate-700 dark:text-slate-200"
@@ -426,7 +406,7 @@ export const PaymentsRegisterPage = () => {
               </label>
               <textarea
                 id="payment-notes"
-                rows={4}
+                rows={2}
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
                 disabled={paymentRegistration.isSubmitting}
                 {...register('notes')}
@@ -436,12 +416,17 @@ export const PaymentsRegisterPage = () => {
           </div>
 
           {paymentRegistration.error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
               {paymentRegistration.error}
             </div>
           ) : null}
 
-          <div className="flex justify-end">
+          <div className="sticky bottom-3 z-10 -mx-3 flex flex-col gap-1.5 border-t border-slate-200 bg-white/95 px-3 py-1.5 dark:border-slate-800 dark:bg-slate-950/95 sm:flex-row sm:items-center sm:justify-between">
+            {selectedLoan ? (
+              <p className="min-w-0 truncate text-xs text-slate-500 dark:text-slate-400">
+                Préstamo <span className="font-semibold text-slate-700 dark:text-slate-200">{selectedLoan.loanNo?.trim() || selectedLoan.id}</span>
+              </p>
+            ) : null}
             <button
               type="submit"
               className="btn-primary px-5 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
@@ -475,3 +460,12 @@ export const PaymentsRegisterPage = () => {
     </div>
   )
 }
+
+const ContextItem = ({ label, value }: { label: string; value: ReactNode }) => (
+  <div className="min-w-0 px-1 py-1.5 first:pl-0 last:pr-0 md:px-4 md:py-1 md:first:pl-0 md:last:pr-0">
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+      {label}
+    </p>
+    <p className="mt-0.5 truncate text-sm font-medium text-slate-900 dark:text-slate-50">{value}</p>
+  </div>
+)

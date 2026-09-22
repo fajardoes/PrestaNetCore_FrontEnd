@@ -7,6 +7,7 @@ import { useUserPermissions } from '@/presentation/features/security/hooks/use-u
 import type { CollateralCatalogItemDto } from '@/infrastructure/intranet/responses/collaterals/collateral-catalog-item-dto'
 import type { CollateralCatalogItemFormValues } from '@/infrastructure/validations/collaterals/collateral-catalog-item.schema'
 import { CollateralCatalogEditorModal } from '@/presentation/pages/catalogs/collaterals/components/collateral-catalog-editor-modal'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
 interface CollateralCatalogPageContentProps {
@@ -165,19 +166,17 @@ export const CollateralCatalogPageContent = ({
         <span className="inline-flex items-center gap-2">
           {canManageCatalogs ? (
             <>
-              <button
-                type="button"
-                className="btn-table-action"
+              <TableActionButton
+                icon="edit"
+                label="Editar catálogo de garantías"
                 onClick={() => {
                   setEditingItem(item)
                   setIsModalOpen(true)
                 }}
-              >
-                Editar
-              </button>
-              <button
-                type="button"
-                className="btn-table-action"
+              />
+              <TableActionButton
+                icon="toggle"
+                label={`${item.isActive ? 'Desactivar' : 'Activar'} catálogo de garantías`}
                 disabled={isSaving}
                 onClick={async () => {
                   if (
@@ -212,9 +211,7 @@ export const CollateralCatalogPageContent = ({
                     )
                   }
                 }}
-              >
-                {item.isActive ? 'Desactivar' : 'Activar'}
-              </button>
+              />
             </>
           ) : null}
         </span>
@@ -241,7 +238,7 @@ export const CollateralCatalogPageContent = ({
           canManageCatalogs ? (
             <button
               type="button"
-              className="btn-primary px-4 py-2 text-sm"
+              className="btn-primary btn-list-action"
               onClick={() => {
                 setEditingItem(null)
                 setIsModalOpen(true)

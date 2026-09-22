@@ -1,5 +1,6 @@
 import type { JournalEntryListItem } from '@/infrastructure/interfaces/accounting/journal-entry'
 import { JournalEntryStateBadge } from './journal-entry-state-badge'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 import {
@@ -114,14 +115,14 @@ export const JournalTable = ({
     },
     {
       key: 'debit',
-      header: 'Debe',
+      header: 'Debe (asiento)',
       className: 'min-w-[105px] text-right',
       render: (entry: JournalEntryListItem) => formatAmount(entry.totalDebit),
       getTitle: (entry: JournalEntryListItem) => formatAmount(entry.totalDebit),
     },
     {
       key: 'credit',
-      header: 'Haber',
+      header: 'Haber (asiento)',
       className: 'min-w-[105px] text-right',
       render: (entry: JournalEntryListItem) => formatAmount(entry.totalCredit),
       getTitle: (entry: JournalEntryListItem) => formatAmount(entry.totalCredit),
@@ -132,39 +133,33 @@ export const JournalTable = ({
       className: 'min-w-[225px]',
       render: (entry: JournalEntryListItem) => (
         <span className="flex items-center justify-end gap-2">
-          <button
-            type="button"
+          <TableActionButton
+            icon="view"
+            label="Ver asiento"
             onClick={() => onView(entry)}
-            className="btn-table-action"
-          >
-            Ver
-          </button>
+          />
           {entry.state === 'draft' ? (
-            <button
-              type="button"
+            <TableActionButton
+              icon="edit"
+              label="Editar asiento"
               onClick={() => onEdit(entry)}
-              className="btn-table-action"
-            >
-              Editar
-            </button>
+            />
           ) : null}
           {entry.state === 'draft' ? (
-            <button
-              type="button"
+            <TableActionButton
+              icon="post"
+              label="Postear asiento"
               onClick={() => onPost(entry)}
-              className="btn-table-action border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-sky-600/50 dark:text-sky-200 dark:hover:bg-sky-500/10"
-            >
-              Postear
-            </button>
+              className="border-sky-200 text-sky-700 hover:bg-sky-50 dark:border-sky-600/50 dark:text-sky-200 dark:hover:bg-sky-500/10"
+            />
           ) : null}
           {entry.state === 'posted' && entry.source === 'manual' ? (
-            <button
-              type="button"
+            <TableActionButton
+              icon="void"
+              label="Anular asiento"
               onClick={() => onVoid(entry)}
-              className="btn-table-action border-red-200 text-red-700 hover:bg-red-50 dark:border-red-600/60 dark:text-red-200 dark:hover:bg-red-500/10"
-            >
-              Anular
-            </button>
+              className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-600/60 dark:text-red-200 dark:hover:bg-red-500/10"
+            />
           ) : null}
         </span>
       ),

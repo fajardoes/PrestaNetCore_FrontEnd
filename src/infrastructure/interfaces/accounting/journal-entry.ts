@@ -18,6 +18,9 @@ export interface JournalEntryLine {
   description?: string | null
   debit: number
   credit: number
+  costCenterId?: string | null
+  costCenterCode?: string | null
+  costCenterName?: string | null
   reference?: string | null
 }
 

@@ -8,6 +8,7 @@ import {
 import type { CollateralResponseDto } from '@/infrastructure/intranet/responses/collaterals/collateral-response'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { formatMoney } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
@@ -129,7 +130,7 @@ export const LoanApplicationAddCollateralModal = ({
               Selecciona una garantía del cliente. Solo las disponibles pueden agregarse.
             </p>
           </div>
-          <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={closeModal}>
+          <button type="button" className="btn-secondary btn-list-action" onClick={closeModal}>
             Cerrar
           </button>
         </div>
@@ -198,22 +199,17 @@ export const LoanApplicationAddCollateralModal = ({
                             className={isSelected ? 'bg-primary/5 dark:bg-primary/10' : ''}
                           >
                             <td>
-                              <button
-                                type="button"
-                                className={`btn-table-action border ${
+                              <TableActionButton
+                                icon={isAvailable ? 'select' : 'lock'}
+                                label={!isAvailable ? 'No disponible' : isSelected ? 'Seleccionada' : 'Seleccionar'}
+                                className={`border ${
                                   isAvailable
                                     ? 'border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30'
                                     : 'cursor-not-allowed border-slate-300 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'
                                 }`}
                                 onClick={() => setValue('collateralId', collateral.id, { shouldValidate: true })}
                                 disabled={!isAvailable || isSubmitting}
-                              >
-                                {!isAvailable
-                                  ? 'No disponible'
-                                  : isSelected
-                                    ? 'Seleccionada'
-                                    : 'Seleccionar'}
-                              </button>
+                              />
                             </td>
                             <td className="font-medium text-slate-800 dark:text-slate-100">
                               {collateral.referenceNo || '—'}
@@ -287,7 +283,7 @@ export const LoanApplicationAddCollateralModal = ({
           <div className="mt-4 flex justify-end gap-2">
             <button
               type="button"
-              className="btn-secondary px-4 py-2 text-sm"
+              className="btn-secondary btn-list-action"
               onClick={closeModal}
               disabled={isSubmitting}
             >
@@ -295,7 +291,7 @@ export const LoanApplicationAddCollateralModal = ({
             </button>
             <button
               type="submit"
-              className="btn-primary px-4 py-2 text-sm"
+              className="btn-primary btn-list-action"
               disabled={isSubmitting || !selectedCollateralId}
             >
               {isSubmitting ? 'Guardando...' : 'Agregar'}

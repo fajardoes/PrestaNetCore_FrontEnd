@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, History, LoaderCircle, X } from 'lucide-react'
+import { History, LoaderCircle, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 import { formatCurrency, formatDate } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
@@ -12,6 +12,7 @@ import {
   translatePaymentType,
 } from '@/presentation/features/payments/components/payment-ui'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface LoanPaymentsModalProps {
@@ -190,16 +191,13 @@ const PaymentRow = ({
   <>
     <tr className={isExpanded ? 'bg-slate-50 dark:bg-slate-900/70' : undefined}>
       <td>
-        <button
-          type="button"
-          className="btn-table-action inline-flex items-center gap-1.5"
+        <TableActionButton
+          icon={isExpanded ? 'collapse' : 'expand'}
+          label={`${isExpanded ? 'Ocultar' : 'Ver'} componentes del pago ${payment.internalReceiptNumber?.trim() || payment.id}`}
+          tooltip={isExpanded ? 'Ocultar componentes del pago' : 'Ver componentes del pago'}
           onClick={onToggle}
           aria-expanded={isExpanded}
-          aria-label={`${isExpanded ? 'Ocultar' : 'Ver'} componentes del pago ${payment.internalReceiptNumber?.trim() || payment.id}`}
-        >
-          {isExpanded ? <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" /> : <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />}
-          {isExpanded ? 'Ocultar' : 'Ver componentes'}
-        </button>
+        />
       </td>
       <td>{formatDate(payment.paymentDate)}</td>
       <td className="font-medium text-slate-800 dark:text-slate-100">

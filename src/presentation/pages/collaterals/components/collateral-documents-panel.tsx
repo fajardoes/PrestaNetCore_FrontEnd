@@ -5,6 +5,7 @@ import { useNotifications } from '@/providers/NotificationProvider'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import { FilePreviewModal } from '@/presentation/share/components/file-preview-modal'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableContainer } from '@/presentation/share/components/table-container'
 import { useCollateralDocuments } from '@/presentation/features/collaterals/hooks/use-collateral-documents'
 import type { CollateralDocumentResponseDto } from '@/infrastructure/intranet/responses/collaterals/collateral-document-response'
@@ -283,9 +284,9 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
                     </td>
                     <td className="px-4 py-3 text-right text-sm">
                       <div className="flex items-center justify-end gap-2">
-                        <button
-                          type="button"
-                          className="btn-table-action"
+                        <TableActionButton
+                          icon="view"
+                          label="Ver documento"
                           disabled={isPreviewing}
                           onClick={async () => {
                             const result = await preview(item.downloadUrl, item.fileName)
@@ -307,12 +308,10 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
                               }
                             })
                           }}
-                        >
-                          Ver
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-table-action"
+                        />
+                        <TableActionButton
+                          icon="download"
+                          label="Descargar documento"
                           disabled={isDownloading}
                           onClick={async () => {
                             const result = await download(item.downloadUrl, item.fileName)
@@ -320,20 +319,17 @@ export const CollateralDocumentsPanel = ({ collateralId }: CollateralDocumentsPa
                               notify(result.error, 'error')
                             }
                           }}
-                        >
-                          Descargar
-                        </button>
+                        />
                         {canDeleteDocuments ? (
-                          <button
-                            type="button"
-                            className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                          <TableActionButton
+                            icon="delete"
+                            label="Eliminar documento"
+                            className="text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                             disabled={isDeleting}
                             onClick={() => {
                               setPendingDeleteDocument(item)
                             }}
-                          >
-                            Eliminar
-                          </button>
+                          />
                         ) : null}
                       </div>
                     </td>

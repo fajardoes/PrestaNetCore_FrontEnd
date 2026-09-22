@@ -139,7 +139,7 @@ export const PaymentDetailPage = () => {
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 shadow-sm dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
           {error || 'No fue posible cargar el pago.'}
         </div>
-        <Link to={backPath} className="btn-secondary inline-flex px-4 py-2 text-sm">
+        <Link to={backPath} className="btn-secondary btn-list-action">
           Volver a pagos
         </Link>
       </div>

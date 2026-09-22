@@ -17,6 +17,7 @@ export interface IncomeStatementResultDto {
   toDate?: string
   periodId?: string | null
   costCenterId?: string | null
+  withoutCostCenter?: boolean
   costCenterName?: string | null
   groups: IncomeStatementGroupDto[]
   totalIncome: number

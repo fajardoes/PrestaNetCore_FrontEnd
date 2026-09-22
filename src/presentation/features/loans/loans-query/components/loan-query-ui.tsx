@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { CollapsibleSection } from '@/presentation/share/components/collapsible-section'
 
 interface QueryHeroCardProps {
   eyebrow?: string
@@ -15,6 +16,8 @@ interface QuerySectionCardProps {
   aside?: ReactNode
   children: ReactNode
   className?: string
+  collapsible?: boolean
+  defaultExpanded?: boolean
 }
 
 interface QueryMetricCardProps {
@@ -77,27 +80,40 @@ export const QuerySectionCard = ({
   aside,
   children,
   className,
-}: QuerySectionCardProps) => (
-  <section
-    className={[
-      'rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950',
-      className ?? '',
-    ]
-      .filter(Boolean)
-      .join(' ')}
-  >
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
-        {description ? (
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{description}</p>
-        ) : null}
+  collapsible = false,
+  defaultExpanded = true,
+}: QuerySectionCardProps) =>
+  collapsible ? (
+    <CollapsibleSection
+      title={title}
+      description={description}
+      aside={aside}
+      defaultExpanded={defaultExpanded}
+      className={className}
+    >
+      {children}
+    </CollapsibleSection>
+  ) : (
+    <section
+      className={[
+        'rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950',
+        className ?? '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
+          {description ? (
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{description}</p>
+          ) : null}
+        </div>
+        {aside}
       </div>
-      {aside}
-    </div>
-    <div className="mt-3">{children}</div>
-  </section>
-)
+      <div className="mt-3">{children}</div>
+    </section>
+  )
 
 export const QueryMetricCard = ({
   label,

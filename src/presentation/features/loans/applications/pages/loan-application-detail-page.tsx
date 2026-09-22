@@ -739,7 +739,7 @@ export const LoanApplicationDetailPage = () => {
       <div className="flex justify-end">
         <button
           type="button"
-          className="btn-secondary px-3 py-1.5 text-xs"
+          className="btn-secondary btn-list-action"
           onClick={() => navigate('/loans/applications')}
         >
           Volver al listado

@@ -42,28 +42,28 @@ export const TableTabular = <T,>({
       : column.className || "";
 
   return (
-    <div className="overflow-hidden rounded-lg border border-slate-300 bg-sky-50 shadow-sm dark:border-slate-700 dark:bg-slate-950">
-      <div className="flex items-center gap-2 border-b border-slate-300 bg-gradient-to-b from-sky-100 to-slate-100 px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-slate-700 dark:border-slate-700 dark:from-slate-900 dark:to-slate-950 dark:text-slate-300">
+    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2 font-sans text-[12px] font-semibold leading-4 normal-case tracking-normal text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
         <TableProperties className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
         {title}
       </div>
 
       {isLoading ? (
-        <div className="px-4 py-8 text-center font-mono text-xs text-slate-500 dark:text-slate-400">
+        <div className="px-4 py-8 text-center font-sans text-[12px] text-slate-500 dark:text-slate-400">
           {loadingMessage}
         </div>
       ) : hasRows ? (
         <div className={`${maxHeightClassName} overflow-auto`}>
-          <table className={`${fitContent ? "w-max" : "min-w-full"} border-collapse font-mono text-[11px] leading-4 text-slate-800 dark:text-slate-200`}>
-            <thead className="sticky top-0 z-10 bg-sky-100 dark:bg-slate-900">
+          <table className={`${fitContent ? "w-max" : "min-w-full"} border-collapse font-sans text-[12px] leading-4 text-slate-800 tabular-nums dark:text-slate-200`}>
+            <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-slate-900">
               <tr>
-                <th className="border-b border-r border-slate-400 px-2 py-1 text-left font-semibold uppercase tracking-wide text-slate-700 dark:border-slate-700 dark:text-slate-300">
+                <th className="border-b border-r border-slate-300 px-2 py-1.5 text-left text-[10px] font-semibold leading-4 normal-case tracking-normal text-slate-700 dark:border-slate-700 dark:text-slate-300">
                   #
                 </th>
                 {columns.map((column) => (
                   <th
                     key={column.key}
-                    className={`border-b border-r border-slate-400 px-2 py-1 text-left font-semibold uppercase tracking-wide text-slate-700 dark:border-slate-700 dark:text-slate-300 ${getColumnClassName(column)}`}
+                    className={`border-b border-r border-slate-300 px-2 py-1.5 text-left text-[10px] font-semibold leading-4 normal-case tracking-normal text-slate-700 dark:border-slate-700 dark:text-slate-300 ${getColumnClassName(column)}`}
                   >
                     {column.header}
                   </th>
@@ -79,13 +79,13 @@ export const TableTabular = <T,>({
                     "odd:bg-white even:bg-sky-50/70 dark:odd:bg-slate-950 dark:even:bg-slate-900/70"
                   }
                 >
-                  <td className="border-b border-r border-slate-300 px-2 py-1 align-top text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                  <td className="border-b border-r border-slate-200 px-2 py-1 align-top text-slate-500 dark:border-slate-800 dark:text-slate-400">
                     {rowNumberStart + index}
                   </td>
                   {columns.map((column) => (
                     <td
                       key={`${rowKey(item, index)}-${column.key}`}
-                      className={`max-w-[240px] border-b border-r border-slate-300 px-2 py-1 align-top text-[11px] text-slate-800 dark:border-slate-800 dark:text-slate-200 ${getColumnClassName(column)}`}
+                    className={`max-w-[240px] border-b border-r border-slate-200 px-2.5 py-1 align-top text-[12px] text-slate-800 dark:border-slate-800 dark:text-slate-200 ${getColumnClassName(column)}`}
                       title={column.getTitle?.(item, index)}
                     >
                       <span className="block whitespace-nowrap">
@@ -99,7 +99,7 @@ export const TableTabular = <T,>({
           </table>
         </div>
       ) : (
-        <div className="px-4 py-8 text-center font-mono text-xs text-slate-500 dark:text-slate-400">
+        <div className="px-4 py-8 text-center font-sans text-[12px] text-slate-500 dark:text-slate-400">
           {emptyMessage}
         </div>
       )}

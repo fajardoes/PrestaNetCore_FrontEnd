@@ -181,7 +181,7 @@ export const HolidaysPage = () => {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                  className="btn-secondary btn-list-action disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => {
                     void refresh()
                     void refreshHolidayTypes()
@@ -192,7 +192,7 @@ export const HolidaysPage = () => {
                 </button>
                 <button
                   type="button"
-                  className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => {
                     clearError()
                     setModalMode('create')

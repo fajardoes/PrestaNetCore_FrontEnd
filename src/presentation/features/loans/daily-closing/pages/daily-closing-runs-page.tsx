@@ -68,7 +68,7 @@ export const DailyClosingRunsPage = () => {
         </div>
         <button
           type="button"
-          className="btn-secondary px-4 py-2 text-sm"
+          className="btn-secondary btn-list-action"
           onClick={() => navigate('/loans/daily-closing')}
         >
           Volver al dashboard
@@ -117,10 +117,10 @@ export const DailyClosingRunsPage = () => {
           </label>
         </div>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <button type="button" className="btn-secondary px-4 py-2 text-sm" onClick={resetFilters}>
+          <button type="button" className="btn-secondary btn-list-action" onClick={resetFilters}>
             Limpiar filtros
           </button>
-          <button type="button" className="btn-primary px-4 py-2 text-sm" onClick={applyFilters}>
+          <button type="button" className="btn-primary btn-list-action" onClick={applyFilters}>
             Buscar
           </button>
         </div>

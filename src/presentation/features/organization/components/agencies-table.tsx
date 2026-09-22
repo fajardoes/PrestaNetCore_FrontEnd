@@ -1,4 +1,5 @@
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
@@ -89,13 +90,11 @@ export const AgenciesTable = ({
       className: 'min-w-[90px]',
       render: (agency: Agency) => (
         <span className="flex justify-end">
-          <button
-            type="button"
+          <TableActionButton
+            icon="edit"
+            label="Editar agencia"
             onClick={() => onEdit(agency)}
-            className="btn-table-action"
-          >
-            Editar
-          </button>
+          />
         </span>
       ),
     },

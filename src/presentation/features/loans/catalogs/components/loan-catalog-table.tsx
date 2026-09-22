@@ -1,5 +1,6 @@
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { AccountingStatusBadge } from '@/presentation/features/accounting/components/accounting-status-badge'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableContainer } from '@/presentation/share/components/table-container'
 
 interface LoanCatalogTableProps {
@@ -90,21 +91,17 @@ export const LoanCatalogTable = ({
                   </td>
                   <td className="px-4 py-3 text-right text-sm">
                     <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
-                      <button
-                        type="button"
-                        className="btn-table-action"
+                      <TableActionButton
+                        icon="edit"
+                        label="Editar catálogo"
                         onClick={() => onEdit(item)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-table-action"
+                      />
+                      <TableActionButton
+                        icon="toggle"
+                        label={`${item.isActive ? 'Desactivar' : 'Activar'} catálogo`}
                         onClick={() => onToggleStatus(item)}
                         disabled={isProcessingId === item.id}
-                      >
-                        {item.isActive ? 'Desactivar' : 'Activar'}
-                      </button>
+                      />
                     </div>
                   </td>
                 </tr>

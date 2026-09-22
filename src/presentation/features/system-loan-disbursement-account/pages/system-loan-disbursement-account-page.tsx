@@ -70,7 +70,7 @@ export const SystemLoanDisbursementAccountPage = () => {
           <div className="mt-4 flex flex-wrap gap-3">
             <button
               type="button"
-              className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => setIsModalOpen(true)}
               disabled={isLoading || isSaving}
             >
@@ -78,7 +78,7 @@ export const SystemLoanDisbursementAccountPage = () => {
             </button>
             <button
               type="button"
-              className="btn-secondary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-secondary btn-list-action disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => void handleSubmit(null)}
               disabled={isLoading || isSaving || !state?.isConfigured}
             >

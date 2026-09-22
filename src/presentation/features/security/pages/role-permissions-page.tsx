@@ -228,7 +228,7 @@ export const RolePermissionsPage = () => {
             </h2>
             <button
               type="button"
-              className="btn-primary px-3 py-1.5 text-xs"
+              className="btn-primary btn-list-action"
               onClick={() => setIsCreateRoleOpen(true)}
               disabled={isLoadingRoles || isCreatingRole}
             >
@@ -280,7 +280,7 @@ export const RolePermissionsPage = () => {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className="btn-secondary px-3 py-1.5 text-xs"
+                className="btn-secondary btn-list-action"
                 onClick={() => replaceAssignedPermissions(catalog.map((item) => item.code))}
                 disabled={!selectedRoleName || isLoadingRoleData || isSaving || !catalog.length}
               >
@@ -288,7 +288,7 @@ export const RolePermissionsPage = () => {
               </button>
               <button
                 type="button"
-                className="btn-secondary px-3 py-1.5 text-xs"
+                className="btn-secondary btn-list-action"
                 onClick={() => replaceAssignedPermissions([])}
                 disabled={!selectedRoleName || isLoadingRoleData || isSaving}
               >
@@ -296,7 +296,7 @@ export const RolePermissionsPage = () => {
               </button>
               <button
                 type="button"
-                className="btn-primary px-3 py-1.5 text-xs"
+                className="btn-primary btn-list-action"
                 onClick={async () => {
                   const result = await save()
                   if (result.success) {
@@ -333,7 +333,7 @@ export const RolePermissionsPage = () => {
           <div className="mt-2 flex items-center justify-end gap-2">
             <button
               type="button"
-              className="btn-secondary px-3 py-1.5 text-xs"
+              className="btn-secondary btn-list-action"
               onClick={() => setAllModulesCollapsed(false)}
               disabled={isLoadingRoleData || !groupedCatalog.length}
             >
@@ -341,7 +341,7 @@ export const RolePermissionsPage = () => {
             </button>
             <button
               type="button"
-              className="btn-secondary px-3 py-1.5 text-xs"
+              className="btn-secondary btn-list-action"
               onClick={() => setAllModulesCollapsed(true)}
               disabled={isLoadingRoleData || !groupedCatalog.length}
             >

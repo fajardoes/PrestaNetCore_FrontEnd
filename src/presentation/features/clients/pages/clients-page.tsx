@@ -213,19 +213,21 @@ export const ClientsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-7xl space-y-4">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
-          Clientes
+        <h1 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+          {isFormOpen ? (selectedClientId ? "Editar cliente" : "Nuevo cliente") : "Clientes"}
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
-          Filtra por nombre, estado y municipio.
+          {isFormOpen
+            ? "Completa la información del cliente, sus referencias y actividad económica."
+            : "Filtra por nombre, estado y municipio."}
         </p>
       </div>
 
       {isFormOpen ? (
-        <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="flex items-start justify-between gap-3">
+        <div className="space-y-3">
+          <div className="hidden">
             <div>
               <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
                 {selectedClientId ? "Editar cliente" : "Nuevo cliente"}
@@ -235,20 +237,6 @@ export const ClientsPage = () => {
                 una sola actividad principal.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setIsFormOpen(false);
-                setSelectedClientId(null);
-                setClient(null);
-                setActionError(null);
-                resetError();
-              }}
-              className="btn-icon"
-              aria-label="Cerrar formulario"
-            >
-              <CloseIcon className="h-5 w-5" />
-            </button>
           </div>
 
           {detailError && selectedClientId ? (
@@ -326,7 +314,7 @@ export const ClientsPage = () => {
               <>
                 <button
                   type="button"
-                  className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => {
                     setClient(null);
                     setSelectedClientId(null);
@@ -363,19 +351,3 @@ export const ClientsPage = () => {
   );
 };
 
-const CloseIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-    aria-hidden="true"
-  >
-    <path d="M18 6 6 18" />
-    <path d="m6 6 12 12" />
-  </svg>
-);

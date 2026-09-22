@@ -22,6 +22,13 @@ const SystemLoanDisbursementAccountPage = lazy(() =>
     default: module.SystemLoanDisbursementAccountPage,
   })),
 )
+const SystemLoanInterestAccrualPage = lazy(() =>
+  import(
+    '@/presentation/features/system-loan-interest-accrual/pages/system-loan-interest-accrual-page'
+  ).then((module) => ({
+    default: module.SystemLoanInterestAccrualPage,
+  })),
+)
 
 export const SystemRoutes = () => (
   <Fragment>
@@ -36,6 +43,10 @@ export const SystemRoutes = () => (
     <Route
       path="/admin/system/collection-transit-account"
       element={<SystemCollectionTransitAccountPage />}
+    />
+    <Route
+      path="/admin/system/loan-interest-accrual"
+      element={<SystemLoanInterestAccrualPage />}
     />
   </Fragment>
 )

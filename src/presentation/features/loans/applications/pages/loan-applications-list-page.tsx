@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CircleAlert, Eye, FileCheck2, Pencil, Plus, Printer } from 'lucide-react'
+import { CircleAlert, FileCheck2, Plus } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { LoanApplicationReport } from '@/presentation/components/reports/loans/loan-application-report'
 import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
@@ -7,6 +7,7 @@ import AsyncSelect, { type AsyncSelectOption } from '@/presentation/share/compon
 import { DatePicker } from '@/presentation/share/components/date-picker'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import { MessageModal } from '@/presentation/share/components/message-modal'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
@@ -129,46 +130,34 @@ export const LoanApplicationsListPage = () => {
               ...
             </span>
           ) : null}
-          <button
-            type="button"
-            className="btn-table-action w-7 px-0"
+          <TableActionButton
+            icon="view"
+            label="Ver detalle de solicitud"
             onClick={() => navigate(`/loans/applications/${item.id}`)}
-            title="Ver detalle de solicitud"
-            aria-label="Ver"
-          >
-            <Eye className="mx-auto h-4 w-4" />
-          </button>
+          />
           {allowedActionsById[item.id]?.includes('update_draft') ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
+            <TableActionButton
+              icon="edit"
+              label="Editar solicitud"
               onClick={() =>
                 navigate(`/loans/applications/${item.id}/edit`, {
                   state: { returnTo: '/loans/applications' },
                 })
               }
-              title="Editar solicitud"
-              aria-label="Editar"
-            >
-              <Pencil className="mx-auto h-4 w-4" />
-            </button>
+            />
           ) : null}
           {allowedActionsById[item.id]?.includes('print') ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
+            <TableActionButton
+              icon="print"
+              label="Imprimir solicitud"
               onClick={() =>
                 void openPrintPreview(
                   item.id,
                   item.applicationNo || item.id.slice(0, 8),
                 )
               }
-              title="Imprimir solicitud"
-              aria-label="Imprimir"
               disabled={isReportLoading}
-            >
-              <Printer className="mx-auto h-4 w-4" />
-            </button>
+            />
           ) : null}
         </span>
       ),
@@ -323,7 +312,7 @@ export const LoanApplicationsListPage = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="btn-secondary px-3 py-1.5 text-xs"
+                className="btn-secondary btn-list-action"
                 onClick={() => {
                   setSearch('')
                   setClientId('')
@@ -342,7 +331,7 @@ export const LoanApplicationsListPage = () => {
               </button>
               <button
                 type="button"
-                className="btn-primary px-3 py-1.5 text-xs"
+                className="btn-primary btn-list-action"
                 onClick={() => {
                   applyFilters({
                     search,
@@ -360,7 +349,7 @@ export const LoanApplicationsListPage = () => {
               {canCreateLoanApplication ? (
                 <button
                   type="button"
-                  className="btn-primary inline-flex items-center gap-2 px-3 py-1.5 text-xs"
+                  className="btn-primary btn-list-action gap-2"
                   disabled={isLoadingPermissions}
                   onClick={() => navigate('/loans/applications/new')}
                 >

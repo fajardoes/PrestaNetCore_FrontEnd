@@ -1,5 +1,6 @@
 ﻿import AsyncSelect from 'react-select/async'
-import type { OnChangeValue } from 'react-select'
+import type { FormatOptionLabelMeta, OnChangeValue } from 'react-select'
+import type { ReactNode } from 'react'
 import { reactSelectClassNames, reactSelectMenuPortalStyles } from './react-select-styles'
 
 export interface AsyncSelectOption<TMeta = unknown> {
@@ -28,6 +29,11 @@ interface AsyncSelectFieldProps<TMeta = unknown, TIsMulti extends boolean = fals
   menuPosition?: 'absolute' | 'fixed'
   isMulti?: TIsMulti
   isOptionDisabled?: (option: AsyncSelectOption<TMeta>) => boolean
+  formatOptionLabel?: (
+    option: AsyncSelectOption<TMeta>,
+    context: FormatOptionLabelMeta<AsyncSelectOption<TMeta>>,
+  ) => ReactNode
+  maxMenuHeight?: number
 }
 
 const defaultNoOptions = () => 'Sin resultados'
@@ -48,9 +54,11 @@ const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
   menuPosition,
   isMulti,
   isOptionDisabled,
+  formatOptionLabel,
+  maxMenuHeight = 300,
 }: AsyncSelectFieldProps<TMeta, TIsMulti>) => {
   return (
-    <AsyncSelect
+    <AsyncSelect<AsyncSelectOption<TMeta>, TIsMulti>
       unstyled
       cacheOptions
       defaultOptions={defaultOptions ?? false}
@@ -67,6 +75,8 @@ const AsyncSelectField = <TMeta, TIsMulti extends boolean = false>({
       isLoading={isLoading}
       isMulti={isMulti}
       isOptionDisabled={isOptionDisabled}
+      formatOptionLabel={formatOptionLabel}
+      maxMenuHeight={maxMenuHeight}
       classNames={reactSelectClassNames}
       menuPortalTarget={menuPortalTarget}
       menuPosition={menuPosition}

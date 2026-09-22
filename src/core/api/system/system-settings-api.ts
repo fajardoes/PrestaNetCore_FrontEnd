@@ -5,6 +5,8 @@ import type { UpdateCollectionTransitAccountRequestDto } from '@/infrastructure/
 import type { UpdateLoanDisbursementAccountRequestDto } from '@/infrastructure/interfaces/system/update-loan-disbursement-account-request.dto'
 import type { AnticipatedInstallmentTransitAccountSettingDto } from '@/infrastructure/interfaces/system/anticipated-installment-transit-account-setting.dto'
 import type { UpdateAnticipatedInstallmentTransitAccountRequestDto } from '@/infrastructure/interfaces/system/update-anticipated-installment-transit-account-request.dto'
+import type { LoanInterestAccrualSettingDto } from '@/infrastructure/interfaces/system/loan-interest-accrual-setting.dto'
+import type { UpdateLoanInterestAccrualSettingRequest } from '@/infrastructure/interfaces/system/update-loan-interest-accrual-setting.request'
 
 const basePath = '/system/settings'
 
@@ -57,6 +59,24 @@ export const updateAnticipatedInstallmentTransitAccountSetting = async (
 ): Promise<AnticipatedInstallmentTransitAccountSettingDto> => {
   const { data } = await httpClient.put<AnticipatedInstallmentTransitAccountSettingDto>(
     `${basePath}/anticipated-installment-transit-account`,
+    payload,
+  )
+  return data
+}
+
+export const getLoanInterestAccrualSetting =
+  async (): Promise<LoanInterestAccrualSettingDto> => {
+    const { data } = await httpClient.get<LoanInterestAccrualSettingDto>(
+      `${basePath}/loan-interest-accrual`,
+    )
+    return data
+  }
+
+export const updateLoanInterestAccrualSetting = async (
+  payload: UpdateLoanInterestAccrualSettingRequest,
+): Promise<LoanInterestAccrualSettingDto> => {
+  const { data } = await httpClient.put<LoanInterestAccrualSettingDto>(
+    `${basePath}/loan-interest-accrual`,
     payload,
   )
   return data

@@ -133,20 +133,20 @@ export const LoanApplicationPaymentPlanModal = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              className="btn-print px-3 py-1.5 text-xs"
+              className="btn-print btn-list-action"
               onClick={() => setIsPdfOpen(true)}
               disabled={!preview}
             >
               <Printer className="h-4 w-4" />
               Imprimir
             </button>
-            <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={() => {
+            <button type="button" className="btn-secondary btn-list-action" onClick={() => {
               reset(resolvedDefaultValues)
               setShowAdvanced((prev) => !prev)
             }}>
               {showAdvanced ? 'Ocultar opciones avanzadas' : 'Mostrar opciones avanzadas'}
             </button>
-            <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={onClose}>
+            <button type="button" className="btn-secondary btn-list-action" onClick={onClose}>
               Cerrar
             </button>
           </div>
@@ -274,7 +274,7 @@ export const LoanApplicationPaymentPlanModal = ({
             <div className="mb-4 flex justify-end">
               <button
                 type="button"
-                className="btn-primary px-3 py-1.5 text-xs"
+                className="btn-primary btn-list-action"
                 onClick={() => onGenerate(resolvedDefaultValues)}
                 disabled={isLoading}
               >

@@ -4,6 +4,7 @@ import { HnIdentityText } from '@/presentation/share/components/hn-identity-text
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 const CLIENTS_PAGE_SIZE = 10
 
@@ -47,13 +48,12 @@ export const LoanClientPickerModal = ({
         const isSelected = client.id === selectedClientId
 
         return (
-          <button
-            type="button"
-            className="btn-table-action border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
+          <TableActionButton
+            icon="select"
+            label={isSelected ? 'Seleccionado' : 'Seleccionar'}
+            className="border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
             onClick={() => onSelect(client)}
-          >
-            {isSelected ? 'Seleccionado' : 'Seleccionar'}
-          </button>
+          />
         )
       },
     },
@@ -111,7 +111,7 @@ export const LoanClientPickerModal = ({
               Busca por nombre o identidad para consultar la cartera del cliente.
             </p>
           </div>
-          <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={onClose}>
+          <button type="button" className="btn-secondary btn-list-action" onClick={onClose}>
             Cerrar
           </button>
         </div>

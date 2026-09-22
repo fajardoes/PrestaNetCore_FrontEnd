@@ -77,17 +77,17 @@ export const Topbar = ({
   }, [isUserMenuOpen])
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-300 bg-white/80 backdrop-blur transition-colors dark:border-slate-800 dark:bg-slate-900/80">
-      <div className="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between gap-4 px-4 lg:px-8">
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900">
+      <div className="mx-auto flex h-14 w-full max-w-screen-2xl items-center justify-between gap-3 px-4 lg:px-8">
         <Link
           to="/"
-          className="flex min-w-0 items-center gap-2.5 rounded-lg px-1 py-1 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
+          className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900"
           aria-label="Ir al inicio de PrestaNet"
         >
-          <img src={logoLight} alt="" className="h-9 w-9 dark:hidden" />
-          <img src={logoDark} alt="" className="hidden h-9 w-9 dark:block" />
+          <img src={logoLight} alt="" className="h-8 w-8 dark:hidden" />
+          <img src={logoDark} alt="" className="hidden h-8 w-8 dark:block" />
           <span className="min-w-0">
-            <span className="block truncate text-base font-semibold text-slate-900 dark:text-slate-100">
+            <span className="block truncate text-[15px] font-semibold text-slate-900 dark:text-slate-100">
               prestanet
             </span>
             <span className="hidden text-[11px] text-slate-500 dark:text-slate-400 sm:block">
@@ -95,7 +95,7 @@ export const Topbar = ({
             </span>
           </span>
         </Link>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {user ? <BusinessDateIndicator /> : null}
           <ThemeToggle />
           {user ? (
@@ -103,12 +103,12 @@ export const Topbar = ({
               <button
                 type="button"
                 onClick={() => setIsUserMenuOpen((open) => !open)}
-                className="flex items-center gap-3 rounded-full border border-transparent bg-white/80 px-3 py-1 transition hover:bg-white focus:outline-none focus:ring-2 focus:ring-primary dark:bg-slate-800 dark:hover:bg-slate-700"
+                className="flex items-center gap-2 rounded-md border border-transparent bg-transparent px-2 py-1 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-primary dark:bg-transparent dark:hover:bg-slate-800"
                 aria-haspopup="menu"
                 aria-expanded={isUserMenuOpen}
                 disabled={isProcessing}
               >
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
                   {getInitials(user.fullName)}
                 </div>
                 <div className="hidden text-left text-sm text-slate-700 dark:text-slate-200 sm:block">
@@ -119,7 +119,7 @@ export const Topbar = ({
                 </div>
               </button>
               {isUserMenuOpen ? (
-                <div className="absolute right-0 z-50 mt-3 w-60 rounded-xl border border-slate-300 bg-white p-4 shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900">
+                <div className="absolute right-0 z-50 mt-2 w-60 rounded-lg border border-slate-200 bg-white p-3 shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900">
                   <div className="mb-3 text-left text-sm">
                     <p className="font-medium text-slate-900 dark:text-slate-100">
                       {user.fullName}

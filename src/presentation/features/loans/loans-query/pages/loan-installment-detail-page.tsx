@@ -75,7 +75,7 @@ export const LoanInstallmentDetailPage = () => {
         }
         actions={
           <div className="flex flex-wrap gap-2">
-            <Link className="btn-secondary px-4 py-2 text-sm" to={`/loans/${id}`}>
+            <Link className="btn-secondary btn-list-action" to={`/loans/${id}`}>
               Volver al préstamo
             </Link>
           </div>

@@ -136,7 +136,7 @@ export const UsersPage = () => {
           <div className="flex justify-end">
             <button
               type="button"
-              className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => setIsCreateOpen(true)}
               disabled={isLoading}
             >

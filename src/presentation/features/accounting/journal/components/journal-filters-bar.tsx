@@ -185,7 +185,7 @@ export const JournalFiltersBar = ({
               <button
                 type="button"
                 onClick={onReset}
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50 sm:w-auto dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                className="btn-secondary btn-list-action w-full sm:w-auto"
               >
                 Limpiar filtros
               </button>

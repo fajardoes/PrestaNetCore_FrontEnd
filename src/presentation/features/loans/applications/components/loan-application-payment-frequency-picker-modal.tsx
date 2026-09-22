@@ -1,6 +1,7 @@
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { ListFiltersBar } from '@/presentation/share/components/list-filters-bar'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 interface LoanApplicationPaymentFrequencyPickerModalProps {
   open: boolean
@@ -39,7 +40,7 @@ export const LoanApplicationPaymentFrequencyPickerModal = ({
               Selecciona cada cuánto se realizará un pago. La duración solicitada no cambia.
             </p>
           </div>
-          <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={onClose}>
+          <button type="button" className="btn-secondary btn-list-action" onClick={onClose}>
             Cerrar
           </button>
         </div>
@@ -88,13 +89,12 @@ export const LoanApplicationPaymentFrequencyPickerModal = ({
                       return (
                         <tr key={frequency.id} className={isSelected ? 'bg-primary/5 dark:bg-primary/10' : ''}>
                           <td>
-                            <button
-                              type="button"
-                              className="btn-table-action border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
+                            <TableActionButton
+                              icon="select"
+                              label={isSelected ? 'Seleccionado' : 'Seleccionar'}
+                              className="border border-primary/40 bg-primary/10 text-primary-700 hover:bg-primary/20 dark:border-primary/50 dark:bg-primary/20 dark:text-primary-200 dark:hover:bg-primary/30"
                               onClick={() => onSelect(frequency)}
-                            >
-                              {isSelected ? 'Seleccionado' : 'Seleccionar'}
-                            </button>
+                            />
                           </td>
                           <td className="text-slate-800 dark:text-slate-100">{frequency.name}</td>
                         </tr>

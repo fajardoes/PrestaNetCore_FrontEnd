@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { Briefcase, FileText, MapPin, Users } from 'lucide-react'
+import { useFieldArray, useForm, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import type { ClientCatalogItem } from '@/infrastructure/interfaces/clients/catalog'
 import type { ClientActivity, ClientReference } from '@/infrastructure/interfaces/clients/client'
@@ -15,6 +16,11 @@ import {
 } from '@/infrastructure/validations/clients/client.schema'
 import { ReferenceModal } from '@/presentation/features/clients/components/reference-modal'
 import { ActivityModal } from '@/presentation/features/clients/components/activity-modal'
+import { ClientFormSection } from '@/presentation/features/clients/components/client-form-section'
+import {
+  ClientFormSectionNav,
+  type ClientFormSectionNavItem,
+} from '@/presentation/features/clients/components/client-form-section-nav'
 import AsyncSelect, {
   type AsyncSelectOption,
 } from '@/presentation/share/components/async-select'
@@ -55,6 +61,45 @@ const filterOptions = <TMeta,>(
   return options.filter((option) => option.label.toLowerCase().includes(term))
 }
 
+type ClientFormSectionId = 'personal' | 'residence' | 'references' | 'activities'
+
+const clientFormSections: Array<ClientFormSectionNavItem & { id: ClientFormSectionId }> = [
+  { id: 'personal', title: 'Datos personales', icon: FileText },
+  { id: 'residence', title: 'Domicilio y perfil', icon: MapPin },
+  { id: 'references', title: 'Referencias', icon: Users },
+  { id: 'activities', title: 'Actividad económica', icon: Briefcase },
+]
+
+const sectionErrorFields: Record<ClientFormSectionId, Array<keyof ClientFormValues>> = {
+  personal: [
+    'nombreCompleto',
+    'identidad',
+    'rtn',
+    'telefono',
+  ],
+  residence: [
+    'address',
+    'generoId',
+    'estadoCivilId',
+    'profesionId',
+    'fechaNacimiento',
+    'municipioId',
+    'dependientesId',
+    'tipoViviendaId',
+    'tiempoResidirMeses',
+    'esEmpleado',
+  ],
+  references: ['referencias'],
+  activities: ['actividades'],
+}
+
+const getFirstSectionWithErrors = (
+  validationErrors: FieldErrors<ClientFormValues>,
+): ClientFormSectionId | undefined =>
+  clientFormSections.find((section) =>
+    sectionErrorFields[section.id].some((field) => Boolean(validationErrors[field])),
+  )?.id
+
 export const ClientForm = ({
   initialValues,
   onSubmit,
@@ -64,6 +109,7 @@ export const ClientForm = ({
   isEdit,
   catalogs,
 }: ClientFormProps) => {
+  const [activeSection, setActiveSection] = useState<ClientFormSectionId>('personal')
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false)
   const [editingReferenceIndex, setEditingReferenceIndex] = useState<number | null>(null)
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false)
@@ -76,7 +122,7 @@ export const ClientForm = ({
     watch,
     setValue,
     getValues,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
     defaultValues: {
@@ -169,6 +215,7 @@ export const ClientForm = ({
 
   const activities = watch('actividades')
   const references = watch('referencias')
+  const selectMenuPortalTarget = typeof document !== 'undefined' ? document.body : null
 
   const handleDepartmentChange = (departmentId: string) => {
     setSelectedDepartmentId(departmentId)
@@ -363,7 +410,17 @@ export const ClientForm = ({
 
   const submitHandler = handleSubmit(async (values) => {
     await onSubmit(values)
+  }, (validationErrors) => {
+    const firstSectionWithErrors = getFirstSectionWithErrors(validationErrors)
+    if (firstSectionWithErrors) {
+      setActiveSection(firstSectionWithErrors)
+    }
   })
+
+  const hasSectionError = (sectionId: string) => {
+    const fields = sectionErrorFields[sectionId as ClientFormSectionId]
+    return fields?.some((field) => Boolean(errors[field])) ?? false
+  }
 
   const activitiesError =
     typeof errors.actividades?.message === 'string'
@@ -372,8 +429,27 @@ export const ClientForm = ({
 
   return (
     <>
-      <form className="space-y-6" onSubmit={submitHandler} noValidate>
-      <div className="grid grid-cols-1 gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:grid-cols-2">
+      <form className="space-y-3" onSubmit={submitHandler} noValidate>
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-2.5 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-100">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(220px,250px)_minmax(0,1fr)] lg:items-start">
+        <ClientFormSectionNav
+          items={clientFormSections}
+          activeSection={activeSection}
+          onSelect={(sectionId) => setActiveSection(sectionId as ClientFormSectionId)}
+          hasError={hasSectionError}
+        />
+        <div className="min-w-0 space-y-4">
+      <div hidden={activeSection !== 'personal'}>
+        <ClientFormSection
+          title="Datos personales"
+          description="Identifica al cliente y completa su información básica."
+        >
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <div className="space-y-2">
           <label
             htmlFor="nombreCompleto"
@@ -453,6 +529,16 @@ export const ClientForm = ({
           ) : null}
         </div>
 
+      </div>
+        </ClientFormSection>
+      </div>
+
+      <div hidden={activeSection !== 'residence'}>
+        <ClientFormSection
+          title="Domicilio y perfil"
+          description="Completa la ubicación, vivienda y situación laboral del cliente."
+        >
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
         <div className="md:col-span-2 space-y-2">
           <label
             htmlFor="direccion"
@@ -488,6 +574,8 @@ export const ClientForm = ({
             placeholder="Selecciona..."
             inputId="generoId"
             instanceId="client-genero-id"
+            menuPortalTarget={selectMenuPortalTarget}
+            menuPosition="fixed"
             isDisabled={isSaving}
             defaultOptions={genderOptions}
             noOptionsMessage="Sin géneros"
@@ -516,6 +604,8 @@ export const ClientForm = ({
             placeholder="Selecciona..."
             inputId="estadoCivilId"
             instanceId="client-estado-civil-id"
+            menuPortalTarget={selectMenuPortalTarget}
+            menuPosition="fixed"
             isDisabled={isSaving}
             defaultOptions={civilStatusOptions}
             noOptionsMessage="Sin estados civiles"
@@ -546,6 +636,8 @@ export const ClientForm = ({
             placeholder="Selecciona..."
             inputId="profesionId"
             instanceId="client-profesion-id"
+            menuPortalTarget={selectMenuPortalTarget}
+            menuPosition="fixed"
             isDisabled={isSaving}
             defaultOptions={professionOptions}
             noOptionsMessage="Sin profesiones"
@@ -606,6 +698,8 @@ export const ClientForm = ({
             placeholder="Selecciona..."
             inputId="departmentId"
             instanceId="client-department-id"
+            menuPortalTarget={selectMenuPortalTarget}
+            menuPosition="fixed"
             isDisabled={isSaving}
             defaultOptions={departmentOptions}
             noOptionsMessage="Sin departamentos"
@@ -632,6 +726,8 @@ export const ClientForm = ({
             placeholder="Selecciona..."
             inputId="municipioId"
             instanceId="client-municipio-id"
+            menuPortalTarget={selectMenuPortalTarget}
+            menuPosition="fixed"
             isDisabled={isSaving || (!municipalityOptions.length && !municipalityId)}
             defaultOptions={municipalityAsyncOptions}
             noOptionsMessage={
@@ -670,6 +766,8 @@ export const ClientForm = ({
             placeholder="Selecciona..."
             inputId="dependientesId"
             instanceId="client-dependientes-id"
+            menuPortalTarget={selectMenuPortalTarget}
+            menuPosition="fixed"
             isDisabled={isSaving}
             defaultOptions={dependentOptions}
             noOptionsMessage="Sin dependientes"
@@ -700,6 +798,8 @@ export const ClientForm = ({
             placeholder="Selecciona..."
             inputId="tipoViviendaId"
             instanceId="client-tipo-vivienda-id"
+            menuPortalTarget={selectMenuPortalTarget}
+            menuPosition="fixed"
             isDisabled={isSaving}
             defaultOptions={housingTypeOptions}
             noOptionsMessage="Sin tipos de vivienda"
@@ -756,18 +856,19 @@ export const ClientForm = ({
           </label>
         </div>
       </div>
+        </ClientFormSection>
+      </div>
 
-      <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div hidden={activeSection !== 'references'}>
+        <ClientFormSection
+          title="Referencias personales"
+          description="Agrega personas de referencia y administra su estado."
+        >
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
-              Referencias personales
-            </h3>
-          </div>
           <button
             type="button"
             onClick={openNewReferenceModal}
-            className="btn-primary px-3 py-2 text-xs shadow"
+            className="btn-primary btn-list-action shadow"
             disabled={isSaving}
           >
             Agregar referencia
@@ -855,11 +956,16 @@ export const ClientForm = ({
           )
           })}
         </div>
+        </ClientFormSection>
       </div>
 
-      <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div hidden={activeSection !== 'activities'}>
+        <ClientFormSection
+          title="Actividades económicas"
+          description="Relaciona las actividades e identifica una sola actividad principal activa."
+        >
         <div className="flex items-center justify-between">
-          <div>
+          <div className="hidden">
             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
               Actividades económicas
             </h3>
@@ -871,7 +977,7 @@ export const ClientForm = ({
             <button
               type="button"
               onClick={openNewActivityModal}
-              className="btn-primary px-3 py-2 text-xs shadow self-start"
+              className="btn-primary btn-list-action shadow self-start"
               disabled={isSaving}
             >
               Agregar actividad
@@ -993,19 +1099,35 @@ export const ClientForm = ({
           )
           })}
         </div>
+        </ClientFormSection>
+      </div>
+        </div>
       </div>
 
-      {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
-          {error}
+      <div className="sticky bottom-3 z-20 mt-4 flex flex-col gap-3 rounded-xl border border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-lg shadow-slate-900/5 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-950/95 dark:shadow-black/20 sm:flex-row sm:items-center sm:justify-between">
+        <div
+          aria-live="polite"
+          className={`inline-flex w-fit items-center gap-2 rounded-full border px-2.5 py-1 ${
+            isDirty
+              ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-200'
+              : 'border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
+          }`}
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${
+              isDirty ? 'bg-amber-500 dark:bg-amber-400' : 'bg-slate-400 dark:bg-slate-500'
+            }`}
+            aria-hidden="true"
+          />
+          <span className="text-xs font-medium">
+            {isDirty ? 'Cambios pendientes' : 'Sin cambios pendientes'}
+          </span>
         </div>
-      ) : null}
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+          className="btn-secondary px-4 py-1.5 text-sm"
           disabled={isSaving}
         >
           Cancelar
@@ -1017,6 +1139,7 @@ export const ClientForm = ({
         >
           {isSaving ? 'Guardando...' : 'Guardar cliente'}
         </button>
+        </div>
       </div>
 
     </form>

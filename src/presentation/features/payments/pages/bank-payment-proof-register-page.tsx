@@ -228,10 +228,17 @@ export const BankPaymentProofRegisterPage = () => {
     )
   }
 
+  const handleChangeLoan = () => {
+    setSelectedClient(null)
+    setSelectedLoan(null)
+    setLoanCode('')
+    clearLookup()
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
+    <div className="space-y-3 pb-1">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
           Registrar abono bancario
         </h1>
         <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -239,105 +246,125 @@ export const BankPaymentProofRegisterPage = () => {
         </p>
       </div>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="grid gap-3 md:grid-cols-3">
-          <InfoCard label="Fecha operativa" value={isLoadingBusinessDate ? 'Cargando...' : formatDate(businessDateState?.businessDate)} />
-          <InfoCard label="Estado del día" value={isLoadingBusinessDate ? 'Cargando...' : isDayOpen ? 'Abierto' : 'Cerrado'} />
-          <InfoCard label="Flujo operativo" value="Abono bancario con comprobante" />
+      <section className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="grid divide-y divide-slate-200 md:grid-cols-[minmax(10rem,0.8fr)_minmax(10rem,0.8fr)_minmax(15rem,1.5fr)] md:divide-x md:divide-y-0 dark:divide-slate-800">
+          <ContextItem
+            label="Fecha operativa"
+            value={isLoadingBusinessDate ? 'Cargando...' : formatDate(businessDateState?.businessDate)}
+          />
+          <ContextItem
+            label="Estado del día"
+            value={
+              isLoadingBusinessDate ? (
+                'Cargando...'
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      isDayOpen ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                    aria-hidden="true"
+                  />
+                  {isDayOpen ? 'Abierto' : 'Cerrado'}
+                </span>
+              )
+            }
+          />
+          <ContextItem label="Flujo operativo" value="Abono bancario con comprobante" />
         </div>
         {businessDateError ? (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+          <div className="mt-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
             {businessDateError}
           </div>
         ) : null}
         {!isDayOpen && !isLoadingBusinessDate ? (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+          <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
             El día operativo está cerrado. No se pueden registrar abonos bancarios.
           </div>
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <div className="grid gap-4 xl:grid-cols-2">
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  Buscar por cliente
-                </p>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Selecciona un cliente y se consultarán sus préstamos disponibles para pago.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2 sm:min-w-[10rem] sm:items-stretch">
+      <section className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        {selectedLoan ? (
+          <PaymentLookupLoanSummaryCard
+            businessDate={lookup?.businessDate ?? businessDateState?.businessDate}
+            clientName={lookup?.client?.fullName ?? selectedClient?.clientFullName}
+            clientIdentityNo={lookup?.client?.identityNo ?? selectedClient?.clientIdentityNo}
+            loan={selectedLoan}
+            compact
+            onChange={handleChangeLoan}
+          />
+        ) : (
+          <div className="grid gap-2 md:grid-cols-2">
+            <div className="min-w-0 md:border-r md:border-slate-200 md:pr-4 md:dark:border-slate-800">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Buscar por cliente
+              </p>
+              <p className="mt-0 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                Selecciona un cliente para consultar sus préstamos disponibles.
+              </p>
+              <div className="mt-1.5 flex min-h-9 flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  className="btn-primary px-4 py-2 text-sm"
+                  className="btn-primary px-3 py-1.5 text-sm"
                   onClick={() => setClientPickerOpen(true)}
                 >
                   Buscar cliente
                 </button>
-                {selectedClient || lookup || selectedLoan ? (
+                {selectedClient ? (
+                  <span className="min-w-0 truncate text-xs text-slate-600 dark:text-slate-300">
+                    {selectedClient.clientFullName} · <HnIdentityText value={selectedClient.clientIdentityNo} fallback="—" />
+                  </span>
+                ) : null}
+                {selectedClient || lookup ? (
                   <button
                     type="button"
-                    className="btn-secondary px-4 py-2 text-sm"
-                    onClick={() => {
-                      setSelectedClient(null)
-                      setSelectedLoan(null)
-                      setLoanCode('')
-                      clearLookup()
-                    }}
+                    className="btn-secondary px-3 py-1.5 text-xs"
+                    onClick={handleChangeLoan}
                   >
                     Limpiar
                   </button>
                 ) : null}
               </div>
             </div>
-            {selectedClient ? (
-              <div className="mt-4 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950">
-                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                  {selectedClient.clientFullName}
-                </p>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-                  <HnIdentityText value={selectedClient.clientIdentityNo} fallback="—" />
-                </p>
-              </div>
-            ) : null}
-          </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Buscar por número de préstamo
-            </p>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-              <input
-                type="text"
-                value={loanCode}
-                onChange={(event) => setLoanCode(event.target.value.toUpperCase())}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault()
-                    void handleResolveLoan()
-                  }
-                }}
-                placeholder="PRE-2026-000001"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-              />
-              <button
-                type="button"
-                className="btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-                onClick={() => void handleResolveLoan()}
-                disabled={!loanCode.trim() || isLookingUp}
-              >
-                {isLookingUp ? 'Buscando...' : 'Buscar'}
-              </button>
+            <div className="min-w-0 md:pl-4">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Buscar por número de préstamo
+              </p>
+              <p className="mt-0 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                Usa el número visible en el comprobante o contrato.
+              </p>
+              <div className="mt-1.5 flex gap-2">
+                <input
+                  type="text"
+                  value={loanCode}
+                  onChange={(event) => setLoanCode(event.target.value.toUpperCase())}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      void handleResolveLoan()
+                    }
+                  }}
+                  placeholder="PRE-2026-000001"
+                  className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                />
+                <button
+                  type="button"
+                  className="btn-primary shrink-0 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => void handleResolveLoan()}
+                  disabled={!loanCode.trim() || isLookingUp}
+                >
+                  {isLookingUp ? 'Buscando...' : 'Buscar'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {lookupError ? <p className="mt-3 text-sm text-red-600 dark:text-red-300">{lookupError}</p> : null}
+        {lookupError ? <p className="mt-1.5 text-sm text-red-600 dark:text-red-300">{lookupError}</p> : null}
         {lookup && lookup.loans.length === 0 ? (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+          <div className="mt-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
             No se encontraron préstamos disponibles para la consulta.
           </div>
         ) : null}
@@ -349,31 +376,23 @@ export const BankPaymentProofRegisterPage = () => {
             loans={lookup.loans}
             selectedLoanId={selectedLoan?.id}
             onSelect={setSelectedLoan}
-          />
-        ) : null}
-
-        {selectedLoan ? (
-          <PaymentLookupLoanSummaryCard
-            businessDate={lookup?.businessDate ?? businessDateState?.businessDate}
-            clientName={lookup?.client?.fullName ?? selectedClient?.clientFullName}
-            clientIdentityNo={lookup?.client?.identityNo ?? selectedClient?.clientIdentityNo}
-            loan={selectedLoan}
+            compact
           />
         ) : null}
 
         {selectedLoan && !isLoanEligible ? (
-          <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+          <div className="mt-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
             Solo se pueden registrar abonos sobre préstamos vigentes, morosos o vencidos.
           </div>
         ) : null}
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+      <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-50">
           Datos del comprobante
         </h2>
-        <form className="mt-4 space-y-4" onSubmit={(event) => void submit(event)} noValidate>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <form className="mt-2 space-y-2" onSubmit={(event) => void submit(event)} noValidate>
+          <div className="grid grid-cols-1 gap-x-3 gap-y-3 md:grid-cols-2 lg:grid-cols-4">
             <Field label="Monto">
               <input
                 type="number"
@@ -416,14 +435,15 @@ export const BankPaymentProofRegisterPage = () => {
                 placeholder="Selecciona el banco reportado por el cliente"
                 noOptionsMessage="No hay entidades bancarias activas."
               />
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              <p className="mt-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400">
                 {bankEntityOption
                   ? 'El banco seleccionado se enviará para revisión.'
                   : 'Banco no especificado.'}
               </p>
             </Field>
-            <Field label="Archivo del comprobante">
-              <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 p-4 transition hover:border-primary/70 hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-900/70 dark:hover:border-primary/70 dark:hover:bg-primary/10">
+            <div className="lg:col-span-2">
+              <Field label="Archivo del comprobante">
+                <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50/80 px-3 py-2 transition hover:border-primary/70 hover:bg-primary/5 dark:border-slate-700 dark:bg-slate-900/70 dark:hover:border-primary/70 dark:hover:bg-primary/10">
                 <input
                   key={proofFileInputKey}
                   id="bank-proof-file"
@@ -432,71 +452,59 @@ export const BankPaymentProofRegisterPage = () => {
                   disabled={paymentRegistration.isSubmitting}
                   className="sr-only"
                 />
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-primary ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-800">
+                <div className="flex min-w-0 items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white text-primary ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-800">
                       {proofFile ? (
-                        <FileText className="h-5 w-5" />
+                        <FileText className="h-4 w-4" />
                       ) : (
-                        <Upload className="h-5 w-5" />
+                        <Upload className="h-4 w-4" />
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-                        {proofFile ? 'Comprobante seleccionado' : 'Subir comprobante bancario'}
+                      <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-50">
+                        {proofFile ? proofFile.name : 'Ningún archivo seleccionado'}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                      <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                         {proofFile
-                          ? 'Puedes cambiar el archivo antes de registrar el abono.'
-                          : 'Haz clic en el botón para adjuntar el comprobante emitido por el banco.'}
+                          ? `${formatFileSize(proofFile.size)} · ${proofFile.type || 'Tipo no identificado'}`
+                          : 'Comprobante emitido por el banco · archivo obligatorio para revisión.'}
                       </p>
                     </div>
                   </div>
                   <label
                     htmlFor="bank-proof-file"
-                    className={`btn-secondary inline-flex cursor-pointer items-center justify-center gap-2 px-4 py-2 text-sm ${
+                    className={`btn-secondary inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 px-3 py-1.5 text-xs ${
                       paymentRegistration.isSubmitting
                         ? 'pointer-events-none cursor-not-allowed opacity-60'
                         : ''
                     }`}
                   >
-                    <Upload className="h-4 w-4" />
+                    <Upload className="h-3.5 w-3.5" />
                     {proofFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
                   </label>
                 </div>
-              </div>
-              {proofFile ? (
-                <div className="mt-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
-                  <span className="font-medium text-slate-800 dark:text-slate-100">
-                    {proofFile.name}
-                  </span>
-                  <span className="mx-1">·</span>
-                  <span>{formatFileSize(proofFile.size)}</span>
-                  <span className="mx-1">·</span>
-                  <span>{proofFile.type || 'Tipo no identificado'}</span>
                 </div>
-              ) : (
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  El archivo es obligatorio para enviar el abono a revisión.
-                </p>
-              )}
-            </Field>
-            <Field label="Comprobante externo">
-              <input
-                type="text"
-                maxLength={80}
-                value={externalReceiptNumber}
-                onChange={(event) => setExternalReceiptNumber(event.target.value)}
-                disabled={paymentRegistration.isSubmitting}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
-              />
-            </Field>
-            <div className="space-y-2 md:col-span-2">
+              </Field>
+            </div>
+            <div className="lg:col-span-2">
+              <Field label="Comprobante externo">
+                <input
+                  type="text"
+                  maxLength={80}
+                  value={externalReceiptNumber}
+                  onChange={(event) => setExternalReceiptNumber(event.target.value)}
+                  disabled={paymentRegistration.isSubmitting}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                />
+              </Field>
+            </div>
+            <div className="space-y-1.5 md:col-span-2 lg:col-span-4">
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
                 Notas
               </label>
               <textarea
-                rows={4}
+                rows={2}
                 maxLength={500}
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
@@ -507,22 +515,28 @@ export const BankPaymentProofRegisterPage = () => {
           </div>
 
           {validationError || paymentRegistration.error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
               {validationError || paymentRegistration.error}
             </div>
           ) : null}
           {!validationError && !paymentRegistration.error && bankEntitiesError ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
               {bankEntitiesError}
             </div>
           ) : null}
           {!validationError && !paymentRegistration.error && !bankEntitiesError && submitBlockReason ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
-              {submitBlockReason}
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-500/10 dark:text-amber-50">
+              <span aria-hidden="true">⚠</span>
+              <span>{submitBlockReason}</span>
             </div>
           ) : null}
 
-          <div className="flex justify-end">
+          <div className="sticky bottom-3 z-10 -mx-3 flex flex-col gap-1.5 border-t border-slate-200 bg-white/95 px-3 py-1.5 dark:border-slate-800 dark:bg-slate-950/95 sm:flex-row sm:items-center sm:justify-between">
+            {selectedLoan ? (
+              <p className="min-w-0 truncate text-xs text-slate-500 dark:text-slate-400">
+                Préstamo <span className="font-semibold text-slate-700 dark:text-slate-200">{selectedLoan.loanNo?.trim() || selectedLoan.id}</span>
+              </p>
+            ) : null}
             <button
               type="submit"
               className="btn-primary px-5 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
@@ -569,17 +583,17 @@ export const BankPaymentProofRegisterPage = () => {
   )
 }
 
-const InfoCard = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
-    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+const ContextItem = ({ label, value }: { label: string; value: ReactNode }) => (
+  <div className="min-w-0 px-1 py-1.5 first:pl-0 last:pr-0 md:px-4 md:py-1 md:first:pl-0 md:last:pr-0">
+    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
       {label}
     </p>
-    <p className="mt-1 text-sm font-medium text-slate-900 dark:text-slate-50">{value}</p>
+    <p className="mt-0.5 truncate text-sm font-medium text-slate-900 dark:text-slate-50">{value}</p>
   </div>
 )
 
 const Field = ({ label, children }: { label: string; children: ReactNode }) => (
-  <div className="space-y-2">
+  <div className="space-y-1.5">
     <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
       {label}
     </label>

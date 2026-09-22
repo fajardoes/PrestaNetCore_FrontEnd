@@ -1,6 +1,7 @@
 import type { CostCenter } from '@/infrastructure/interfaces/accounting/cost-center'
 import type { Agency } from '@/infrastructure/interfaces/catalog/agency'
 import { AccountingStatusBadge } from './accounting-status-badge'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
@@ -91,13 +92,11 @@ export const CostCentersTable = ({
       header: 'Acciones',
       className: 'min-w-[100px]',
       render: (center: CostCenter) => onEdit ? (
-        <button
-          type="button"
+        <TableActionButton
+          icon="edit"
+          label="Editar centro de costo"
           onClick={() => onEdit(center)}
-          className="btn-table-action"
-        >
-          Editar
-        </button>
+        />
       ) : (
         <span className="text-xs text-slate-500 dark:text-slate-400">—</span>
       ),

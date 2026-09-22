@@ -1,4 +1,4 @@
-import { CalendarRange, CheckCircle2, ClipboardList, History, ReceiptText } from 'lucide-react'
+import { CalendarRange, CheckCircle2, ClipboardList, Eye, History, ReceiptText } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
@@ -468,9 +468,11 @@ export const LoanDetailPage = () => {
                           <td>
                             <Link
                               to={`/loans/${loan.id}/installments/${item.installmentNo}`}
-                              className="btn-table-action inline-flex px-2"
+                              className="btn-table-action inline-flex h-7 w-7 items-center justify-center p-0"
+                              title="Ver detalle de cuota"
+                              aria-label="Ver detalle de cuota"
                             >
-                              Ver
+                              <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                             </Link>
                           </td>
                           <td className="font-medium text-slate-700 dark:text-slate-200">

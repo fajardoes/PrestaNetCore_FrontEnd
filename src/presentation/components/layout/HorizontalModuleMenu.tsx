@@ -16,6 +16,7 @@ type DropdownPosition = {
   top: number
   left: number
   width: number
+  maxHeight: number
 }
 
 export const HorizontalModuleMenu = ({
@@ -88,8 +89,8 @@ export const HorizontalModuleMenu = ({
 
   if (isLoading) {
     return (
-      <div className="border-b border-slate-200 bg-white/95 dark:border-slate-800 dark:bg-slate-900/95">
-        <div className="mx-auto flex h-12 w-full max-w-screen-2xl items-center gap-2 px-4 lg:px-8">
+      <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+        <div className="mx-auto flex h-11 w-full max-w-screen-2xl items-center gap-2 px-4 lg:px-8">
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400 xl:hidden">
             Cargando menú
           </span>
@@ -97,12 +98,12 @@ export const HorizontalModuleMenu = ({
             {Array.from({ length: 5 }, (_, index) => (
               <div
                 key={index}
-                className="h-8 rounded-md bg-slate-200 dark:bg-slate-800"
+                className="h-7 rounded-md bg-slate-200 dark:bg-slate-800"
                 style={{ width: index === 0 ? 68 : 94 }}
               />
             ))}
           </div>
-          <div className="ml-auto h-8 w-24 animate-pulse rounded-md bg-slate-200 motion-reduce:animate-none dark:bg-slate-800 xl:hidden" />
+          <div className="ml-auto h-7 w-24 animate-pulse rounded-md bg-slate-200 motion-reduce:animate-none dark:bg-slate-800 xl:hidden" />
         </div>
       </div>
     )
@@ -110,11 +111,11 @@ export const HorizontalModuleMenu = ({
 
   if (error) {
     return (
-      <div className="border-b border-slate-200 bg-white/95 px-4 py-2 dark:border-slate-800 dark:bg-slate-900/95 lg:px-8">
-        <div className="mx-auto flex w-full max-w-screen-2xl flex-wrap items-center justify-between gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+      <div className="border-b border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900 lg:px-8">
+        <div className="mx-auto flex w-full max-w-screen-2xl flex-wrap items-center justify-between gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
           <span>{error}</span>
           {onRetry ? (
-            <button type="button" className="btn-secondary px-3 py-1.5 text-xs" onClick={onRetry}>
+            <button type="button" className="btn-secondary btn-list-action" onClick={onRetry}>
               Reintentar
             </button>
           ) : null}
@@ -126,13 +127,13 @@ export const HorizontalModuleMenu = ({
   if (!sortedMenus.length) return null
 
   return (
-    <div className="border-b border-slate-200 bg-white/95 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
+    <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div ref={containerRef} className="mx-auto w-full max-w-screen-2xl px-4 lg:px-8">
         <nav
           aria-label="Navegación principal"
-          className="hidden h-12 items-center justify-center xl:flex"
+          className="hidden min-h-11 items-center overflow-x-auto xl:flex"
         >
-          <div className="flex items-center gap-1">
+          <div className="mx-auto flex min-w-max items-center gap-0.5 py-1">
             {sortedMenus.map((item) => (
               <DesktopRootItem
                 key={item.id}
@@ -148,14 +149,14 @@ export const HorizontalModuleMenu = ({
           </div>
         </nav>
 
-        <div className="flex min-h-12 items-center justify-between gap-3 py-2 xl:hidden">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">
+        <div className="flex min-h-11 items-center justify-between gap-3 py-1.5 xl:hidden">
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
             Módulos
           </p>
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((open) => !open)}
-            className="btn-icon-label px-3 py-1.5 text-xs"
+            className="btn-icon-label rounded-md px-2.5 py-1.5 text-xs"
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-primary-navigation"
           >
@@ -202,13 +203,12 @@ const DesktopRootItem = ({
 }) => {
   const isActive = containsMenuItem(item, activeMenuItemId)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const panelRef = useRef<HTMLDivElement>(null)
   const [dropdownPosition, setDropdownPosition] = useState<DropdownPosition | null>(null)
   const hasChildren = item.children.length > 0
   const dropdownId = `desktop-menu-${item.id}`
   const triggerId = `desktop-menu-trigger-${item.id}`
-  const preferredDropdownWidth = item.children.some((child) => child.children.length > 0)
-    ? 640
-    : 360
+  const preferredDropdownWidth = 660
 
   useEffect(() => {
     if (!isOpen) {
@@ -228,13 +228,19 @@ const DesktopRootItem = ({
       )
       const left = Math.max(
         viewportPadding,
-        Math.min(rect.left + rect.width / 2 - width / 2, window.innerWidth - width - viewportPadding),
+        Math.min(
+          rect.left + rect.width / 2 - width / 2,
+          window.innerWidth - width - viewportPadding,
+        ),
       )
+      const top = rect.bottom + 6
+      const maxHeight = Math.max(160, window.innerHeight - top - viewportPadding)
 
       setDropdownPosition({
-        top: rect.bottom + 8,
+        top,
         left,
         width,
+        maxHeight,
       })
     }
 
@@ -248,6 +254,21 @@ const DesktopRootItem = ({
     }
   }, [isOpen, preferredDropdownWidth])
 
+  useEffect(() => {
+    if (!isOpen || !dropdownPosition) return
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      panelRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+    })
+
+    return () => window.cancelAnimationFrame(focusFrame)
+  }, [dropdownPosition, isOpen])
+
+  const closeDropdown = () => {
+    onClose()
+    window.requestAnimationFrame(() => buttonRef.current?.focus())
+  }
+
   if (!hasChildren) {
     return (
       <NavLink
@@ -255,7 +276,7 @@ const DesktopRootItem = ({
         end={item.route === '/'}
         className={getRootItemClasses(isActive)}
       >
-        <MenuIcon iconName={item.icon} className="h-4 w-4" />
+        {item.icon ? <MenuIcon iconName={item.icon} className="h-4 w-4" /> : null}
         <span>{item.title}</span>
       </NavLink>
     )
@@ -267,13 +288,19 @@ const DesktopRootItem = ({
         ref={buttonRef}
         type="button"
         onClick={onToggle}
-        className={getRootItemClasses(isActive || isOpen)}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowDown') {
+            event.preventDefault()
+            if (!isOpen) onToggle()
+          }
+        }}
+        className={getRootItemClasses(isActive, isOpen)}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         aria-controls={dropdownId}
         id={triggerId}
       >
-        <MenuIcon iconName={item.icon} className="h-4 w-4" />
+        {item.icon ? <MenuIcon iconName={item.icon} className="h-4 w-4" /> : null}
         <span>{item.title}</span>
         <ChevronDownIcon
           className={`h-3.5 w-3.5 transition-transform motion-reduce:transition-none ${
@@ -285,29 +312,35 @@ const DesktopRootItem = ({
       {isOpen && dropdownPosition && typeof document !== 'undefined'
         ? createPortal(
             <div
+              ref={panelRef}
               data-top-navigation-dropdown="true"
               id={dropdownId}
               role="menu"
               aria-labelledby={triggerId}
               aria-label={`Opciones de ${item.title}`}
-              className="fixed z-50 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-xl border border-slate-200 bg-white p-2 shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950"
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.preventDefault()
+                  closeDropdown()
+                }
+              }}
+              className="fixed z-50 max-h-[calc(100vh-7rem)] max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-lg border border-slate-200 bg-white p-3 shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950"
               style={{
                 top: dropdownPosition.top,
                 left: dropdownPosition.left,
                 width: dropdownPosition.width,
+                maxHeight: dropdownPosition.maxHeight,
               }}
             >
-              <div
-                className={
-                  item.children.some((child) => child.children.length > 0)
-                    ? 'columns-1 gap-x-2 sm:columns-2'
-                    : 'space-y-1'
-                }
-              >
+              <div className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-500 dark:text-slate-400">
+                {item.title}
+              </div>
+              <div className="columns-1 gap-x-6 sm:columns-2">
                 <DesktopMenuEntries
                   items={item.children}
                   activeMenuItemId={activeMenuItemId}
-                  onClose={onClose}
+                  onClose={closeDropdown}
+                  depth={0}
                 />
               </div>
             </div>,
@@ -322,53 +355,66 @@ const DesktopMenuEntries = ({
   items,
   activeMenuItemId,
   onClose,
+  depth,
 }: {
   items: MenuItemTreeDto[]
   activeMenuItemId: string | null
   onClose: () => void
+  depth: number
 }) => (
   <>
     {items.map((item) => {
       const isCurrent = item.id === activeMenuItemId
       const hasChildren = item.children.length > 0
 
-      return (
-        <div
-          key={item.id}
-          className={hasChildren ? 'mb-2 break-inside-avoid rounded-lg p-1' : 'break-inside-avoid'}
-        >
-          {hasChildren ? (
-            <>
-              <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400">
-                <MenuIcon iconName={item.icon} className="h-3.5 w-3.5 shrink-0" />
-                <span>{item.title}</span>
-              </div>
-              <div className="space-y-0.5">
-                <DesktopMenuEntries
-                  items={item.children}
-                  activeMenuItemId={activeMenuItemId}
-                  onClose={onClose}
-                />
-              </div>
-            </>
-          ) : (
-            <NavLink
-              to={item.route ?? '/'}
-              end={item.route === '/'}
-              onClick={onClose}
-              className={[
-                'flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition motion-reduce:transition-none',
-                isCurrent
-                  ? 'bg-sky-50 font-semibold text-sky-900 dark:bg-sky-500/10 dark:text-sky-100'
-                  : 'text-slate-700 hover:bg-slate-50 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:text-white',
-              ].join(' ')}
-              role="menuitem"
+      if (hasChildren) {
+        return (
+          <section
+            key={item.id}
+            className={[
+              'break-inside-avoid',
+              depth === 0 ? 'pb-3' : 'pt-1 pb-1',
+            ].join(' ')}
+          >
+            <div
+              className="px-2 pt-1 pb-1 text-xs font-semibold normal-case text-slate-700 dark:text-slate-200"
             >
-              <MenuIcon iconName={item.icon} className="h-4 w-4 shrink-0" />
-              <span className="min-w-0 truncate">{item.title}</span>
-            </NavLink>
-          )}
-        </div>
+              {item.title}
+            </div>
+            <div className={depth > 0 ? 'space-y-0.5 pl-2' : 'space-y-0.5'}>
+              <DesktopMenuEntries
+                items={item.children}
+                activeMenuItemId={activeMenuItemId}
+                onClose={onClose}
+                depth={depth + 1}
+              />
+            </div>
+          </section>
+        )
+      }
+
+      return (
+        <NavLink
+          key={item.id}
+          to={item.route ?? '/'}
+          end={item.route === '/'}
+          onClick={onClose}
+          className={getMenuEntryClasses(isCurrent)}
+          role="menuitem"
+        >
+          {item.icon ? (
+            <MenuIcon
+              iconName={item.icon}
+              className={[
+                'h-4 w-4 shrink-0',
+                isCurrent
+                  ? 'text-sky-600 dark:text-sky-300'
+                  : 'text-slate-400 dark:text-slate-500',
+              ].join(' ')}
+            />
+          ) : null}
+          <span className="min-w-0 truncate">{item.title}</span>
+        </NavLink>
       )
     })}
   </>
@@ -393,7 +439,7 @@ const MobileRootItem = ({
         onClick={onClose}
         className={getMobileRootItemClasses(isActive)}
       >
-        <MenuIcon iconName={item.icon} className="h-4 w-4" />
+        {item.icon ? <MenuIcon iconName={item.icon} className="h-4 w-4" /> : null}
         <span>{item.title}</span>
       </NavLink>
     )
@@ -403,18 +449,18 @@ const MobileRootItem = ({
     <section>
       <div
         className={[
-          'flex items-center gap-2 px-2 pb-1 text-xs font-semibold uppercase tracking-[0.12em]',
+          'px-2 pb-1 text-xs font-semibold uppercase tracking-[0.08em]',
           isActive ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500 dark:text-slate-400',
         ].join(' ')}
       >
-        <MenuIcon iconName={item.icon} className="h-4 w-4" />
-        <span>{item.title}</span>
+        {item.title}
       </div>
-      <div className="space-y-0.5 border-l border-slate-200 pl-2 dark:border-slate-700">
+      <div className="space-y-0.5 pl-2">
         <MobileMenuEntries
           items={item.children}
           activeMenuItemId={activeMenuItemId}
           onClose={onClose}
+          depth={0}
         />
       </div>
     </section>
@@ -425,10 +471,12 @@ const MobileMenuEntries = ({
   items,
   activeMenuItemId,
   onClose,
+  depth,
 }: {
   items: MenuItemTreeDto[]
   activeMenuItemId: string | null
   onClose: () => void
+  depth: number
 }) => (
   <>
     {items.map((item) => {
@@ -436,16 +484,19 @@ const MobileMenuEntries = ({
 
       if (item.children.length > 0) {
         return (
-          <section key={item.id} className="space-y-0.5 pt-1">
-            <div className="flex items-center gap-1.5 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              <MenuIcon iconName={item.icon} className="h-3.5 w-3.5 shrink-0" />
-              <span>{item.title}</span>
+          <section
+            key={item.id}
+            className={depth > 0 ? 'space-y-0.5 pt-2' : 'space-y-0.5 pt-1'}
+          >
+            <div className="px-2 py-1 text-xs font-semibold normal-case text-slate-700 dark:text-slate-200">
+              {item.title}
             </div>
-            <div className="space-y-0.5 border-l border-slate-200 pl-2 dark:border-slate-700">
+            <div className="space-y-0.5 pl-2">
               <MobileMenuEntries
                 items={item.children}
                 activeMenuItemId={activeMenuItemId}
                 onClose={onClose}
+                depth={depth + 1}
               />
             </div>
           </section>
@@ -458,14 +509,19 @@ const MobileMenuEntries = ({
           to={item.route ?? '/'}
           end={item.route === '/'}
           onClick={onClose}
-          className={[
-            'flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition motion-reduce:transition-none',
-            isActive
-              ? 'bg-sky-50 font-semibold text-sky-900 dark:bg-sky-500/10 dark:text-sky-100'
-              : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
-          ].join(' ')}
+          className={getMenuEntryClasses(isActive)}
         >
-          <MenuIcon iconName={item.icon} className="h-4 w-4 shrink-0" />
+          {item.icon ? (
+            <MenuIcon
+              iconName={item.icon}
+              className={[
+                'h-4 w-4 shrink-0',
+                isActive
+                  ? 'text-sky-600 dark:text-sky-300'
+                  : 'text-slate-400 dark:text-slate-500',
+              ].join(' ')}
+            />
+          ) : null}
           <span className="min-w-0 truncate">{item.title}</span>
         </NavLink>
       )
@@ -473,29 +529,36 @@ const MobileMenuEntries = ({
   </>
 )
 
-const containsMenuItem = (
-  item: MenuItemTreeDto,
-  menuItemId: string | null,
-): boolean => {
+const containsMenuItem = (item: MenuItemTreeDto, menuItemId: string | null): boolean => {
   if (!menuItemId) return false
   if (item.id === menuItemId) return true
   return item.children.some((child) => containsMenuItem(child, menuItemId))
 }
 
-const getRootItemClasses = (isActive: boolean) =>
+const getMenuEntryClasses = (isActive: boolean) =>
   [
-    'inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium whitespace-nowrap transition motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900',
+    'relative flex min-h-9 break-inside-avoid items-center gap-2 rounded-md border-l-2 px-2.5 py-2 text-sm transition motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-1 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-950',
     isActive
-      ? 'bg-sky-50 text-sky-800 dark:bg-sky-500/10 dark:text-sky-200'
-      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white',
+      ? 'border-sky-500 bg-sky-50 font-medium text-sky-700 dark:bg-sky-950/30 dark:text-sky-300'
+      : 'border-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-200 dark:hover:bg-slate-800/70 dark:hover:text-white',
+  ].join(' ')
+
+const getRootItemClasses = (isActive: boolean, isOpen = false) =>
+  [
+    'inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900',
+    isActive
+      ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-300'
+      : isOpen
+        ? 'bg-slate-100 text-slate-900 dark:bg-slate-800/70 dark:text-slate-100'
+        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-800/70 dark:hover:text-white',
   ].join(' ')
 
 const getMobileRootItemClasses = (isActive: boolean) =>
   [
-    'flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium transition motion-reduce:transition-none focus:outline-none focus:ring-2 focus:ring-primary/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900',
+    'flex items-center gap-2 rounded-md px-2.5 py-2 text-sm font-medium transition motion-reduce:transition-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900',
     isActive
-      ? 'bg-sky-50 text-sky-800 dark:bg-sky-500/10 dark:text-sky-200'
-      : 'text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800',
+      ? 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-300'
+      : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800/70',
   ].join(' ')
 
 const ChevronDownIcon = ({ className }: { className?: string }) => (

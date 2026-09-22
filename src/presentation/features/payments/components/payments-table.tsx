@@ -1,7 +1,7 @@
-import { CheckCircle2, Eye, Printer, RotateCcw, XCircle } from 'lucide-react'
 import type { PaymentActionsResponse } from '@/infrastructure/payments/responses/payment-actions-response'
 import type { PaymentResponse } from '@/infrastructure/payments/responses/payment-response'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 import {
   formatBankEntityDisplay,
@@ -56,63 +56,51 @@ export const PaymentsTable = ({
       header: 'Acciones',
       render: (item: PaymentResponse) => (
         <span className="inline-flex items-center gap-1">
-          <button
-            type="button"
-            className="btn-table-action w-7 px-0"
-            title="Ver detalle"
+          <TableActionButton
+            icon="view"
+            label="Ver detalle"
+            tooltip="Ver detalle"
             onClick={() => onView(item)}
-          >
-            <Eye className="mx-auto h-3.5 w-3.5" />
-          </button>
+          />
           {isActionEnabled(actionsByPaymentId?.[item.id], 'settle') ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
-              title={getActionTitle(actionsByPaymentId?.[item.id], 'settle', 'Liquidar')}
+            <TableActionButton
+              icon="post"
+              label="Liquidar pago"
+              tooltip="Liquidar pago"
               onClick={() => onSettle?.(item)}
-            >
-              <CheckCircle2 className="mx-auto h-3.5 w-3.5" />
-            </button>
+            />
           ) : null}
           {isActionEnabled(actionsByPaymentId?.[item.id], 'effectivize') ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
-              title={getActionTitle(actionsByPaymentId?.[item.id], 'effectivize', 'Aprobar')}
+            <TableActionButton
+              icon="post"
+              label="Aprobar abono"
+              tooltip="Aprobar abono"
               onClick={() => onEffectivize?.(item)}
-            >
-              <CheckCircle2 className="mx-auto h-3.5 w-3.5" />
-            </button>
+            />
           ) : null}
           {isActionEnabled(actionsByPaymentId?.[item.id], 'reject') ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
-              title={getActionTitle(actionsByPaymentId?.[item.id], 'reject', 'Rechazar')}
+            <TableActionButton
+              icon="void"
+              label="Rechazar abono"
+              tooltip="Rechazar abono"
               onClick={() => onReject?.(item)}
-            >
-              <XCircle className="mx-auto h-3.5 w-3.5" />
-            </button>
+            />
           ) : null}
           {isActionEnabled(actionsByPaymentId?.[item.id], 'reverse') ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
-              title={getActionTitle(actionsByPaymentId?.[item.id], 'reverse', 'Reversar')}
+            <TableActionButton
+              icon="reverse"
+              label="Reversar pago"
+              tooltip="Reversar pago"
               onClick={() => onReverse?.(item)}
-            >
-              <RotateCcw className="mx-auto h-3.5 w-3.5" />
-            </button>
+            />
           ) : null}
           {isPaymentReceiptPrintable(item) ? (
-            <button
-              type="button"
-              className="btn-table-action w-7 px-0"
-              title="Imprimir recibo"
+            <TableActionButton
+              icon="print"
+              label="Imprimir recibo"
+              tooltip="Imprimir recibo"
               onClick={() => onPrintReceipt?.(item)}
-            >
-              <Printer className="mx-auto h-3.5 w-3.5" />
-            </button>
+            />
           ) : null}
         </span>
       ),
@@ -123,7 +111,7 @@ export const PaymentsTable = ({
       className: 'whitespace-nowrap',
       render: (item: PaymentResponse) => (
         <span
-          className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${getPaymentStatusBadgeClass(item.statusCode)}`}
+          className={`inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold leading-4 ${getPaymentStatusBadgeClass(item.statusCode)}`}
         >
           {translatePaymentStatus(item.statusCode, item.statusName)}
         </span>
@@ -136,7 +124,7 @@ export const PaymentsTable = ({
       header: 'Recibo interno',
       className: 'whitespace-nowrap',
       render: (item: PaymentResponse) => (
-        <span className="font-semibold text-slate-800 dark:text-slate-100">
+        <span className="font-mono text-[12px] text-slate-700 dark:text-slate-200">
           {formatShortValue(item.internalReceiptNumber)}
         </span>
       ),
@@ -146,7 +134,11 @@ export const PaymentsTable = ({
       key: 'loan',
       header: 'Préstamo',
       className: 'whitespace-nowrap',
-      render: (item: PaymentResponse) => formatShortValue(item.loanNo),
+      render: (item: PaymentResponse) => (
+        <span className="font-mono text-[12px] text-slate-700 dark:text-slate-200">
+          {formatShortValue(item.loanNo)}
+        </span>
+      ),
       getTitle: (item: PaymentResponse) => formatShortValue(item.loanNo),
     },
     {
@@ -266,15 +258,22 @@ export const PaymentsTable = ({
       key: 'journalEntry',
       header: 'Asiento registro',
       className: 'whitespace-nowrap',
-      render: (item: PaymentResponse) => formatShortValue(item.journalEntryNumber),
+      render: (item: PaymentResponse) => (
+        <span className="font-mono text-[12px] text-slate-700 dark:text-slate-200">
+          {formatShortValue(item.journalEntryNumber)}
+        </span>
+      ),
       getTitle: (item: PaymentResponse) => formatShortValue(item.journalEntryNumber),
     },
     {
       key: 'effectivizationEntry',
       header: 'Asiento efectivización',
       className: 'whitespace-nowrap',
-      render: (item: PaymentResponse) =>
-        formatShortValue(item.effectivizationJournalEntryNumber),
+      render: (item: PaymentResponse) => (
+        <span className="font-mono text-[12px] text-slate-700 dark:text-slate-200">
+          {formatShortValue(item.effectivizationJournalEntryNumber)}
+        </span>
+      ),
       getTitle: (item: PaymentResponse) =>
         formatShortValue(item.effectivizationJournalEntryNumber),
     },
@@ -298,6 +297,9 @@ export const PaymentsTable = ({
         emptyMessage={error ? 'No fue posible cargar los pagos.' : 'No hay pagos para los filtros seleccionados.'}
         maxHeightClassName="max-h-[640px]"
         rowNumberStart={(page - 1) * pageSize + 1}
+        getRowClassName={() =>
+          'odd:bg-white even:bg-slate-50/70 hover:bg-sky-50/70 dark:odd:bg-slate-950 dark:even:bg-slate-900/70 dark:hover:bg-slate-900'
+        }
         fitContent
       />
 
@@ -315,13 +317,3 @@ const isActionEnabled = (
   code: string,
 ) => actions?.allowedActions.find((action) => action.code === code)?.enabled ?? false
 
-const getActionTitle = (
-  actions: PaymentActionsResponse | undefined,
-  code: string,
-  fallbackLabel: string,
-) => {
-  const action = actions?.allowedActions.find((item) => item.code === code)
-  if (!action) return `${fallbackLabel} no disponible`
-  if (!action.enabled) return action.reason || `${action.label} no disponible`
-  return action.label
-}

@@ -27,8 +27,9 @@ export const TableContainer = ({
       ? [
           'rounded-md shadow-none',
           '[&_thead]:bg-slate-100 dark:[&_thead]:bg-slate-900/80',
-          '[&_th]:px-3 [&_th]:py-2 [&_th]:text-[11px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide',
-          '[&_td]:px-3 [&_td]:py-2 [&_td]:text-[13px]',
+          '[&_table]:font-sans [&_table]:tabular-nums',
+          '[&_th]:px-3 [&_th]:py-2 [&_th]:text-[10px] [&_th]:font-semibold [&_th]:leading-4 [&_th]:normal-case [&_th]:tracking-normal',
+          '[&_td]:px-3 [&_td]:py-2 [&_td]:text-[12px] [&_td]:leading-4',
           '[&_tbody_tr]:transition-none',
         ].join(' ')
       : mode === 'legacy-compact'
@@ -36,8 +37,9 @@ export const TableContainer = ({
             'rounded-md border-slate-300 shadow-none dark:border-slate-700',
             '[&_thead]:bg-slate-100 dark:[&_thead]:bg-slate-900/80',
             '[&_thead]:border-b [&_thead]:border-slate-300 dark:[&_thead]:border-slate-700',
-            '[&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-[10px] [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide',
-            '[&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-xs',
+            '[&_table]:font-sans [&_table]:tabular-nums',
+            '[&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-[10px] [&_th]:font-semibold [&_th]:leading-4 [&_th]:normal-case [&_th]:tracking-normal',
+            '[&_td]:px-2.5 [&_td]:py-1.5 [&_td]:text-[12px] [&_td]:leading-4',
             '[&_tbody]:divide-y [&_tbody]:divide-slate-300 dark:[&_tbody]:divide-slate-700',
             '[&_tbody_tr]:transition-none',
           ].join(' ')

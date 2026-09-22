@@ -3,6 +3,7 @@ import { useFieldArray, useWatch, type Control, type FieldErrors } from 'react-h
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { FeeModal } from '@/presentation/features/loans/products/components/fee-modal'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 interface FeesEditorProps {
   control: Control<LoanProductFormValues>
@@ -67,7 +68,7 @@ export const FeesEditor = ({
       <div className="flex items-center justify-end">
         <button
           type="button"
-          className="btn-primary px-3 py-1.5 text-xs shadow"
+          className="btn-primary btn-list-action shadow"
           onClick={openNewFeeModal}
           disabled={disabled}
         >
@@ -121,31 +122,26 @@ export const FeesEditor = ({
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="btn-table-action"
+                  <TableActionButton
+                    icon="edit"
+                    label="Editar comisión"
                     onClick={() => openEditFeeModal(index)}
                     disabled={disabled}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-table-action"
+                  />
+                  <TableActionButton
+                    icon="toggle"
+                    label={fee.isActive === false ? 'Activar comisión' : 'Desactivar comisión'}
                     onClick={() => handleToggleFee(index)}
                     disabled={disabled}
-                  >
-                    {fee.isActive === false ? 'Activar' : 'Desactivar'}
-                  </button>
+                  />
                   {allowRemove ? (
-                    <button
-                      type="button"
-                      className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                    <TableActionButton
+                      icon="delete"
+                      label="Eliminar comisión"
+                      className="text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       onClick={() => remove(index)}
                       disabled={disabled}
-                    >
-                      Eliminar
-                    </button>
+                    />
                   ) : null}
                 </div>
               </div>

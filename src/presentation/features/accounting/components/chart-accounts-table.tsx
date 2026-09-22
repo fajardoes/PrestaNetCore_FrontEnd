@@ -1,5 +1,6 @@
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import { AccountingStatusBadge } from './accounting-status-badge'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
 interface ChildrenMap {
@@ -88,6 +89,7 @@ export const ChartAccountsTable = ({
                 onClick={() => onToggleExpand(account.id, account.isGroup)}
                 className="btn-table-action w-7 shrink-0 px-0"
                 aria-label={isExpanded ? 'Colapsar' : 'Expandir'}
+                title={isExpanded ? 'Colapsar' : 'Expandir'}
               >
                 {childrenState?.isLoading ? (
                   <SpinnerIcon className="mx-auto h-4 w-4 animate-spin" />
@@ -164,21 +166,17 @@ export const ChartAccountsTable = ({
       render: ({ account }: VisibleChartAccountRow) => (
         <span className="flex items-center justify-end gap-2">
           {account.isGroup && onCreateChild ? (
-            <button
-              type="button"
+            <TableActionButton
+              icon="add"
+              label="Crear subcuenta"
               onClick={() => onCreateChild(account)}
-              className="btn-table-action"
-            >
-              Nuevo hijo
-            </button>
+            />
           ) : null}
-          <button
-            type="button"
+          <TableActionButton
+            icon="edit"
+            label="Editar cuenta"
             onClick={() => onEdit(account)}
-            className="btn-table-action"
-          >
-            Editar
-          </button>
+          />
         </span>
       ),
     },

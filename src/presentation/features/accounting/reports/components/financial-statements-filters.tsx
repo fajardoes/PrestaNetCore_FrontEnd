@@ -201,7 +201,7 @@ export const FinancialStatementsFilters = ({
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
         <button
           type="submit"
-          className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+        className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
           disabled={isLoading}
         >
           {isLoading ? 'Consultando...' : 'Consultar'}

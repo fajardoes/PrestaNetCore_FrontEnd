@@ -28,14 +28,14 @@ export const LoanProductsFilters = ({
         <>
           <button
             type="button"
-            className="btn-secondary px-4 py-2 text-sm"
+            className="btn-secondary btn-list-action"
             onClick={onSearch}
           >
             Buscar
           </button>
           <button
             type="button"
-            className="btn-primary px-4 py-2 text-sm"
+            className="btn-primary btn-list-action"
             onClick={onCreate}
           >
             Nuevo producto

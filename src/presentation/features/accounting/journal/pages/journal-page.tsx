@@ -6,12 +6,14 @@ import { useJournalEntryForm } from '@/presentation/features/accounting/journal/
 import { usePostJournalEntry } from '@/presentation/features/accounting/journal/hooks/use-post-journal-entry'
 import { useVoidJournalEntry } from '@/presentation/features/accounting/journal/hooks/use-void-journal-entry'
 import { useJournalEntryDetail } from '@/presentation/features/accounting/journal/hooks/use-journal-entry-detail'
+import { useJournalEntryVoucherReport } from '@/presentation/features/accounting/journal/hooks/use-journal-entry-voucher-report'
 import { JournalFiltersBar } from '@/presentation/features/accounting/journal/components/journal-filters-bar'
 import { JournalTable } from '@/presentation/features/accounting/journal/components/journal-table'
 import { JournalEntryFormModal } from '@/presentation/features/accounting/journal/components/journal-entry-form-modal'
 import { JournalEntryVoidModal } from '@/presentation/features/accounting/journal/components/journal-entry-void-modal'
 import { JournalEntryDetailModal } from '@/presentation/features/accounting/journal/components/journal-entry-detail-modal'
 import { JournalEntryPostModal } from '@/presentation/features/accounting/journal/components/journal-entry-post-modal'
+import { FilePreviewModal } from '@/presentation/share/components/file-preview-modal'
 import { usePostableAccounts } from '@/presentation/features/accounting/hooks/use-postable-accounts'
 import { useCostCenterOptions } from '@/presentation/features/accounting/hooks/use-cost-center-options'
 import { usePostingContext } from '@/presentation/features/accounting/hooks/use-posting-context'
@@ -80,6 +82,7 @@ export const JournalPage = () => {
 
   const detailHook = useJournalEntryDetail()
   const postDetailHook = useJournalEntryDetail()
+  const voucherReportHook = useJournalEntryVoucherReport()
 
   const canCreate = isAdmin
   const postingMessages = getPostingContextMessages(postingContextHook.postingContext)
@@ -102,6 +105,11 @@ export const JournalPage = () => {
 
   const handleVoid = (entry: JournalEntryListItem) => {
     setVoidEntry(entry)
+  }
+
+  const handlePrint = async (entry: NonNullable<typeof detailHook.entry>) => {
+    const result = await voucherReportHook.openPreview(entry.id)
+    if (!result.success) notify(result.error, 'error')
   }
 
   const canShowRestriction = useMemo(() => !isAdmin, [isAdmin])
@@ -167,7 +175,7 @@ export const JournalPage = () => {
           canCreate ? (
             <button
               type="button"
-              className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
               onClick={() => {
                 setEditingId(null)
                 formHook.setError(null)
@@ -267,10 +275,24 @@ export const JournalPage = () => {
         entry={detailHook.entry}
         isLoading={detailHook.isLoading}
         error={detailHook.error}
+        onPrint={handlePrint}
+        isPrinting={voucherReportHook.isLoading}
         onClose={() => {
           setIsDetailOpen(false)
           detailHook.clear()
         }}
+      />
+
+      <FilePreviewModal
+        open={Boolean(voucherReportHook.preview)}
+        fileName={voucherReportHook.preview?.fileName}
+        fileUrl={voucherReportHook.preview?.objectUrl}
+        contentType={voucherReportHook.preview?.contentType}
+        isLoading={voucherReportHook.isLoading}
+        error={voucherReportHook.error}
+        isDownloading={voucherReportHook.isDownloading}
+        onClose={voucherReportHook.closePreview}
+        onDownload={voucherReportHook.download}
       />
     </div>
   )

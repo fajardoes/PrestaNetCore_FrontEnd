@@ -7,6 +7,7 @@ import {
   formatInsuranceValue,
   getCatalogItemCodeById,
 } from '@/core/helpers/insurance-value'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 interface InsurancesEditorProps {
   control: Control<LoanProductFormValues>
@@ -71,7 +72,7 @@ export const InsurancesEditor = ({
       <div className="flex items-center justify-end">
         <button
           type="button"
-          className="btn-primary px-3 py-1.5 text-xs shadow"
+          className="btn-primary btn-list-action shadow"
           onClick={openNewInsuranceModal}
           disabled={disabled}
         >
@@ -143,31 +144,26 @@ export const InsurancesEditor = ({
                   </span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="btn-table-action"
+                  <TableActionButton
+                    icon="edit"
+                    label="Editar seguro"
                     onClick={() => openEditInsuranceModal(index)}
                     disabled={disabled}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-table-action"
+                  />
+                  <TableActionButton
+                    icon="toggle"
+                    label={insurance.isActive === false ? 'Activar seguro' : 'Desactivar seguro'}
                     onClick={() => handleToggleInsurance(index)}
                     disabled={disabled}
-                  >
-                    {insurance.isActive === false ? 'Activar' : 'Desactivar'}
-                  </button>
+                  />
                   {allowRemove ? (
-                    <button
-                      type="button"
-                      className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                    <TableActionButton
+                      icon="delete"
+                      label="Eliminar seguro"
+                      className="text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                       onClick={() => remove(index)}
                       disabled={disabled}
-                    >
-                      Eliminar
-                    </button>
+                    />
                   ) : null}
                 </div>
               </div>

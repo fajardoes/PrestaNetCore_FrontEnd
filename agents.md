@@ -27,6 +27,10 @@
 - `src/presentation/share/components/table-container.tsx`: contenedor global para tablas con variantes visuales consistentes. Para tablas administrativas usar `mode="legacy-compact"` y borde marcado (`variant="strong"` cuando aplique) para mantener densidad y legibilidad homogénea.
 - `src/index.css` (`.btn-table-action`): clase estándar para acciones dentro de tablas/listas (editar, estado, ver, eliminar). Evitar botones ad-hoc por módulo para conservar tamaño y espaciado consistentes.
 
+`src/presentation/share/components/table-action-button.tsx`: wrapper global para acciones compactas de tablas. Usarlo cuando la acción pueda representarse claramente con un icono; siempre recibe un `label` para generar `aria-label` y tooltip, y conserva texto visible solo cuando el contexto requiera una acción explícita.
+
+- `src/index.css` (`.btn-list-action`): clase estÃ¡ndar para acciones de barras de listados y filtros. Mantiene el tamaÃ±o compacto de `Crear solicitud` en `/loans/applications` (28 px de alto).
+
 ## Componentes compartidos de selects
 
 - `src/presentation/share/components/async-select.tsx`: wrapper de `react-select/async` con estilos Tailwind (claro/oscuro). Usar este componente para selects asíncronos con búsqueda remota. No usar `react-select` directamente en componentes de features.
@@ -178,3 +182,10 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
 - `useRecentMenus` toma sus elementos exclusivamente del árbol autorizado `MenuItemTreeDto[]`, identifica la mejor coincidencia de ruta y conserva como máximo seis accesos por usuario en `localStorage` bajo `prestanet:recent-menus:{userId}`.
 - La visibilidad de la barra se conserva de forma independiente por usuario bajo `prestanet:recent-menus-visibility:{userId}`.
 - Las rutas profundas (detalles, edición y creación) se asocian a la opción autorizada más específica disponible; los accesos almacenados se vuelven a validar contra el árbol actual antes de mostrarse.
+
+## UX del configurador de productos de préstamo
+
+- `LoanProductForm` usa `ProductFormSectionNav` como índice lateral en escritorio y navegación adaptable en pantallas pequeñas.
+- Los contenidos se presentan mediante `ProductFormSection`; las secciones permanecen montadas y se ocultan con `hidden` para conservar el estado local y de React Hook Form al navegar.
+- `ProductFormSectionNav` muestra atención únicamente cuando existen errores de validación en los campos asociados a la sección.
+- El mapeo contable reutiliza `GlAccountsSelector` y permite mostrar descripciones y badges de obligatoriedad sin modificar contratos ni consultas.

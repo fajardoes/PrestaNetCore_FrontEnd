@@ -67,7 +67,7 @@ export const DelinquencyBucketsEditor = ({
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className="btn-secondary px-3 py-1.5 text-xs"
+            className="btn-secondary btn-list-action"
             onClick={handleSort}
             disabled={disabled || buckets.length < 2}
           >
@@ -75,7 +75,7 @@ export const DelinquencyBucketsEditor = ({
           </button>
           <button
             type="button"
-            className="btn-primary px-3 py-1.5 text-xs"
+            className="btn-primary btn-list-action"
             onClick={handleAdd}
             disabled={disabled}
           >

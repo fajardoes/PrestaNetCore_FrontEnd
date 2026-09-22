@@ -12,7 +12,19 @@ export const formatAccountingDate = (value?: string | null) => {
   if (!value) return '—'
   const date = new Date(`${value}T00:00:00`)
   if (Number.isNaN(date.getTime())) return value
-  return date.toLocaleDateString('es-HN')
+  return new Intl.DateTimeFormat('es-HN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date)
+}
+
+export const formatAccountingAmount = (value?: number | null) => {
+  if (value === null || value === undefined || !Number.isFinite(value)) return '0.00'
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value)
 }
 
 export const getJournalAccountingDate = (

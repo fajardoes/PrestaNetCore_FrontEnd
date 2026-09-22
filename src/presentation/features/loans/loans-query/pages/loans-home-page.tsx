@@ -144,10 +144,10 @@ export const LoansHomePage = () => {
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button type="button" className="btn-secondary px-4 py-2 text-sm" onClick={openClientPicker}>
+                    <button type="button" className="btn-secondary btn-list-action" onClick={openClientPicker}>
                       Cambiar cliente
                     </button>
-                    <button type="button" className="btn-secondary px-4 py-2 text-sm" onClick={clearSelectedClient}>
+                    <button type="button" className="btn-secondary btn-list-action" onClick={clearSelectedClient}>
                       Limpiar
                     </button>
                   </div>
@@ -167,7 +167,7 @@ export const LoansHomePage = () => {
                       Abre el selector para buscar clientes con préstamos y consultar su cartera.
                     </p>
                   </div>
-                  <button type="button" className="btn-primary px-4 py-2 text-sm" onClick={openClientPicker}>
+                  <button type="button" className="btn-primary btn-list-action" onClick={openClientPicker}>
                     Buscar cliente
                   </button>
                 </div>

@@ -98,7 +98,7 @@ export const CostCentersPage = () => {
           <>
             <button
               type="button"
-              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+              className="btn-secondary btn-list-action disabled:cursor-not-allowed disabled:opacity-60"
               onClick={handleSync}
               disabled={syncState.isLoading}
             >
@@ -106,7 +106,7 @@ export const CostCentersPage = () => {
             </button>
             <button
             type="button"
-            className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
             onClick={() => {
               setFormError(null)
               form.reset({

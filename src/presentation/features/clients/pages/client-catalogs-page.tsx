@@ -290,7 +290,7 @@ export const ClientCatalogsPage = () => {
               actions={
                 <button
                   type="button"
-                  className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
                   onClick={() => {
                     setEditingCatalog(null)
                     setIsCatalogModalOpen(true)
@@ -337,7 +337,7 @@ export const ClientCatalogsPage = () => {
           </div>
           <button
             type="button"
-            className="btn-primary px-4 py-2 text-sm shadow disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-primary btn-list-action shadow disabled:cursor-not-allowed disabled:opacity-60"
             onClick={() => {
               setEditingActivity(null)
               setIsActivityModalOpen(true)

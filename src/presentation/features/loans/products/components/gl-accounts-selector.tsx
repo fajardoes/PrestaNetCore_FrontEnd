@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import AsyncSelect, {
   type AsyncSelectOption,
@@ -6,6 +6,8 @@ import AsyncSelect, {
 
 interface GlAccountsSelectorProps {
   label: string
+  description?: string
+  required?: boolean
   value?: string | null
   onChange: (accountId: string) => void
   onSearch: (query: string) => Promise<ChartAccountListItem[]>
@@ -16,7 +18,7 @@ interface GlAccountsSelectorProps {
 }
 
 const getAccountLabel = (account: ChartAccountListItem) =>
-  `${account.code} - ${account.name}`
+  `${account.code} · ${account.name}`
 
 const toOption = (
   account: ChartAccountListItem,
@@ -28,6 +30,8 @@ const toOption = (
 
 export const GlAccountsSelector = ({
   label,
+  description,
+  required,
   value,
   onChange,
   onSearch,
@@ -60,11 +64,6 @@ export const GlAccountsSelector = ({
     }
   }, [value, onResolveAccount, selectedOption?.value])
 
-  const selectionLabel = useMemo(() => {
-    if (!selectedOption) return 'Sin cuenta seleccionada.'
-    return `Cuenta seleccionada: ${selectedOption.label}`
-  }, [selectedOption])
-
   const loadOptions = useCallback(
     async (inputValue: string) => {
       const results = await onSearch(inputValue.trim())
@@ -85,9 +84,27 @@ export const GlAccountsSelector = ({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+          {label}
+        </label>
+        {required !== undefined ? (
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+              required
+                ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/50 dark:text-sky-200'
+                : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+            }`}
+          >
+            {required ? 'Requerida' : 'Opcional'}
+          </span>
+        ) : null}
+      </div>
+      {description ? (
+        <p className="-mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+          {description}
+        </p>
+      ) : null}
       <AsyncSelect<ChartAccountListItem>
         key={selectedOption?.value ?? 'no-selected-account'}
         value={selectedOption}
@@ -103,7 +120,6 @@ export const GlAccountsSelector = ({
         noOptionsMessage="No hay resultados."
       />
       {error ? <p className="text-xs text-red-500">{error}</p> : null}
-      <p className="text-xs text-slate-500 dark:text-slate-400">{selectionLabel}</p>
     </div>
   )
 }

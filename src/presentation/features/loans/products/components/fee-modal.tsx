@@ -4,9 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { feeSchema } from '@/infrastructure/validations/loans/loan-product-form.schema'
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
-import AsyncSelect, {
-  type AsyncSelectOption,
-} from '@/presentation/share/components/async-select'
+import Select from '@/presentation/share/components/select'
 
 type FeeFormValues = LoanProductFormValues['fees'][number]
 
@@ -32,15 +30,6 @@ const defaultValues: FeeFormValues = {
 
 const toNumberValue = (value: string) => (value === '' ? undefined : Number(value))
 const getOptionLabel = (item: LoanCatalogItemDto) => item.name
-const filterOptions = (
-  options: AsyncSelectOption<LoanCatalogItemDto>[],
-  inputValue: string,
-) => {
-  const term = inputValue.trim().toLowerCase()
-  if (!term) return options
-  return options.filter((option) => option.label.toLowerCase().includes(term))
-}
-
 export const FeeModal = ({
   open,
   initialValues,
@@ -143,18 +132,15 @@ export const FeeModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de comisión
               </label>
-              <AsyncSelect<LoanCatalogItemDto>
+              <Select<LoanCatalogItemDto>
                 value={feeTypeOptions.find((option) => option.value === feeTypeId) ?? null}
                 onChange={(option) =>
                   setValue('feeTypeId', option?.value ?? '', { shouldValidate: true })
                 }
-                loadOptions={(inputValue) =>
-                  Promise.resolve(filterOptions(feeTypeOptions, inputValue))
-                }
+                options={feeTypeOptions}
                 placeholder="Selecciona..."
                 inputId="feeTypeId"
                 instanceId="loan-product-fee-type-id"
-                defaultOptions={feeTypeOptions}
                 noOptionsMessage="Sin tipos de comisión"
               />
               <input type="hidden" {...register('feeTypeId')} />
@@ -167,18 +153,15 @@ export const FeeModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Base de cobro
               </label>
-              <AsyncSelect<LoanCatalogItemDto>
+              <Select<LoanCatalogItemDto>
                 value={chargeBaseOptions.find((option) => option.value === chargeBaseId) ?? null}
                 onChange={(option) =>
                   setValue('chargeBaseId', option?.value ?? '', { shouldValidate: true })
                 }
-                loadOptions={(inputValue) =>
-                  Promise.resolve(filterOptions(chargeBaseOptions, inputValue))
-                }
+                options={chargeBaseOptions}
                 placeholder="Selecciona..."
                 inputId="chargeBaseId"
                 instanceId="loan-product-fee-charge-base-id"
-                defaultOptions={chargeBaseOptions}
                 noOptionsMessage="Sin bases de cobro"
               />
               <input type="hidden" {...register('chargeBaseId')} />
@@ -193,18 +176,15 @@ export const FeeModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de valor
               </label>
-              <AsyncSelect<LoanCatalogItemDto>
+              <Select<LoanCatalogItemDto>
                 value={valueTypeOptions.find((option) => option.value === valueTypeId) ?? null}
                 onChange={(option) =>
                   setValue('valueTypeId', option?.value ?? '', { shouldValidate: true })
                 }
-                loadOptions={(inputValue) =>
-                  Promise.resolve(filterOptions(valueTypeOptions, inputValue))
-                }
+                options={valueTypeOptions}
                 placeholder="Selecciona..."
                 inputId="valueTypeId"
                 instanceId="loan-product-fee-value-type-id"
-                defaultOptions={valueTypeOptions}
                 noOptionsMessage="Sin tipos de valor"
               />
               <input type="hidden" {...register('valueTypeId')} />
@@ -233,20 +213,17 @@ export const FeeModal = ({
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Momento de cobro
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+              <Select<LoanCatalogItemDto>
               value={
                 chargeTimingOptions.find((option) => option.value === chargeTimingId) ?? null
               }
               onChange={(option) =>
                 setValue('chargeTimingId', option?.value ?? '', { shouldValidate: true })
               }
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(chargeTimingOptions, inputValue))
-              }
+              options={chargeTimingOptions}
               placeholder="Selecciona..."
               inputId="chargeTimingId"
               instanceId="loan-product-fee-charge-timing-id"
-              defaultOptions={chargeTimingOptions}
               noOptionsMessage="Sin momentos de cobro"
             />
             <input type="hidden" {...register('chargeTimingId')} />
@@ -276,7 +253,7 @@ export const FeeModal = ({
             </button>
             <button
               type="button"
-              className="btn-primary px-5 py-2 text-sm shadow"
+              className="btn-primary btn-list-action shadow"
               onClick={submitHandler}
             >
               {initialValues ? 'Guardar cambios' : 'Agregar'}

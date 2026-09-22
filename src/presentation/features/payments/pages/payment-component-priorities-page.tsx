@@ -138,7 +138,7 @@ export const PaymentComponentPrioritiesPage = () => {
           {hasDraftReorder && canManage ? (
             <button
               type="button"
-              className="btn-primary px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-primary btn-list-action disabled:cursor-not-allowed disabled:opacity-60"
               disabled={mutations.isReordering}
               onClick={() => void handleSaveOrder()}
             >
@@ -148,7 +148,7 @@ export const PaymentComponentPrioritiesPage = () => {
           {canManage ? (
             <button
               type="button"
-              className="btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm"
+              className="btn-primary btn-list-action gap-2"
               onClick={() => setIsCreateOpen(true)}
             >
               <Plus className="h-4 w-4" />

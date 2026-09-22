@@ -169,22 +169,22 @@ export const LoanApplicationAnticipatedInstallmentSection = ({
         </div>
         <div className="flex flex-wrap gap-1.5">
           {canCreate ? (
-            <button type="button" className="btn-primary whitespace-nowrap px-2.5 py-1 text-xs" onClick={() => openUpsert('create')}>
+            <button type="button" className="btn-primary btn-list-action" onClick={() => openUpsert('create')}>
               Registrar monto
             </button>
           ) : null}
           {canEdit ? (
-            <button type="button" className="btn-primary whitespace-nowrap px-2.5 py-1 text-xs" onClick={() => openUpsert('edit')}>
+            <button type="button" className="btn-primary btn-list-action" onClick={() => openUpsert('edit')}>
               Editar monto
             </button>
           ) : null}
           {canReactivate ? (
-            <button type="button" className="btn-primary whitespace-nowrap px-2.5 py-1 text-xs" onClick={() => openUpsert('reactivate')}>
+            <button type="button" className="btn-primary btn-list-action" onClick={() => openUpsert('reactivate')}>
               Reactivar cuota anticipada
             </button>
           ) : null}
           {canCancelPending ? (
-            <button type="button" className="btn-secondary whitespace-nowrap px-2.5 py-1 text-xs" onClick={() => setCancelOpen(true)}>
+            <button type="button" className="btn-secondary btn-list-action" onClick={() => setCancelOpen(true)}>
               Cancelar cuota
             </button>
           ) : null}

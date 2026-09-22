@@ -20,6 +20,7 @@ interface PaymentLookupLoanSelectorProps {
   loans: PaymentLookupLoanResponse[]
   selectedLoanId?: string | null
   onSelect: (loan: PaymentLookupLoanResponse) => void
+  compact?: boolean
 }
 
 interface PaymentLookupLoanSummaryCardProps {
@@ -27,6 +28,8 @@ interface PaymentLookupLoanSummaryCardProps {
   clientName?: string | null
   clientIdentityNo?: string | null
   loan: PaymentLookupLoanResponse
+  compact?: boolean
+  onChange?: () => void
 }
 
 const sortComponentBalances = <
@@ -57,8 +60,65 @@ export const PaymentLookupLoanSelector = ({
   loans,
   selectedLoanId,
   onSelect,
-}: PaymentLookupLoanSelectorProps) => (
-  <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
+  compact = false,
+}: PaymentLookupLoanSelectorProps) => {
+  if (compact) {
+    return (
+      <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50/70 p-2 dark:border-slate-800 dark:bg-slate-900/60">
+        <div className="mb-1">
+          <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Selecciona el préstamo a pagar
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Se encontraron {loans.length} préstamos disponibles para {client?.fullName?.trim() || 'el cliente'}.
+          </p>
+        </div>
+
+        <div className="grid gap-2 xl:grid-cols-2">
+          {loans.map((loan) => {
+            const isSelected = selectedLoanId === loan.id
+            return (
+              <button
+                key={loan.id}
+                type="button"
+                className={`rounded-lg border p-2 text-left transition ${
+                  isSelected
+                    ? 'border-primary bg-white ring-2 ring-primary/20 dark:border-primary/70 dark:bg-slate-950'
+                    : 'border-slate-200 bg-white hover:border-primary/50 dark:border-slate-700 dark:bg-slate-950 dark:hover:border-primary/60'
+                }`}
+                onClick={() => onSelect(loan)}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {loan.loanNo?.trim() || loan.id}
+                    </p>
+                    <p className="mt-0 truncate text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                      {loan.loanProductName?.trim() || 'Producto no especificado'}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${getPaymentLookupLoanStatusBadgeClass(
+                      loan.statusCode,
+                    )}`}
+                  >
+                    {translatePaymentLookupLoanStatus(loan.statusCode, loan.statusName)}
+                  </span>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] leading-4 text-slate-600 dark:text-slate-300">
+                  <span>Saldo: {formatCurrency(loan.totalOutstanding)}</span>
+                  <span>Próxima cuota: {formatCurrency(loan.nextPayableInstallment?.outstandingAmount)}</span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/70">
     <div className="mb-3 flex flex-col gap-1">
       <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
         Selecciona el préstamo a pagar
@@ -131,17 +191,70 @@ export const PaymentLookupLoanSelector = ({
         )
       })}
     </div>
-  </div>
-)
+    </div>
+  )
+}
 
 export const PaymentLookupLoanSummaryCard = ({
   businessDate,
   clientName,
   clientIdentityNo,
   loan,
+  compact = false,
+  onChange,
 }: PaymentLookupLoanSummaryCardProps) => {
   const dueBreakdown = sortComponentBalances(loan.dueComponentBalances ?? [])
   const outstandingBreakdown = sortComponentBalances(loan.outstandingComponentBalances ?? [])
+
+  if (compact) {
+    return (
+      <div className="mt-0 flex flex-col gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 p-2 dark:border-slate-800 dark:bg-slate-900/60 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Préstamo seleccionado
+            </p>
+            <span
+              className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${getPaymentLookupLoanStatusBadgeClass(
+                loan.statusCode,
+              )}`}
+            >
+              {translatePaymentLookupLoanStatus(loan.statusCode, loan.statusName)}
+            </span>
+          </div>
+          <p className="mt-0.5 truncate text-sm text-slate-900 dark:text-slate-100">
+            <span className="font-semibold">{loan.loanNo?.trim() || loan.id}</span>
+            <span className="mx-1 text-slate-400">·</span>
+            <span>{clientName?.trim() || 'Cliente no disponible'}</span>
+            <span className="mx-1 text-slate-400">·</span>
+            <span className="text-slate-600 dark:text-slate-300">
+              <HnIdentityText value={clientIdentityNo} fallback="—" />
+            </span>
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center justify-between gap-4 sm:justify-end">
+          <div className="text-left sm:text-right">
+            <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Saldo pendiente
+            </p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+              {formatCurrency(loan.totalOutstanding)}
+            </p>
+          </div>
+          {onChange ? (
+            <button
+              type="button"
+              className="btn-secondary px-3 py-1.5 text-xs"
+              onClick={onChange}
+            >
+              Cambiar
+            </button>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-950">

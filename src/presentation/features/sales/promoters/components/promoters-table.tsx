@@ -1,5 +1,6 @@
 import type { PromoterResponse } from '@/infrastructure/interfaces/sales/promoter'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
@@ -86,22 +87,18 @@ export const PromotersTable = ({
       className: 'min-w-[170px]',
       render: (promoter: PromoterResponse) => (
         <span className="flex items-center justify-end gap-2">
-          <button
-            type="button"
+          <TableActionButton
+            icon="edit"
+            label="Editar promotor"
             onClick={() => onEdit(promoter)}
-            className="btn-table-action"
             disabled={processingId === promoter.id}
-          >
-            Editar
-          </button>
-          <button
-            type="button"
+          />
+          <TableActionButton
+            icon="toggle"
+            label={`${promoter.isActive ? 'Desactivar' : 'Activar'} promotor`}
             onClick={() => onToggle(promoter)}
-            className="btn-table-action"
             disabled={processingId === promoter.id}
-          >
-            {promoter.isActive ? 'Desactivar' : 'Activar'}
-          </button>
+          />
         </span>
       ),
     },

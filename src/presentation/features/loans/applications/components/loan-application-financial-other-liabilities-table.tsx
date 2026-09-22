@@ -1,5 +1,6 @@
 import { useFieldArray, type Control, type FieldErrors, type UseFormRegister } from 'react-hook-form'
 import type { LoanApplicationFinancialProfileFormValues } from '@/infrastructure/validations/loans/loan-application-financial-profile.schema'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 const enabledFieldClass =
   'w-full rounded-lg border border-slate-400 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-600 dark:bg-slate-950 dark:text-slate-100 dark:focus:border-sky-400 dark:focus:ring-sky-400/20'
@@ -42,7 +43,7 @@ export const LoanApplicationFinancialOtherLiabilitiesTable = ({
         </div>
         <button
           type="button"
-          className="btn-primary px-3 py-1.5 text-xs"
+          className="btn-primary btn-list-action"
           disabled={disabled}
           onClick={() =>
             append({
@@ -116,14 +117,13 @@ export const LoanApplicationFinancialOtherLiabilitiesTable = ({
                       ) : null}
                     </td>
                     <td className="px-3 py-2 align-top text-right">
-                      <button
-                        type="button"
-                        className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+                      <TableActionButton
+                        icon="delete"
+                        label="Eliminar pasivo"
+                        className="text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
                         disabled={disabled}
                         onClick={() => remove(index)}
-                      >
-                        Eliminar
-                      </button>
+                      />
                     </td>
                   </tr>
                 )

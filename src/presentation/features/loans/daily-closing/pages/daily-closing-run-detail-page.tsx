@@ -126,12 +126,12 @@ export const DailyClosingRunDetailPage = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link to="/loans/daily-closing/runs" className="btn-secondary px-4 py-2 text-sm">
+          <Link to="/loans/daily-closing/runs" className="btn-secondary btn-list-action">
             Volver al historico
           </Link>
           <button
             type="button"
-            className="btn-secondary px-4 py-2 text-sm"
+            className="btn-secondary btn-list-action"
             onClick={() => {
               void Promise.all([runQuery.refresh(), details.refresh()])
             }}
@@ -201,7 +201,7 @@ export const DailyClosingRunDetailPage = () => {
                 </span>
                 <button
                   type="button"
-                  className="btn-secondary px-4 py-2 text-sm"
+                  className="btn-secondary btn-list-action"
                   onClick={filterFailed}
                 >
                   Ver fallidos
@@ -276,12 +276,12 @@ export const DailyClosingRunDetailPage = () => {
           </label>
         </div>
         <div className="mt-4 flex flex-wrap justify-end gap-2">
-          <button type="button" className="btn-secondary px-4 py-2 text-sm" onClick={resetFilters}>
+          <button type="button" className="btn-secondary btn-list-action" onClick={resetFilters}>
             Limpiar filtros
           </button>
           <button
             type="button"
-            className="btn-primary px-4 py-2 text-sm"
+            className="btn-primary btn-list-action"
             onClick={() => applyFilters()}
           >
             Buscar

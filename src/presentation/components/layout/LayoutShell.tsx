@@ -63,7 +63,7 @@ export const LayoutShell = () => {
         loginPromptId={loginPromptId}
         onLoginPromptConsumed={() => setLoginPromptId(null)}
       />
-      <div className="sticky top-16 z-30">
+      <div className="sticky top-14 z-30">
         <HorizontalModuleMenu
           menus={menus}
           isLoading={isLoading}

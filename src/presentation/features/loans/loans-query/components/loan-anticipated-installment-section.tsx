@@ -1,6 +1,7 @@
 import { yupResolver } from '@hookform/resolvers/yup'
 import { Fragment, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import type { ApiResult } from '@/core/helpers/api-result'
 import type {
   ApplyAnticipatedInstallmentRequest,
@@ -178,11 +179,13 @@ export const LoanAnticipatedInstallmentSection = ({
                         <td>{anticipatedInstallmentStatusLabel(application.applicationStatusCode)}</td>
                         <td>{application.reason?.trim() || '—'}</td>
                         <td className="space-x-2 text-right">
-                          <button type="button" className="btn-table-action" onClick={() => setExpanded((items) => items.includes(application.id) ? items.filter((id) => id !== application.id) : [...items, application.id])}>
-                            {expanded.includes(application.id) ? 'Ocultar' : 'Distribución'}
-                          </button>
+                          <TableActionButton
+                            icon={expanded.includes(application.id) ? 'collapse' : 'expand'}
+                            label={expanded.includes(application.id) ? 'Ocultar distribución' : 'Ver distribución'}
+                            onClick={() => setExpanded((items) => items.includes(application.id) ? items.filter((id) => id !== application.id) : [...items, application.id])}
+                          />
                           {canReverse && application.applicationStatusCode === 'APPLIED' ? (
-                            <button type="button" className="btn-table-action" onClick={() => setReverseTarget(application)}>Reversar</button>
+                            <TableActionButton icon="reverse" label="Reversar aplicación" onClick={() => setReverseTarget(application)} />
                           ) : null}
                         </td>
                       </tr>

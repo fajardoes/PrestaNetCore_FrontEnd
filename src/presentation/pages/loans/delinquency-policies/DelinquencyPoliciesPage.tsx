@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AccountingStatusBadge } from '@/presentation/features/accounting/components/accounting-status-badge'
 import { ListFiltersBar, type StatusFilterValue } from '@/presentation/share/components/list-filters-bar'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
 import { useDelinquencyPoliciesList } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policies-list'
 import { useDelinquencyPolicyMutations } from '@/presentation/features/loans/delinquency/hooks/use-delinquency-policy-mutations'
@@ -78,14 +79,14 @@ export const DelinquencyPoliciesPage = () => {
           <>
             <button
               type="button"
-              className="btn-secondary px-4 py-2 text-sm"
+              className="btn-secondary btn-list-action"
               onClick={handleSearch}
             >
               Buscar
             </button>
             <button
               type="button"
-              className="btn-primary px-4 py-2 text-sm"
+              className="btn-primary btn-list-action"
               onClick={() => navigate('/loans/delinquency-policies/new')}
             >
               Nueva política
@@ -185,23 +186,19 @@ export const DelinquencyPoliciesPage = () => {
                     </td>
                     <td className="px-4 py-3 text-right text-sm">
                       <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
-                        <button
-                          type="button"
-                          className="btn-table-action"
+                        <TableActionButton
+                          icon="view"
+                          label="Ver y editar política"
                           onClick={() =>
                             navigate(`/loans/delinquency-policies/${item.id}`)
                           }
-                        >
-                          Ver/Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-table-action"
+                        />
+                        <TableActionButton
+                          icon="toggle"
+                          label={`${item.isActive ? 'Desactivar' : 'Activar'} política`}
                           onClick={() => setPendingToggle(item)}
                           disabled={isToggling}
-                        >
-                          {item.isActive ? 'Desactivar' : 'Activar'}
-                        </button>
+                        />
                       </div>
                     </td>
                   </tr>

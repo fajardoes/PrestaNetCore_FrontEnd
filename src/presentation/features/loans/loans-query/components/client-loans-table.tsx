@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { Eye } from 'lucide-react'
 import type { LoanListItemResponse } from '@/infrastructure/loans/responses/loan-list-response'
 import {
   formatCurrency,
@@ -94,9 +95,11 @@ export const ClientLoansTable = ({
                   <Link
                     to={`/loans/${loan.id}`}
                     state={detailNavigationState}
-                    className="btn-table-action inline-flex px-2"
+                    className="btn-table-action inline-flex h-7 w-7 items-center justify-center p-0"
+                    title="Ver préstamo"
+                    aria-label="Ver préstamo"
                   >
-                    Ver
+                    <Eye className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
                 </td>
               </tr>

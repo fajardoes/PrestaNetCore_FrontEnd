@@ -1,4 +1,5 @@
 import { StatusBadge } from '@/presentation/features/security/components/status-badge'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 import type { SecurityUser } from '@/infrastructure/interfaces/security/user'
@@ -104,21 +105,16 @@ export const UsersTable = ({
       className: 'min-w-[120px]',
       render: (user: SecurityUser) => (
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
+          <TableActionButton
+            icon="edit"
+            label="Editar usuario"
             onClick={() => onEdit(user)}
-            className="btn-table-action"
-          >
-            Editar
-          </button>
-          <button
-            type="button"
+          />
+          <TableActionButton
+            icon="key"
+            label="Generar contraseña temporal"
             onClick={() => onGenerateTemporaryPassword(user)}
-            className="btn-table-action w-7 px-0"
-            aria-label="Generar contraseña temporal"
-          >
-            <KeyIcon className="h-4 w-4" />
-          </button>
+          />
         </div>
       ),
     },
@@ -162,19 +158,3 @@ export const UsersTable = ({
   )
 }
 
-const KeyIcon = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-    aria-hidden="true"
-  >
-    <path d="M15 7a5 5 0 1 0-4.09 4.91V14a2 2 0 0 0 2 2h1v2h2v2h2v-4.09A5 5 0 0 0 15 7Z" />
-    <path d="M10 7h.01" />
-  </svg>
-)

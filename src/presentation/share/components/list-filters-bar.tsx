@@ -97,7 +97,7 @@ const StatusPills = ({ value, onChange }: StatusPillsProps) => {
             key={option.value}
             type="button"
             onClick={() => onChange(option.value)}
-            className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/40 sm:flex-none ${
+            className={`btn-list-action flex-1 rounded-md font-semibold transition focus:outline-none focus:ring-2 focus:ring-primary/40 sm:flex-none ${
               isActive
                 ? 'bg-primary text-white shadow-sm'
                 : 'text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-800'

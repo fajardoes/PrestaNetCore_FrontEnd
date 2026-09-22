@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { PencilLine, RefreshCw } from 'lucide-react'
+import { RefreshCw } from 'lucide-react'
 import type { LoanApplicationFeeResponse } from '@/infrastructure/loans/responses/loan-application-fee-response'
 import type { LoanDisbursementChargeResponse } from '@/infrastructure/loans/responses/loan-disbursement-charge-response'
 import type { LoanApplicationFeeOverrideFormValues } from '@/infrastructure/validations/loans/loan-application-fee-override.schema'
@@ -13,6 +13,7 @@ import {
   formatFeeOverrideMode,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 
 interface LoanApplicationFeesCardProps {
   fees: LoanApplicationFeeResponse[]
@@ -236,15 +237,12 @@ export const LoanApplicationFeesCard = ({
                         {canEdit ? (
                           <td className="text-right">
                             {relatedFee ? (
-                              <button
-                                type="button"
-                                className="btn-table-action w-7 px-0"
+                              <TableActionButton
+                                icon="edit"
+                                label="Ajustar comisión"
                                 onClick={() => setSelectedFee(relatedFee)}
                                 disabled={isSaving}
-                                title="Ajustar comisión"
-                              >
-                                <PencilLine className="mx-auto h-4 w-4" />
-                              </button>
+                              />
                             ) : null}
                           </td>
                         ) : null}

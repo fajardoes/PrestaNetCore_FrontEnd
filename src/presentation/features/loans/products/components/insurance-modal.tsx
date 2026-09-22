@@ -4,9 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
 import { insuranceSchema } from '@/infrastructure/validations/loans/loan-product-form.schema'
 import type { LoanProductFormValues } from '@/presentation/features/loans/products/components/loan-product-form.schema'
-import AsyncSelect, {
-  type AsyncSelectOption,
-} from '@/presentation/share/components/async-select'
+import Select from '@/presentation/share/components/select'
 
 type InsuranceFormValues = LoanProductFormValues['insurances'][number]
 
@@ -38,15 +36,6 @@ const defaultValues: InsuranceFormValues = {
 
 const toNumberValue = (value: string) => (value === '' ? undefined : Number(value))
 const getOptionLabel = (item: LoanCatalogItemDto) => item.name
-const filterOptions = (
-  options: AsyncSelectOption<LoanCatalogItemDto>[],
-  inputValue: string,
-) => {
-  const term = inputValue.trim().toLowerCase()
-  if (!term) return options
-  return options.filter((option) => option.label.toLowerCase().includes(term))
-}
-
 export const InsuranceModal = ({
   open,
   initialValues,
@@ -149,7 +138,7 @@ export const InsuranceModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de seguro
               </label>
-              <AsyncSelect<LoanCatalogItemDto>
+              <Select<LoanCatalogItemDto>
                 value={
                   insuranceTypeOptions.find((option) => option.value === insuranceTypeId) ??
                   null
@@ -160,13 +149,10 @@ export const InsuranceModal = ({
                   })
                   setValue('insuranceTypeName', option?.meta?.name ?? null)
                 }}
-                loadOptions={(inputValue) =>
-                  Promise.resolve(filterOptions(insuranceTypeOptions, inputValue))
-                }
+                options={insuranceTypeOptions}
                 placeholder="Selecciona..."
                 inputId="insuranceTypeId"
                 instanceId="loan-product-insurance-type-id"
-                defaultOptions={insuranceTypeOptions}
                 noOptionsMessage="Sin tipos de seguro"
               />
               <input type="hidden" {...register('id')} />
@@ -183,7 +169,7 @@ export const InsuranceModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Base de cálculo
               </label>
-              <AsyncSelect<LoanCatalogItemDto>
+              <Select<LoanCatalogItemDto>
                 value={
                   calculationBaseOptions.find((option) => option.value === calculationBaseId) ??
                   null
@@ -194,13 +180,10 @@ export const InsuranceModal = ({
                   })
                   setValue('calculationBaseName', option?.meta?.name ?? null)
                 }}
-                loadOptions={(inputValue) =>
-                  Promise.resolve(filterOptions(calculationBaseOptions, inputValue))
-                }
+                options={calculationBaseOptions}
                 placeholder="Selecciona..."
                 inputId="calculationBaseId"
                 instanceId="loan-product-insurance-calculation-base-id"
-                defaultOptions={calculationBaseOptions}
                 noOptionsMessage="Sin bases de cálculo"
               />
               <input type="hidden" {...register('calculationBaseId')} />
@@ -218,7 +201,7 @@ export const InsuranceModal = ({
               <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
                 Tipo de valor
               </label>
-              <AsyncSelect<LoanCatalogItemDto>
+              <Select<LoanCatalogItemDto>
                 value={
                   valueTypeOptions.find((option) => option.value === valueTypeId) ??
                   null
@@ -229,13 +212,10 @@ export const InsuranceModal = ({
                   })
                   setValue('valueTypeName', option?.meta?.name ?? null)
                 }}
-                loadOptions={(inputValue) =>
-                  Promise.resolve(filterOptions(valueTypeOptions, inputValue))
-                }
+                options={valueTypeOptions}
                 placeholder="Selecciona..."
                 inputId="valueTypeId"
                 instanceId="loan-product-insurance-value-type-id"
-                defaultOptions={valueTypeOptions}
                 noOptionsMessage="Sin tipos de valor"
               />
               <input type="hidden" {...register('valueTypeId')} />
@@ -267,7 +247,7 @@ export const InsuranceModal = ({
             <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
               Momento de cobro
             </label>
-            <AsyncSelect<LoanCatalogItemDto>
+              <Select<LoanCatalogItemDto>
               value={
                 chargeTimingOptions.find((option) => option.value === chargeTimingId) ?? null
               }
@@ -277,13 +257,10 @@ export const InsuranceModal = ({
                 })
                 setValue('chargeTimingName', option?.meta?.name ?? null)
               }}
-              loadOptions={(inputValue) =>
-                Promise.resolve(filterOptions(chargeTimingOptions, inputValue))
-              }
+              options={chargeTimingOptions}
               placeholder="Selecciona..."
               inputId="chargeTimingId"
               instanceId="loan-product-insurance-charge-timing-id"
-              defaultOptions={chargeTimingOptions}
               noOptionsMessage="Sin momentos de cobro"
             />
             <input type="hidden" {...register('chargeTimingId')} />
@@ -324,7 +301,7 @@ export const InsuranceModal = ({
             </button>
             <button
               type="button"
-              className="btn-primary px-5 py-2 text-sm shadow"
+              className="btn-primary btn-list-action shadow"
               onClick={submitHandler}
             >
               {initialValues ? 'Guardar cambios' : 'Agregar'}

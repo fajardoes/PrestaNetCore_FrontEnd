@@ -1,6 +1,7 @@
 import type { ClientListItem } from '@/infrastructure/interfaces/clients/client'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import { TablePagination } from '@/presentation/share/components/table-pagination'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableTabular } from '@/presentation/share/components/table-tabular'
 
 const PAGE_SIZE = 10
@@ -88,30 +89,25 @@ export const ClientsTable = ({
       className: 'min-w-[270px]',
       render: (client: ClientListItem) => (
         <span className="flex items-center justify-end gap-2">
-          <button
-            type="button"
+          <TableActionButton
+            icon="view"
+            label="Ver y editar cliente"
             onClick={() => onSelect(client)}
-            className="btn-table-action"
             disabled={processingId === client.id}
-          >
-            Ver / Editar
-          </button>
-          <button
-            type="button"
+          />
+          <TableActionButton
+            icon="toggle"
+            label={`${client.activo ? 'Desactivar' : 'Activar'} cliente`}
             onClick={() => onToggle(client)}
-            className="btn-table-action"
             disabled={processingId === client.id}
-          >
-            {client.activo ? 'Desactivar' : 'Activar'}
-          </button>
-          <button
-            type="button"
+          />
+          <TableActionButton
+            icon="delete"
+            label="Borrar cliente"
             onClick={() => onDelete(client)}
-            className="btn-table-action text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
+            className="text-red-600 hover:text-red-700 dark:text-red-300 dark:hover:text-red-200"
             disabled={processingId === client.id}
-          >
-            Borrar
-          </button>
+          />
         </span>
       ),
     },

@@ -1,9 +1,7 @@
-import { useState } from 'react'
 import type { JournalEntryDetail } from '@/infrastructure/interfaces/accounting/journal-entry'
 import { JournalEntryStateBadge } from './journal-entry-state-badge'
-import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
-import { JournalEntryVoucherReport } from '@/presentation/components/reports/accounting/journal-entry-voucher-report'
 import {
+  formatAccountingAmount,
   formatAccountingDate,
   getJournalAccountingDate,
   getPostingModeLabel,
@@ -15,14 +13,8 @@ interface JournalEntryDetailModalProps {
   isLoading: boolean
   error: string | null
   onClose: () => void
-}
-
-const formatAmount = (value: number) => {
-  if (!Number.isFinite(value)) return '0.00'
-  return new Intl.NumberFormat('es-ES', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
+  onPrint: (entry: JournalEntryDetail) => void
+  isPrinting?: boolean
 }
 
 export const JournalEntryDetailModal = ({
@@ -31,17 +23,27 @@ export const JournalEntryDetailModal = ({
   isLoading,
   error,
   onClose,
+  onPrint,
+  isPrinting = false,
 }: JournalEntryDetailModalProps) => {
-  const [isPdfOpen, setIsPdfOpen] = useState(false)
   const canPrint = Boolean(entry && entry.state !== 'draft')
+  const totals = entry?.lines.reduce(
+    (summary, line) => ({
+      debit: summary.debit + line.debit,
+      credit: summary.credit + line.credit,
+    }),
+    { debit: 0, credit: 0 },
+  ) ?? { debit: 0, credit: 0 }
+  const difference = Math.abs(totals.debit - totals.credit)
+  const isBalanced = Math.round(difference * 100) === 0
 
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-900/60 p-4 backdrop-blur">
-      <div className="flex max-h-[calc(100vh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-6 py-4 dark:border-slate-800">
-          <div>
+      <div className="flex max-h-[calc(100vh-2rem)] w-[calc(100vw-48px)] max-w-[1180px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl ring-1 ring-black/10 dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-6 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-50">
               Detalle del asiento
             </h3>
@@ -49,12 +51,15 @@ export const JournalEntryDetailModal = ({
               Revisa la información completa del asiento seleccionado.
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
             <button
               type="button"
               className="btn-print"
-              onClick={() => setIsPdfOpen(true)}
-              disabled={!canPrint}
+              onClick={() => {
+                if (entry) onPrint(entry)
+              }}
+              disabled={!canPrint || isPrinting}
+              aria-busy={isPrinting}
             >
               <PrinterIcon className="h-4 w-4" />
               Imprimir comprobante
@@ -70,7 +75,7 @@ export const JournalEntryDetailModal = ({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6">
           {isLoading ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
               Cargando detalle del asiento...
@@ -81,7 +86,7 @@ export const JournalEntryDetailModal = ({
             </div>
           ) : entry ? (
             <div className="space-y-4">
-              <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 md:grid-cols-3">
+              <div className="grid grid-cols-1 gap-x-5 gap-y-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                   Número
@@ -138,7 +143,7 @@ export const JournalEntryDetailModal = ({
                   {entry.postingPeriodName || entry.periodName || '—'}
                 </p>
               </div>
-              <div className="md:col-span-3">
+              <div className="sm:col-span-2 lg:col-span-4">
                 <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">
                   Descripción
                 </span>
@@ -150,8 +155,16 @@ export const JournalEntryDetailModal = ({
 
               <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
-                    <thead className="bg-slate-50 dark:bg-slate-900">
+                  <table className="min-w-[1120px] w-full table-fixed divide-y divide-slate-200 dark:divide-slate-800">
+                    <colgroup>
+                      <col className="w-[22%]" />
+                      <col className="w-[19%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[12%]" />
+                      <col className="w-[18%]" />
+                      <col className="w-[17%]" />
+                    </colgroup>
+                    <thead className="bg-slate-50 text-slate-600 dark:bg-slate-900 dark:text-slate-300 [&_th]:whitespace-nowrap">
                       <tr>
                         <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                           Cuenta
@@ -159,10 +172,10 @@ export const JournalEntryDetailModal = ({
                         <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
                           Descripción
                         </th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider tabular-nums text-slate-600 dark:text-slate-300">
                           Debe
                         </th>
-                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                        <th className="px-3 py-2 text-right text-xs font-semibold uppercase tracking-wider tabular-nums text-slate-600 dark:text-slate-300">
                           Haber
                         </th>
                         <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
@@ -175,33 +188,86 @@ export const JournalEntryDetailModal = ({
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                       {entry.lines.map((line, index) => (
-                        <tr key={`${line.accountId}-${index}`}>
-                          <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
-                            {line.accountCode
-                              ? `${line.accountCode} - ${line.accountName ?? ''}`
-                              : line.accountId}
+                        <tr
+                          key={`${line.accountId}-${index}`}
+                          className="hover:bg-slate-50/70 dark:hover:bg-slate-900/60"
+                        >
+                          <td className="px-3 py-2 align-middle text-xs text-slate-700 dark:text-slate-200">
+                            {line.accountCode ? (
+                              <div className="min-w-0">
+                                <div className="font-mono text-[11px] font-semibold leading-4 text-slate-800 dark:text-slate-100">
+                                  {line.accountCode}
+                                </div>
+                                <div className="truncate text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                                  {line.accountName || line.accountId}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="font-mono text-[11px]">{line.accountId}</span>
+                            )}
                           </td>
-                          <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
+                          <td className="px-3 py-2 align-middle text-xs leading-4 text-slate-700 dark:text-slate-200">
                             {line.description || '—'}
                           </td>
-                          <td className="px-3 py-2 text-right text-xs text-slate-700 dark:text-slate-200">
-                            {formatAmount(line.debit)}
+                          <td className="whitespace-nowrap px-3 py-2 text-right align-middle text-xs tabular-nums text-slate-700 dark:text-slate-200">
+                            {formatAccountingAmount(line.debit)}
                           </td>
-                          <td className="px-3 py-2 text-right text-xs text-slate-700 dark:text-slate-200">
-                            {formatAmount(line.credit)}
+                          <td className="whitespace-nowrap px-3 py-2 text-right align-middle text-xs tabular-nums text-slate-700 dark:text-slate-200">
+                            {formatAccountingAmount(line.credit)}
                           </td>
-                          <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
+                          <td className="whitespace-nowrap px-3 py-2 align-middle font-mono text-[11px] text-slate-700 dark:text-slate-200">
                             {line.reference || '—'}
                           </td>
-                          <td className="px-3 py-2 text-xs text-slate-700 dark:text-slate-200">
-                            {line.costCenterCode || line.costCenterName
-                              ? `${line.costCenterCode ?? ''}${line.costCenterCode && line.costCenterName ? ' - ' : ''}${line.costCenterName ?? ''}`
-                              : 'Sin centro'}
+                          <td className="px-3 py-2 align-middle text-xs text-slate-700 dark:text-slate-200">
+                            {line.costCenterCode || line.costCenterName ? (
+                              <div className="min-w-0">
+                                {line.costCenterCode ? (
+                                  <div className="font-mono text-[11px] font-semibold leading-4 text-slate-800 dark:text-slate-100">
+                                    {line.costCenterCode}
+                                  </div>
+                                ) : null}
+                                {line.costCenterName ? (
+                                  <div className="truncate text-[11px] leading-4 text-slate-500 dark:text-slate-400">
+                                    {line.costCenterName}
+                                  </div>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <span className="text-slate-500 dark:text-slate-400">Sin centro</span>
+                            )}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
+                </div>
+                <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 border-t border-slate-200 bg-slate-50/70 px-4 py-3 text-xs dark:border-slate-800 dark:bg-slate-900/60">
+                  <div className="flex items-baseline gap-2 text-slate-600 dark:text-slate-300">
+                    <span>Total Debe</span>
+                    <strong className="tabular-nums text-slate-900 dark:text-slate-100">
+                      {formatAccountingAmount(totals.debit)}
+                    </strong>
+                  </div>
+                  <div className="flex items-baseline gap-2 text-slate-600 dark:text-slate-300">
+                    <span>Total Haber</span>
+                    <strong className="tabular-nums text-slate-900 dark:text-slate-100">
+                      {formatAccountingAmount(totals.credit)}
+                    </strong>
+                  </div>
+                  <div
+                    className={`flex items-baseline gap-2 rounded-md px-2 py-1 font-semibold ${
+                      isBalanced
+                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300'
+                        : 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300'
+                    }`}
+                    role="status"
+                    aria-label={isBalanced ? 'Asiento cuadrado' : 'Asiento con diferencia'}
+                  >
+                    <span>Diferencia</span>
+                    <strong className="tabular-nums">
+                      {formatAccountingAmount(difference)}
+                    </strong>
+                  </div>
                 </div>
               </div>
             </div>
@@ -209,19 +275,6 @@ export const JournalEntryDetailModal = ({
         </div>
       </div>
 
-      {entry ? (
-        <PdfViewerDialog
-          isOpen={isPdfOpen}
-          onClose={() => setIsPdfOpen(false)}
-          title="Comprobante de asiento"
-          document={
-            <JournalEntryVoucherReport
-              entry={entry}
-              organizationName="PrestaNet"
-            />
-          }
-        />
-      ) : null}
     </div>
   )
 }

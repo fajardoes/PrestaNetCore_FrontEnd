@@ -12,6 +12,7 @@ import { useActiveDelinquencyPolicies } from '@/presentation/features/loans/deli
 import { useAgencies } from '@/presentation/features/catalog/hooks/use-agencies'
 import { useLoanCatalogsCache } from '@/presentation/features/loans/catalogs/hooks/use-loan-catalogs-cache'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import type { DelinquencyPolicyAssignmentListItemDto } from '@/infrastructure/intranet/responses/loans/delinquency-policy-assignment-list-item.response'
 import type { DelinquencyPolicyAssignmentFormValues } from '@/infrastructure/validations/loans/delinquency-policy-assignment.schema'
 
@@ -148,14 +149,14 @@ export const DelinquencyPolicyAssignmentsPage = () => {
           <>
             <button
               type="button"
-              className="btn-secondary px-4 py-2 text-sm"
+              className="btn-secondary btn-list-action"
               onClick={handleSearch}
             >
               Buscar
             </button>
             <button
               type="button"
-              className="btn-primary px-4 py-2 text-sm"
+              className="btn-primary btn-list-action"
               onClick={() => {
                 setEditingAssignment(null)
                 setIsModalOpen(true)
@@ -292,24 +293,20 @@ export const DelinquencyPolicyAssignmentsPage = () => {
                     </td>
                     <td className="px-4 py-3 text-right text-sm">
                       <div className="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
-                        <button
-                          type="button"
-                          className="btn-table-action"
+                        <TableActionButton
+                          icon="edit"
+                          label="Editar asignación"
                           onClick={() => {
                             setEditingAssignment(item)
                             setIsModalOpen(true)
                           }}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-table-action"
+                        />
+                        <TableActionButton
+                          icon="toggle"
+                          label={`${item.isActive ? 'Desactivar' : 'Activar'} asignación`}
                           onClick={() => setPendingToggle(item)}
                           disabled={isSaving}
-                        >
-                          {item.isActive ? 'Desactivar' : 'Activar'}
-                        </button>
+                        />
                       </div>
                     </td>
                   </tr>

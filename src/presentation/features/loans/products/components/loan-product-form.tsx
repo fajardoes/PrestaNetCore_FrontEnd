@@ -1191,8 +1191,11 @@ export const LoanProductForm = ({
         <InsurancesEditor
           control={control}
           errors={errors}
-          disabled={isSaving || isLoadingCatalogs || !hasInsurance}
+          disabled={isSaving || isLoadingCatalogs}
           allowRemove={!isEdit}
+          onInsuranceSave={() =>
+            setValue('hasInsurance', true, { shouldDirty: true, shouldValidate: true })
+          }
           insuranceTypes={catalogs.insuranceTypes}
           insuranceCalculationBases={catalogs.insuranceCalculationBases}
           insuranceValueTypes={catalogs.insuranceValueTypes}

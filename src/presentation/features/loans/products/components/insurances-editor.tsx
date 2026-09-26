@@ -14,6 +14,7 @@ interface InsurancesEditorProps {
   errors: FieldErrors<LoanProductFormValues>
   disabled?: boolean
   allowRemove?: boolean
+  onInsuranceSave?: () => void
   insuranceTypes: LoanCatalogItemDto[]
   insuranceCalculationBases: LoanCatalogItemDto[]
   insuranceValueTypes: LoanCatalogItemDto[]
@@ -26,6 +27,7 @@ export const InsurancesEditor = ({
   control,
   disabled,
   allowRemove = true,
+  onInsuranceSave,
   insuranceTypes,
   insuranceCalculationBases,
   insuranceValueTypes,
@@ -55,6 +57,7 @@ export const InsurancesEditor = ({
     } else {
       update(editingIndex, values)
     }
+    onInsuranceSave?.()
     setIsModalOpen(false)
   }
 

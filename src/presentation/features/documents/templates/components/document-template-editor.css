@@ -1,0 +1,95 @@
+.document-template-prosemirror {
+  padding: 1rem;
+  color: #0f172a;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.dark .document-template-prosemirror {
+  color: #f1f5f9;
+}
+
+.document-template-prosemirror > * + * {
+  margin-top: 0.75rem;
+}
+
+.document-template-prosemirror h1,
+.document-template-prosemirror h2,
+.document-template-prosemirror h3 {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.document-template-prosemirror h1 {
+  font-size: 1.5rem;
+}
+
+.document-template-prosemirror h2 {
+  font-size: 1.25rem;
+}
+
+.document-template-prosemirror h3 {
+  font-size: 1.125rem;
+}
+
+.document-template-prosemirror ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+
+.document-template-prosemirror ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+
+.document-template-prosemirror blockquote {
+  border-left: 3px solid #94a3b8;
+  padding-left: 0.75rem;
+  color: #475569;
+}
+
+.dark .document-template-prosemirror blockquote {
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+.document-template-prosemirror code {
+  border-radius: 0.25rem;
+  background: #f1f5f9;
+  padding: 0.1rem 0.25rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.dark .document-template-prosemirror code {
+  background: #1e293b;
+}
+
+.document-template-prosemirror pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: #f1f5f9;
+  padding: 0.75rem;
+}
+
+.dark .document-template-prosemirror pre {
+  background: #0f172a;
+}
+
+.document-template-prosemirror .document-variable-chip {
+  display: inline-block;
+  border: 1px solid #bae6fd;
+  border-radius: 0.375rem;
+  background: #f0f9ff;
+  padding: 0.05rem 0.35rem;
+  color: #075985;
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+.dark .document-template-prosemirror .document-variable-chip {
+  border-color: #075985;
+  background: rgb(8 47 73 / 0.7);
+  color: #bae6fd;
+}

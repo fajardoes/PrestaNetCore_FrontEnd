@@ -13,6 +13,7 @@ interface DisbursementChargesTableProps {
   charges?: LoanDisbursementChargeResponse[] | null
   collapsible?: boolean
   defaultExpanded?: boolean
+  compact?: boolean
 }
 
 const isInsuranceCharge = (item: LoanDisbursementChargeResponse) =>
@@ -27,6 +28,7 @@ export const DisbursementChargesTable = ({
   charges,
   collapsible = false,
   defaultExpanded = true,
+  compact = false,
 }: DisbursementChargesTableProps) => {
   const rows = charges ?? []
   const feeCharges = rows.filter(isFeeCharge)
@@ -39,13 +41,17 @@ export const DisbursementChargesTable = ({
   )
 
   const content = (
-    <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <SummaryMetric label="Total cargos" value={formatCurrency(totalAmount)} />
-        <SummaryMetric label="Total comisiones" value={formatCurrency(totalFees)} />
-        <SummaryMetric label="Total seguros" value={formatCurrency(totalInsurance)} />
+    <div className={compact ? 'space-y-2' : 'space-y-3'}>
+      <div className={compact ? 'grid grid-cols-1 gap-2 md:grid-cols-3' : 'grid grid-cols-1 gap-3 md:grid-cols-3'}>
+        <SummaryMetric compact={compact} label="Total cargos" value={formatCurrency(totalAmount)} />
+        <SummaryMetric compact={compact} label="Total comisiones" value={formatCurrency(totalFees)} />
+        <SummaryMetric compact={compact} label="Total seguros" value={formatCurrency(totalInsurance)} />
       </div>
-      <TableContainer mode="legacy-compact" variant="strong">
+      <TableContainer
+        mode="legacy-compact"
+        variant="strong"
+        className={compact ? '[&_th]:px-2 [&_td]:px-2 [&_td]:py-1 [&_tfoot_td]:py-2' : undefined}
+      >
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
@@ -95,7 +101,9 @@ export const DisbursementChargesTable = ({
             {rows.length ? (
               <tfoot>
                 <tr className="border-t border-slate-200/80 dark:border-slate-700">
-                  <td className="px-2 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <td
+                    className={`${compact ? 'px-2 py-2' : 'px-2 py-3'} text-sm font-semibold text-slate-900 dark:text-slate-100`}
+                  >
                     Total
                   </td>
                   <td />
@@ -103,7 +111,9 @@ export const DisbursementChargesTable = ({
                   <td />
                   <td />
                   <td />
-                  <td className="px-2 py-3 text-right text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  <td
+                    className={`${compact ? 'px-2 py-2' : 'px-2 py-3'} text-right text-sm font-semibold text-slate-900 dark:text-slate-100`}
+                  >
                     {formatCurrency(totalAmount)}
                   </td>
                 </tr>
@@ -121,6 +131,7 @@ export const DisbursementChargesTable = ({
         title="Cargos descontados"
         description="Detalle de cargos aplicados al desembolso."
         defaultExpanded={defaultExpanded}
+        compact={compact}
       >
         {content}
       </CollapsibleSection>
@@ -142,8 +153,18 @@ export const DisbursementChargesTable = ({
   )
 }
 
-const SummaryMetric = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+const SummaryMetric = ({
+  label,
+  value,
+  compact = false,
+}: {
+  label: string
+  value: string
+  compact?: boolean
+}) => (
+  <div
+    className={`rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900 ${compact ? 'px-2 py-1.5' : 'p-3'}`}
+  >
     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
       {label}
     </p>

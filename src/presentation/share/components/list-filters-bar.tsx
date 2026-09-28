@@ -13,6 +13,7 @@ interface ListFiltersBarProps {
   layout?: 'single-row' | 'two-rows'
   children?: ReactNode
   actions?: ReactNode
+  searchAction?: ReactNode
 }
 
 export const ListFiltersBar = ({
@@ -26,6 +27,7 @@ export const ListFiltersBar = ({
   layout = 'single-row',
   children,
   actions,
+  searchAction,
 }: ListFiltersBarProps) => {
   const searchControl = (
     <div className="flex min-w-0 flex-col gap-1.5">
@@ -43,6 +45,11 @@ export const ListFiltersBar = ({
           onChange={(event) => onSearchChange(event.target.value)}
         />
         {showStatus ? <StatusPills value={status} onChange={onStatusChange} /> : null}
+        {searchAction ? (
+          <div className="flex w-full justify-end sm:w-auto sm:justify-start">
+            {searchAction}
+          </div>
+        ) : null}
       </div>
     </div>
   )

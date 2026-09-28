@@ -26,6 +26,9 @@ import { useLoanApplicationScoringHistory } from '@/presentation/features/loans/
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { useLoanApplicationAnticipatedInstallment } from '@/presentation/features/loans/applications/hooks/use-loan-application-anticipated-installment'
+import { useGeneratedDocuments } from '@/presentation/features/documents/generated-documents/hooks/use-generated-documents'
+import { GeneratedDocumentsPanel } from '@/presentation/features/documents/generated-documents/components/generated-documents-panel'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import { MessageModal } from '@/presentation/share/components/message-modal'
 import { FilePreviewModal } from '@/presentation/share/components/file-preview-modal'
 import type { LoanApplicationAllowedAction } from '@/infrastructure/loans/responses/loan-application-actions-response'
@@ -71,6 +74,14 @@ interface FeedbackState {
 export const LoanApplicationDetailPage = () => {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const { hasPermission } = useUserPermissions()
+  const canReadGeneratedDocuments = hasPermission('documents.generated.read')
+  const canDownloadGeneratedDocuments = hasPermission('documents.generated.download')
+  const canRetryGeneratedDocuments = hasPermission('documents.generated.retry')
+  const generatedDocuments = useGeneratedDocuments({
+    enabled: Boolean(id) && canReadGeneratedDocuments,
+    loanApplicationId: id,
+  })
   const options = useLoanApplicationOptions()
   const { state: businessDateState } = useBusinessDate()
   const { holidays } = useHolidays()
@@ -220,6 +231,9 @@ export const LoanApplicationDetailPage = () => {
     application?.returnedToDraftOperationalDate ?? '',
   ].join(':')
   const canPreview = hasAction('preview_schedule')
+  const requiresProductConditionsReview = Boolean(
+    application?.productConditionsStale || application?.productConditionsReviewRequired,
+  )
   const canGenerateScoring = !isDraftApplication && hasAction('generate_scoring')
   const canSetFirstDueDate = hasAction('set_first_due_date')
   const canSetRate = hasAction('set_rate')
@@ -297,7 +311,7 @@ export const LoanApplicationDetailPage = () => {
   }
 
   useEffect(() => {
-    if (!id || !canPreview) return
+    if (!id || !application || !canPreview || requiresProductConditionsReview) return
     if (preview || isPreviewLoading) return
     if (autoPreviewRequestedForId === id) return
 
@@ -305,10 +319,12 @@ export const LoanApplicationDetailPage = () => {
     void generatePaymentPlan()
   }, [
     autoPreviewRequestedForId,
+    application?.id,
     canPreview,
     id,
     isPreviewLoading,
     preview,
+    requiresProductConditionsReview,
   ])
 
   if (isLoading) {
@@ -337,9 +353,6 @@ export const LoanApplicationDetailPage = () => {
   const canPrint = hasAction('print')
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
-  const requiresProductConditionsReview = Boolean(
-    application.productConditionsStale || application.productConditionsReviewRequired,
-  )
   const canManageAnticipatedInstallment = hasAction('manage_anticipated_installment')
   const shouldShowAnticipatedInstallment =
     canViewAnticipatedInstallment || anticipatedInstallment.data !== null
@@ -726,6 +739,14 @@ export const LoanApplicationDetailPage = () => {
           data={preview?.disbursement ?? disbursementDetail}
         />
       )}
+
+      {canReadGeneratedDocuments ? (
+        <GeneratedDocumentsPanel
+          state={generatedDocuments}
+          canDownload={canDownloadGeneratedDocuments}
+          canRetry={canRetryGeneratedDocuments}
+        />
+      ) : null}
 
       <LoanApplicationCollateralsCard
         collaterals={collaterals}

@@ -29,7 +29,8 @@
 
 `src/presentation/share/components/table-action-button.tsx`: wrapper global para acciones compactas de tablas. Usarlo cuando la acción pueda representarse claramente con un icono; siempre recibe un `label` para generar `aria-label` y tooltip, y conserva texto visible solo cuando el contexto requiera una acción explícita.
 
-- `src/index.css` (`.btn-list-action`): clase estÃ¡ndar para acciones de barras de listados y filtros. Mantiene el tamaÃ±o compacto de `Crear solicitud` en `/loans/applications` (28 px de alto).
+- `src/index.css` (`.btn-list-action`): clase estándar para acciones de barras de listados y filtros. Mantiene el tamaño compacto de `Crear solicitud` en `/loans/applications` (28 px de alto).
+- Usa `.btn-list-action` también para búsqueda y acciones primarias en encabezados de listados (Agregar, Crear). Coloca Buscar junto al campo/filtros relacionados y evita los tamaños estándar de botón en estas barras; reserva esos tamaños para formularios y diálogos.
 
 ## Componentes compartidos de selects
 
@@ -163,6 +164,7 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
   - `SUBMITTED`: definir o modificar primera fecha de cuota (no domingo), aprobar, rechazar, cancelar, preview
   - `APPROVED/REJECTED/CANCELLED`: solo lectura (APPROVED con enlace a préstamo si `approvedLoanId` existe)
 - Crear o editar una solicitud puede devolver `warnings`; mostrarlas mediante el mensaje reutilizable en tono de advertencia sin bloquear la operación.
+- La pantalla de detalle no dispara preview de cronograma al abrir cuando el producto requiere revisión; primero se debe devolver a DRAFT y refrescar condiciones, evitando presentar una previsualización con valores vivos que no corresponden al snapshot.
 
 ## Lineamientos globales Roles/Permisos y Actions (2026-03-04)
 
@@ -179,9 +181,13 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
 ## Historial de menús recientes
 
 - La navegación autenticada integra una barra secundaria de menús recientes debajo del menú horizontal.
-- `useRecentMenus` toma sus elementos exclusivamente del árbol autorizado `MenuItemTreeDto[]`, identifica la mejor coincidencia de ruta y conserva como máximo seis accesos por usuario en `localStorage` bajo `prestanet:recent-menus:{userId}`.
+- `RecentNavigationProvider` y `useRecentNavigation` son la fuente única para la barra superior y el Home. Toman sus elementos exclusivamente del árbol autorizado `MenuItemTreeDto[]`, identifican la mejor coincidencia de ruta y conservan como máximo ocho accesos por usuario en `localStorage` bajo `prestanet:recent-navigation:{userId}`.
+- La persistencia de navegación reciente guarda únicamente `{ path, visitedAt }`; los títulos, iconos y módulos padre se resuelven nuevamente contra el árbol autorizado vigente. La implementación normaliza rutas profundas contra el elemento de menú coincidente y excluye Home, autenticación y páginas de error.
+- Si existe la clave anterior `prestanet:recent-menus:{userId}`, se migra silenciosamente a la nueva estructura; los accesos se vuelven a validar contra el árbol actual antes de mostrarse.
 - La visibilidad de la barra se conserva de forma independiente por usuario bajo `prestanet:recent-menus-visibility:{userId}`.
 - Las rutas profundas (detalles, edición y creación) se asocian a la opción autorizada más específica disponible; los accesos almacenados se vuelven a validar contra el árbol actual antes de mostrarse.
+- En escritorio, la navegación principal mide el ancho disponible y mueve los elementos raíz que no caben a `Más`, conservando el orden y el árbol autorizado del backend. No agregues categorías o rutas localmente en el frontend.
+- La barra de recientes muestra tantos accesos como quepan en el ancho real disponible; `Más recientes` aparece solo cuando quedan accesos fuera de vista. No impongas un tope fijo que muestre el control aunque haya espacio. El límite de ocho accesos persistidos no cambia.
 
 ## UX del configurador de productos de préstamo
 
@@ -189,3 +195,67 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
 - Los contenidos se presentan mediante `ProductFormSection`; las secciones permanecen montadas y se ocultan con `hidden` para conservar el estado local y de React Hook Form al navegar.
 - `ProductFormSectionNav` muestra atención únicamente cuando existen errores de validación en los campos asociados a la sección.
 - El mapeo contable reutiliza `GlAccountsSelector` y permite mostrar descripciones y badges de obligatoriedad sin modificar contratos ni consultas.
+
+## Editor de plantillas documentales — Etapa 4
+
+- Rutas: `/documents/templates` y `/documents/templates/:templateId`; la
+  navegación se consume desde el árbol autorizado de backend, sin enlaces de
+  menú hardcodeados en el shell.
+- Feature: `src/presentation/features/documents/templates/`, manteniendo la
+  separación `pages → hooks → actions → api` y permisos dinámicos
+  `documents.templates.read/manage/publish` y `documents.variables.read`.
+- Tiptap usa una extensión de chip para tokens del catálogo y una estructura
+  controlada de tabla de cuotas. No habilitar tokens escritos libremente,
+  helpers, links, imágenes, scripts ni recursos remotos.
+- Márgenes y contrato HTTP usan `marginTopMm`, `marginRightMm`, `marginBottomMm`
+  y `marginLeftMm`. Preview HTML/PDF siempre es sintético y temporal; el Blob
+  PDF se revoca al cerrar/desmontar y nunca representa un documento oficial.
+- La decisión backend vinculada está en
+  `PrestaNetCore-BackEnd/src/docs/decisions/2026-09-27-document-template-stage4.md`.
+
+## Requisitos documentales del producto — Etapa 5
+
+- La configuración vive en la sección `Documentos` del formulario de edición
+  de producto; no forma parte del DTO financiero ni tiene ruta/menú adicional.
+- La asociación apunta a `DocumentTemplate` lógico. Opciones, tipo, contexto y
+  versión publicada disponible se consumen del backend; no fijar versión en
+  frontend ni inferir readiness operativa futura.
+- Permisos separados: `documents.product_requirements.read` y
+  `documents.product_requirements.manage`. El historial se consulta desde el
+  endpoint backend; las eliminaciones del panel representan inactivación.
+- Los cambios se guardan independientemente de las condiciones financieras.
+  No conectar esta sección con desembolso, preflight ni generación oficial.
+- La decisión de contrato está en
+  `PrestaNetCore-BackEnd/src/docs/decisions/2026-09-27-product-document-requirements-stage5.md`.
+
+## Historial de documentos oficiales — Etapa 7
+
+- El panel compartido vive en
+  `src/presentation/features/documents/generated-documents/` y se integra en
+  los detalles de solicitud y préstamo. Mantiene la separación
+  `page → hook → action → api`; no crea rutas ni entradas de menú.
+- El historial requiere `documents.generated.read`; ver/descargar el PDF
+  requiere `documents.generated.download`; retry requiere
+  `documents.generated.retry`. Usa `canRetry`/`canDownload` del backend además
+  del permiso efectivo; no reproduzcas estados ni timeout en frontend.
+- La visualización usa `FilePreviewModal` y el endpoint oficial de descarga,
+  que sirve el PDF histórico almacenado. Revoca los Blob URLs al cerrar o
+  desmontar. La impresión del visor no genera evento auditable.
+- Contexto inválido se presenta como necesidad de nueva generación después de
+  corregir datos; no mostrar acción de retry ni implementar la creación de otra
+  intención en esta etapa.
+- La decisión completa está en
+  `PrestaNetCore-BackEnd/src/docs/decisions/2026-09-27-generated-documents-operations-stage7.md`.
+
+## Datos institucionales y logo de reportes
+
+- La pantalla vive en `/organization/profile` y se carga desde el árbol de menú
+  autorizado del backend; no agregues enlaces hardcodeados al shell ni asignes
+  roles fijos en frontend.
+- Mantén el flujo `page → hook → action → api` y usa los permisos backend
+  `organization.profile.read/manage`; el endpoint de carga también requiere
+  `documents.upload`.
+- El perfil singleton contiene datos institucionales estructurados. El único
+  asset editable aquí es el logo para PDF/reportes; permite solo PNG/JPEG por
+  el endpoint dedicado. No expongas URL, rutas, base64, favicon ni branding del
+  frontend.

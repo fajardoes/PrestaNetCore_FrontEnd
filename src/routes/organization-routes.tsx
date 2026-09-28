@@ -21,6 +21,11 @@ const HolidaysPage = lazy(() =>
     default: module.HolidaysPage,
   })),
 )
+const OrganizationProfilePage = lazy(() =>
+  import('@/presentation/features/organization/pages/organization-profile-page').then((module) => ({
+    default: module.OrganizationProfilePage,
+  })),
+)
 
 export const OrganizationRoutes = () => (
   <Fragment>
@@ -28,5 +33,6 @@ export const OrganizationRoutes = () => (
     <Route path="/organization/departments" element={<DepartmentsPage />} />
     <Route path="/organization/municipalities" element={<MunicipalitiesPage />} />
     <Route path="/organization/holidays" element={<HolidaysPage />} />
+    <Route path="/organization/profile" element={<OrganizationProfilePage />} />
   </Fragment>
 )

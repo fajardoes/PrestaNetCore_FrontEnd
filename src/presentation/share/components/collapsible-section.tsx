@@ -12,6 +12,7 @@ interface CollapsibleSectionProps {
   className?: string
   contentClassName?: string
   titleClassName?: string
+  compact?: boolean
 }
 
 export const CollapsibleSection = ({
@@ -25,6 +26,7 @@ export const CollapsibleSection = ({
   className,
   contentClassName,
   titleClassName,
+  compact = false,
 }: CollapsibleSectionProps) => {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
   const contentId = useId()
@@ -62,7 +64,7 @@ export const CollapsibleSection = ({
     <section
       onClick={handleSectionClick}
       className={[
-        'rounded-xl border border-slate-200 p-4 shadow-sm dark:border-slate-800',
+        `rounded-xl border border-slate-200 ${compact ? 'px-3 py-2' : 'p-4'} shadow-sm dark:border-slate-800`,
         surfaceClassName ?? 'bg-white dark:bg-slate-950',
         className ?? '',
       ]
@@ -111,7 +113,7 @@ export const CollapsibleSection = ({
         <div
           id={collapsible ? contentId : undefined}
           data-collapsible-content={collapsible ? true : undefined}
-          className={contentClassName ?? 'mt-3'}
+          className={contentClassName ?? (compact ? 'mt-2' : 'mt-3')}
         >
           {children}
         </div>

@@ -18,6 +18,7 @@ interface DisbursementSummaryCardProps {
   data: DisbursementSummaryData
   collapsible?: boolean
   defaultExpanded?: boolean
+  compact?: boolean
 }
 
 export const DisbursementSummaryCard = ({
@@ -26,6 +27,7 @@ export const DisbursementSummaryCard = ({
   data,
   collapsible = false,
   defaultExpanded = true,
+  compact = false,
 }: DisbursementSummaryCardProps) => {
   if (!hasDisbursementData(data)) {
     if (collapsible) {
@@ -34,7 +36,8 @@ export const DisbursementSummaryCard = ({
           title={title}
           defaultExpanded={defaultExpanded}
           contentClassName="mt-2"
-          className="p-3"
+          compact={compact}
+          className={compact ? undefined : 'p-3'}
         >
           <p className="text-xs text-slate-500 dark:text-slate-400">{emptyMessage}</p>
         </CollapsibleSection>
@@ -51,25 +54,30 @@ export const DisbursementSummaryCard = ({
 
   const content = (
     <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-7">
-      <Metric label="Monto bruto" value={formatCurrency(data.grossDisbursementAmount)} />
+      <Metric compact={compact} label="Monto bruto" value={formatCurrency(data.grossDisbursementAmount)} />
       <Metric
+        compact={compact}
         label="Comisiones descontadas"
         value={formatCurrency(data.totalDisbursementFees)}
       />
       <Metric
+        compact={compact}
         label="Seguro cobrado al desembolso"
         value={formatCurrency(data.totalDisbursementInsurance)}
       />
       <Metric
+        compact={compact}
         label="Cuota anticipada retenida"
         value={formatCurrency(data.anticipatedInstallmentDeductionAmount ?? 0)}
       />
       <Metric
+        compact={compact}
         label="Seguro futuro programado"
         value={formatCurrency(data.totalScheduledInsurance)}
       />
-      <Metric label="Neto a entregar" value={formatCurrency(data.netDisbursementAmount)} />
+      <Metric compact={compact} label="Neto a entregar" value={formatCurrency(data.netDisbursementAmount)} />
       <Metric
+        compact={compact}
         label="Asiento de desembolso"
         value={
           data.disbursementJournalEntryNumber?.trim() ||
@@ -86,7 +94,8 @@ export const DisbursementSummaryCard = ({
         title={title}
         defaultExpanded={defaultExpanded}
         contentClassName="mt-2"
-        className="p-3"
+        compact={compact}
+        className={compact ? undefined : 'p-3'}
       >
         {content}
       </CollapsibleSection>
@@ -101,8 +110,18 @@ export const DisbursementSummaryCard = ({
   )
 }
 
-const Metric = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900">
+const Metric = ({
+  label,
+  value,
+  compact = false,
+}: {
+  label: string
+  value: string
+  compact?: boolean
+}) => (
+  <div
+    className={`rounded-lg border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900 ${compact ? 'px-2 py-1.5' : 'p-2'}`}
+  >
     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
       {label}
     </p>

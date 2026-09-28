@@ -2,8 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useMyMenus } from '@/presentation/features/security/menus/hooks/use-my-menus'
+import {
+  RecentNavigationProvider,
+  useRecentNavigation,
+} from '@/presentation/features/navigation/recent/hooks/use-recent-navigation'
 import { RecentMenusBar } from '@/presentation/share/components/recent-menus-bar'
-import { useRecentMenus } from '@/presentation/share/hooks/use-recent-menus'
 import type { RecentMenuItem } from '@/types/recent-menu'
 import type { NavigationState } from '@/types/router'
 import { HorizontalModuleMenu } from './HorizontalModuleMenu'
@@ -11,31 +14,75 @@ import { Topbar } from './Topbar'
 
 export const LayoutShell = () => {
   const { user, logout, isAuthenticated, isProcessing } = useAuth()
-  const location = useLocation()
-  const navigate = useNavigate()
   const [loginPromptId, setLoginPromptId] = useState<number | null>(null)
   const { menus, isLoading, error, isLoaded, refetch } = useMyMenus({
     enabled: isAuthenticated,
   })
+
+  return (
+    <RecentNavigationProvider
+      menus={menus}
+      userId={user?.id}
+      enabled={isAuthenticated}
+      menusReady={isLoaded && (!error || menus.length > 0)}
+    >
+      <LayoutContent
+        error={error}
+        isLoading={isLoading}
+        isProcessing={isProcessing}
+        loginPromptId={loginPromptId}
+        logout={logout}
+        menus={menus}
+        onLoginPromptConsumed={() => setLoginPromptId(null)}
+        onRetry={refetch}
+        setLoginPromptId={setLoginPromptId}
+        user={user}
+      />
+    </RecentNavigationProvider>
+  )
+}
+
+interface LayoutContentProps {
+  error: string | null
+  isLoading: boolean
+  isProcessing: boolean
+  loginPromptId: number | null
+  logout: () => Promise<void>
+  menus: Parameters<typeof HorizontalModuleMenu>[0]['menus']
+  onLoginPromptConsumed: () => void
+  onRetry: () => void
+  setLoginPromptId: (value: number | null) => void
+  user: ReturnType<typeof useAuth>['user']
+}
+
+const LayoutContent = ({
+  error,
+  isLoading,
+  isProcessing,
+  loginPromptId,
+  logout,
+  menus,
+  onLoginPromptConsumed,
+  onRetry,
+  setLoginPromptId,
+  user,
+}: LayoutContentProps) => {
+  const location = useLocation()
+  const navigate = useNavigate()
   const {
-    recentMenus,
-    activeMenuId,
+    recentItems,
+    activeItemId,
     isVisible: areRecentMenusVisible,
     toggleVisibility: toggleRecentMenusVisibility,
-    visitMenu,
-  } = useRecentMenus({
-    menus,
-    userId: user?.id,
-    enabled: isAuthenticated,
-    menusReady: isLoaded && (!error || menus.length > 0),
-  })
+    registerVisit,
+  } = useRecentNavigation()
 
   const handleRecentMenuSelect = useCallback(
     (item: RecentMenuItem) => {
-      visitMenu(item.id)
+      registerVisit(item.path)
       navigate(item.path)
     },
-    [navigate, visitMenu],
+    [navigate, registerVisit],
   )
 
   const navigationState = useMemo(() => {
@@ -61,18 +108,18 @@ export const LayoutShell = () => {
         user={user}
         isProcessing={isProcessing}
         loginPromptId={loginPromptId}
-        onLoginPromptConsumed={() => setLoginPromptId(null)}
+        onLoginPromptConsumed={onLoginPromptConsumed}
       />
       <div className="sticky top-14 z-30">
         <HorizontalModuleMenu
           menus={menus}
           isLoading={isLoading}
           error={error}
-          onRetry={refetch}
+          onRetry={onRetry}
         />
         <RecentMenusBar
-          items={recentMenus}
-          activeItemId={activeMenuId}
+          items={recentItems}
+          activeItemId={activeItemId}
           isVisible={areRecentMenusVisible}
           onToggleVisibility={toggleRecentMenusVisibility}
           onSelect={handleRecentMenuSelect}

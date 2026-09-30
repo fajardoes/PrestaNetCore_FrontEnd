@@ -62,19 +62,19 @@ export const LoansHomePage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <QueryHeroCard
         eyebrow="Mesa de consulta"
         title="Préstamos"
         description="Consulta expedientes por código visible o analiza la cartera de un cliente desde una vista operativa y ejecutiva."
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.35fr)]">
         <QuerySectionCard
           title="Consulta por código"
           description="Acceso directo al detalle del préstamo por su código visible."
         >
-          <div className="space-y-4">
+          <div className="space-y-3">
             <label className="block">
               <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
                 Código del préstamo
@@ -178,7 +178,7 @@ export const LoansHomePage = () => {
       </div>
 
       {selectedClient ? (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <QueryMetricCard
               label="Préstamos activos"

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { GetLoanApplicationActionsAction } from '@/core/actions/loan-applications/get-loan-application-actions.action'
+import { GetLoanApplicationListActionsAction } from '@/core/actions/loan-applications/get-loan-application-list-actions.action'
 import { SearchLoanApplicationsAction } from '@/core/actions/loan-applications/search-loan-applications.action'
 import type { LoanApplicationAllowedAction } from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationSearchRequest } from '@/infrastructure/loans/requests/loan-application-search-request'
@@ -38,7 +38,7 @@ const normalizeFilters = (
 
 export const useLoanApplicationsList = () => {
   const actionRef = useRef(new SearchLoanApplicationsAction())
-  const actionsResolverRef = useRef(new GetLoanApplicationActionsAction())
+  const actionsResolverRef = useRef(new GetLoanApplicationListActionsAction())
   const requestIdRef = useRef(0)
   const [filters, setFilters] = useState<LoanApplicationsListFilters>({})
   const [skip, setSkip] = useState(0)
@@ -65,35 +65,28 @@ export const useLoanApplicationsList = () => {
 
     setIsLoadingActions(true)
 
-    const entries: Array<readonly [string, LoanApplicationAllowedAction[]]> = []
-    let actionsEndpointForbidden = false
-
-    for (const item of items) {
-      if (actionsEndpointForbidden) {
-        entries.push([item.id, [] as LoanApplicationAllowedAction[]] as const)
-        continue
-      }
-
-      const result = await actionsResolverRef.current.execute(item.id)
-      if (!result.success) {
-        if (result.status === 403) {
-          actionsEndpointForbidden = true
-        }
-        entries.push([item.id, [] as LoanApplicationAllowedAction[]] as const)
-        continue
-      }
-
-      entries.push([
-        item.id,
-        result.data.allowedActions as LoanApplicationAllowedAction[],
-      ] as const)
-    }
+    const result = await actionsResolverRef.current.execute(
+      items.map((item) => item.id),
+      { silent: true },
+    )
 
     if (requestId !== requestIdRef.current) {
       return
     }
 
-    setAllowedActionsById(Object.fromEntries(entries))
+    const actionsById: Record<string, LoanApplicationAllowedAction[]> = {}
+    items.forEach((item) => {
+      actionsById[item.id] = []
+    })
+
+    if (result.success) {
+      result.data.items.forEach((item) => {
+        actionsById[item.loanApplicationId] =
+          item.allowedActions as LoanApplicationAllowedAction[]
+      })
+    }
+
+    setAllowedActionsById(actionsById)
     setIsLoadingActions(false)
   }, [])
 

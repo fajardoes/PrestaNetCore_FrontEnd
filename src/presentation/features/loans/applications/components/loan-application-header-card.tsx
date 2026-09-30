@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Eye,
   FileSpreadsheet,
+  Info,
   Pencil,
   Printer,
   ReceiptText,
@@ -24,6 +25,7 @@ interface LoanApplicationHeaderCardProps {
   canEdit: boolean
   canSubmit: boolean
   canApprove: boolean
+  approveBlockedReason?: string | null
   canDisburse: boolean
   canReject: boolean
   canCancel: boolean
@@ -53,6 +55,7 @@ export const LoanApplicationHeaderCard = ({
   canEdit,
   canSubmit,
   canApprove,
+  approveBlockedReason = null,
   canDisburse,
   canReject,
   canCancel,
@@ -202,7 +205,8 @@ export const LoanApplicationHeaderCard = ({
                   type="button"
                   className={primaryActionClassName}
                   onClick={onApprove}
-                  disabled={isProcessingWorkflow}
+                  disabled={isProcessingWorkflow || Boolean(approveBlockedReason)}
+                  title={approveBlockedReason ?? 'Aprobar solicitud'}
                 >
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Aprobar
@@ -253,6 +257,15 @@ export const LoanApplicationHeaderCard = ({
                 </button>
               ) : null}
             </div>
+            {approveBlockedReason ? (
+              <div className="mt-2 flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-left text-xs text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                <p>
+                  <span className="font-semibold">Aprobar está bloqueado:</span>{' '}
+                  {approveBlockedReason}
+                </p>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import { CalendarRange, CheckCircle2, ClipboardList, Eye, History, ReceiptText } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { CalendarRange, CheckCircle2, ClipboardList, History, ReceiptText } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 import { DisbursementChargesTable } from '@/presentation/features/loans/components/disbursement-charges-table'
@@ -9,7 +9,10 @@ import { RecognitionPolicyBadges } from '@/presentation/features/loans/component
 import { LoanDisbursementReversalEligibilityCard } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-eligibility-card'
 import { LoanDisbursementReversalModal } from '@/presentation/features/loans/loans-query/components/loan-disbursement-reversal-modal'
 import { LoanAnticipatedInstallmentSection } from '@/presentation/features/loans/loans-query/components/loan-anticipated-installment-section'
+import { InstallmentDetailModal } from '@/presentation/features/loans/loans-query/components/installment-detail-modal'
 import { LoanPaymentsModal } from '@/presentation/features/loans/loans-query/components/loan-payments-modal'
+import { GeneratedDocumentsPanel } from '@/presentation/features/documents/generated-documents/components/generated-documents-panel'
+import { useGeneratedDocuments } from '@/presentation/features/documents/generated-documents/hooks/use-generated-documents'
 import {
   QueryDetailField,
   QueryHeroCard,
@@ -17,9 +20,11 @@ import {
   QuerySectionCard,
 } from '@/presentation/features/loans/loans-query/components/loan-query-ui'
 import { useLoanInstallments } from '@/presentation/features/loans/loans-query/hooks/use-loan-installments'
+import { useLoanInstallment } from '@/presentation/features/loans/loans-query/hooks/use-loan-installment'
 import { useLoanPayments } from '@/presentation/features/loans/loans-query/hooks/use-loan-payments'
 import { useLoan } from '@/presentation/features/loans/loans-query/hooks/use-loan'
 import { useLoanAnticipatedInstallment } from '@/presentation/features/loans/loans-query/hooks/use-loan-anticipated-installment'
+import { usePaymentReceiptReport } from '@/presentation/features/payments/hooks/use-payment-receipt-report'
 import {
   formatCurrency,
   formatDate,
@@ -32,13 +37,17 @@ import {
 import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import { CollapsibleSection } from '@/presentation/share/components/collapsible-section'
 import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
+import { TableActionButton } from '@/presentation/share/components/table-action-button'
 import { TableContainer } from '@/presentation/share/components/table-container'
+import { useNotifications } from '@/providers/NotificationProvider'
 
 export const LoanDetailPage = () => {
   const location = useLocation()
   const { id = '' } = useParams()
   const [reversalModalOpen, setReversalModalOpen] = useState(false)
   const [paymentsModalOpen, setPaymentsModalOpen] = useState(false)
+  const [selectedInstallmentNo, setSelectedInstallmentNo] = useState<number | null>(null)
+  const closeInstallmentModal = useCallback(() => setSelectedInstallmentNo(null), [])
   const {
     loan,
     allowedActions,
@@ -60,15 +69,31 @@ export const LoanDetailPage = () => {
     error: installmentsError,
     loadInstallments,
   } = useLoanInstallments()
+  const {
+    installment: selectedInstallment,
+    isLoading: isLoadingInstallmentDetail,
+    error: installmentDetailError,
+    loadInstallment: loadInstallmentDetail,
+  } = useLoanInstallment()
   const { hasPermission } = useUserPermissions()
+  const { notify } = useNotifications()
+  const receiptReport = usePaymentReceiptReport()
 
   const canReadEligibility = hasPermission('loans.disbursement_reversal.read_eligibility')
+  const canReadGeneratedDocuments = hasPermission('documents.generated.read')
+  const canDownloadGeneratedDocuments = hasPermission('documents.generated.download')
+  const canRetryGeneratedDocuments = hasPermission('documents.generated.retry')
   const canReadPayments = hasPermission('payments.read')
+  const canPrintReceipts = hasPermission('reports.payment_receipt.read')
   const canExecuteReversal = hasPermission('loans.disbursement_reversal.execute')
   const canViewAnticipatedInstallment = allowedActions.includes('view_anticipated_installment')
   const canApplyAnticipatedInstallment = allowedActions.includes('apply_anticipated_installment')
   const canReverseAnticipatedInstallment = allowedActions.includes('reverse_anticipated_installment_application')
   const anticipatedInstallment = useLoanAnticipatedInstallment(id, canViewAnticipatedInstallment)
+  const generatedDocuments = useGeneratedDocuments({
+    enabled: Boolean(id) && canReadGeneratedDocuments,
+    loanId: id,
+  })
   const loanPayments = useLoanPayments(id, paymentsModalOpen && canReadPayments)
   const isDisbursementAlreadyReversed =
     Boolean(loan?.isDisbursementReversed) ||
@@ -81,6 +106,11 @@ export const LoanDetailPage = () => {
       loadInstallments(id),
     ])
   }, [id, canReadEligibility, loadInstallments, loadLoan])
+
+  useEffect(() => {
+    if (!id || selectedInstallmentNo === null) return
+    void loadInstallmentDetail(id, selectedInstallmentNo)
+  }, [id, loadInstallmentDetail, selectedInstallmentNo])
 
   const installmentSummary = useMemo(() => {
     const totalProjected = installments.reduce((sum, item) => sum + item.totalProjected, 0)
@@ -121,7 +151,7 @@ export const LoanDetailPage = () => {
       : 0
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <QueryHeroCard
         eyebrow="Expediente financiero"
         title={loanLabel}
@@ -161,37 +191,46 @@ export const LoanDetailPage = () => {
             value={formatCurrency(loan.principal)}
             hint={loan.loanProductName?.trim() || 'Producto no disponible'}
             accent="blue"
+            compact
           />
           <QueryMetricCard
             label="Saldo cronograma"
             value={formatCurrency(installmentSummary.totalProjected - installmentSummary.totalPaid)}
             hint={`${formatMoney(paidRatio)}% del cronograma ya cubierto`}
             accent="sky"
+            compact
           />
           <QueryMetricCard
             label="Próximo vencimiento"
             value={formatDate(installmentSummary.nextDueDate)}
             hint={`${installmentSummary.pendingCount} cuota(s) pendientes`}
             accent={installmentSummary.pendingCount > 0 ? 'amber' : 'slate'}
+            compact
           />
           <QueryMetricCard
             label="Tasa nominal"
             value={formatRateAsPercent(loan.nominalRate)}
             hint={`Plazo contractual: ${loan.term} ${loan.termUnitName}`}
             accent="slate"
+            compact
           />
         </div>
       </QueryHeroCard>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.95fr)]">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.95fr)]">
         <QuerySectionCard
           title="Resumen ejecutivo"
-          description="Datos principales para gestión operativa, comercial y de control."
+          description="Datos principales del préstamo y su cronograma."
           collapsible
-          defaultExpanded={false}
+          defaultExpanded
         >
-          <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-3">
-            <QueryDetailField label="No. de préstamo" value={loan.loanNo?.trim() || '—'} />
+          <div className="grid gap-x-4 gap-y-2 md:grid-cols-2 xl:grid-cols-12">
+            <QueryDetailField
+              label="No. de préstamo"
+              value={loan.loanNo?.trim() || '—'}
+              variant="compact"
+              className="rounded-lg border border-sky-200 bg-sky-50/70 px-2.5 py-2 dark:border-sky-500/30 dark:bg-sky-500/10 md:col-span-1 xl:col-span-4"
+            />
             <QueryDetailField
               label="Cliente"
               value={
@@ -202,32 +241,56 @@ export const LoanDetailPage = () => {
                   </div>
                 </div>
               }
+              variant="compact"
+              className="rounded-lg border border-sky-200 bg-sky-50/70 px-2.5 py-2 dark:border-sky-500/30 dark:bg-sky-500/10 md:col-span-1 xl:col-span-5"
             />
             <QueryDetailField
               label="Producto"
               value={loan.loanProductName?.trim() || '—'}
+              variant="compact"
+              className="rounded-lg border border-sky-200 bg-sky-50/70 px-2.5 py-2 dark:border-sky-500/30 dark:bg-sky-500/10 md:col-span-1 xl:col-span-3"
             />
             <QueryDetailField
               label="Fecha operativa creación"
               value={formatDate(loan.createdOperationalDate)}
+              variant="compact"
+              className="xl:col-span-3"
             />
             <QueryDetailField
               label="Fecha compromiso cronograma"
               value={formatDate(loan.scheduleCommittedOperationalDate)}
+              variant="compact"
+              className="xl:col-span-3"
             />
-            <QueryDetailField label="Versión de cronograma" value={String(loan.scheduleVersion)} />
+            <QueryDetailField
+              label="Versión de cronograma"
+              value={String(loan.scheduleVersion)}
+              variant="compact"
+              className="xl:col-span-3"
+            />
             <QueryDetailField
               label="Primera cuota"
               value={formatDate(loan.firstDueDate)}
+              variant="compact"
+              className="xl:col-span-3"
             />
             <QueryDetailField
               label="Plazo contractual"
               value={`${loan.term} ${loan.termUnitName}`}
+              variant="compact"
+              className="xl:col-span-3"
             />
-            <QueryDetailField label="Frecuencia pactada" value={loan.paymentFrequencyName} />
+            <QueryDetailField
+              label="Frecuencia pactada"
+              value={loan.paymentFrequencyName}
+              variant="compact"
+              className="xl:col-span-3"
+            />
             <QueryDetailField
               label="Vencimiento contractual"
               value={formatDate(loan.maturityDate)}
+              variant="compact"
+              className="xl:col-span-3"
             />
           </div>
         </QuerySectionCard>
@@ -236,10 +299,10 @@ export const LoanDetailPage = () => {
           title="Indicadores de cartera"
           description="Lectura rápida del comportamiento del cronograma."
           collapsible
-          defaultExpanded={false}
+          defaultExpanded
         >
-          <div className="space-y-3">
-            <div className="grid gap-2.5 sm:grid-cols-2">
+          <div className="space-y-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <QueryMetricCard
                 label="Número de cuotas"
                 value={String(loan.installmentsCount ?? installments.length)}
@@ -254,7 +317,7 @@ export const LoanDetailPage = () => {
               />
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 dark:border-slate-800 dark:bg-slate-900/70">
               <div className="flex items-center justify-between gap-3 text-xs">
                 <span className="font-medium text-slate-700 dark:text-slate-200">
                   Avance de cobro del cronograma
@@ -263,7 +326,7 @@ export const LoanDetailPage = () => {
                   {formatMoney(paidRatio)}%
                 </span>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-cyan-600 via-sky-500 to-sky-400 transition-all"
                   style={{ width: `${Math.max(0, Math.min(paidRatio, 100))}%` }}
@@ -271,7 +334,7 @@ export const LoanDetailPage = () => {
               </div>
             </div>
 
-            <div className="grid gap-2.5">
+            <div className="grid gap-1.5">
               <SignalRow
                 icon={<ClipboardList className="h-4 w-4" />}
                 label="Frecuencia pactada"
@@ -303,10 +366,11 @@ export const LoanDetailPage = () => {
         loan.disbursementReversalJournalEntryId) && (
         <CollapsibleSection
           title="Desembolso revertido"
-          description="Este préstamo quedó en estado final de reversión y debe tratarse como expediente cerrado para operación de cartera."
+          description="Expediente cerrado por reversión del desembolso."
           defaultExpanded={false}
           className="border-amber-200 bg-amber-50 dark:border-amber-500/40 dark:bg-amber-500/10"
           contentClassName="mt-3"
+          compact
         >
           <div className="grid gap-2.5 md:grid-cols-2 xl:grid-cols-4">
             <QueryDetailField
@@ -337,7 +401,15 @@ export const LoanDetailPage = () => {
         </CollapsibleSection>
       )}
 
-      <DisbursementSummaryCard data={loan} collapsible defaultExpanded={false} />
+      <DisbursementSummaryCard data={loan} collapsible defaultExpanded={false} compact />
+
+      {canReadGeneratedDocuments ? (
+        <GeneratedDocumentsPanel
+          state={generatedDocuments}
+          canDownload={canDownloadGeneratedDocuments}
+          canRetry={canRetryGeneratedDocuments}
+        />
+      ) : null}
 
       {canViewAnticipatedInstallment ? (
         <LoanAnticipatedInstallmentSection
@@ -375,6 +447,7 @@ export const LoanDetailPage = () => {
           }}
           collapsible
           defaultExpanded={false}
+          compact
         />
       ) : null}
 
@@ -384,27 +457,27 @@ export const LoanDetailPage = () => {
         </div>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
-        <div className="space-y-4">
-          <DisbursementChargesTable
-            charges={loan.disbursementCharges}
-            collapsible
-            defaultExpanded={false}
-          />
+      <div className="space-y-3">
+        <DisbursementChargesTable
+          charges={loan.disbursementCharges}
+          collapsible
+          defaultExpanded={false}
+          compact
+        />
 
-          <QuerySectionCard
-            title="Plan de pagos"
-            description="Seguimiento de vencimientos, montos proyectados y acceso al detalle de cada cuota."
-            collapsible
-            defaultExpanded={false}
-            aside={
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-                <ReceiptText className="h-3.5 w-3.5" />
-                {installments.length} registro(s)
-              </div>
-            }
-          >
-            <div className="mb-3 grid gap-2.5 md:grid-cols-3">
+        <QuerySectionCard
+          title="Plan de pagos"
+          description="Vencimientos, montos y detalle de cada cuota."
+          collapsible
+          defaultExpanded
+          aside={
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+              <ReceiptText className="h-3.5 w-3.5" />
+              {installments.length} registro(s)
+            </div>
+          }
+        >
+            <div className="mb-2 grid gap-2 md:grid-cols-3">
               <QueryMetricCard
                 label="Pendientes"
                 value={String(installmentSummary.pendingCount)}
@@ -425,15 +498,19 @@ export const LoanDetailPage = () => {
               />
             </div>
 
-            <TableContainer mode="legacy-compact" variant="strong">
+            <TableContainer
+              mode="legacy-compact"
+              variant="strong"
+              className="[&_th]:px-2 [&_td]:px-2 [&_td]:py-1"
+            >
               <div className="overflow-x-auto">
                 <table className="min-w-full">
                   <thead>
                     <tr>
-                      <th>Acciones</th>
+                      <th className="w-12">Acciones</th>
                       <th>#</th>
-                      <th>Vence original</th>
-                      <th>Vence ajustada</th>
+                      <th className="whitespace-nowrap">Vence original</th>
+                      <th className="whitespace-nowrap">Vence ajustada</th>
                       <th className="text-right">Capital</th>
                       <th className="text-right">Interés</th>
                       <th className="text-right">Seguro</th>
@@ -465,36 +542,34 @@ export const LoanDetailPage = () => {
                     ) : (
                       installments.map((item) => (
                         <tr key={item.id}>
-                          <td>
-                            <Link
-                              to={`/loans/${loan.id}/installments/${item.installmentNo}`}
-                              className="btn-table-action inline-flex h-7 w-7 items-center justify-center p-0"
-                              title="Ver detalle de cuota"
-                              aria-label="Ver detalle de cuota"
-                            >
-                              <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-                            </Link>
+                          <td className="whitespace-nowrap">
+                            <TableActionButton
+                              icon="view"
+                              label={`Ver detalle de cuota #${item.installmentNo}`}
+                              tooltip="Ver detalle de cuota"
+                              onClick={() => setSelectedInstallmentNo(item.installmentNo)}
+                            />
                           </td>
                           <td className="font-medium text-slate-700 dark:text-slate-200">
                             {item.installmentNo}
                           </td>
-                          <td>{formatDate(item.dueDateOriginal)}</td>
-                          <td>{formatDate(item.dueDateAdjusted)}</td>
-                          <td className="text-right">{formatMoney(item.principalProjected)}</td>
-                          <td className="text-right">{formatMoney(item.interestProjected)}</td>
-                          <td className="text-right">
-                            {formatMoney(getInstallmentComponentAmount(item.components, 'INSURANCE'))}
+                          <td className="whitespace-nowrap">{formatDate(item.dueDateOriginal)}</td>
+                          <td className="whitespace-nowrap">{formatDate(item.dueDateAdjusted)}</td>
+                          <td className="whitespace-nowrap text-right">{formatCurrency(item.principalProjected)}</td>
+                          <td className="whitespace-nowrap text-right">{formatCurrency(item.interestProjected)}</td>
+                          <td className="whitespace-nowrap text-right">
+                            {formatCurrency(getInstallmentComponentAmount(item.components, 'INSURANCE'))}
                           </td>
-                          <td className="text-right">
-                            {formatMoney(
+                          <td className="whitespace-nowrap text-right">
+                            {formatCurrency(
                               item.components.find(
                                 (component) => component.financialComponentCode === 'PENALTY',
                               )?.outstandingAmount ?? 0,
                             )}
                           </td>
-                          <td className="text-right">{formatMoney(item.totalProjected)}</td>
-                          <td className="text-right">{formatMoney(item.totalPaid)}</td>
-                          <td>
+                          <td className="whitespace-nowrap text-right">{formatCurrency(item.totalProjected)}</td>
+                          <td className="whitespace-nowrap text-right">{formatCurrency(item.totalPaid)}</td>
+                          <td className="whitespace-nowrap">
                             <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${statusBadgeClass(item.statusCode)}`}>
                               {translateLoanApplicationStatus(item.statusCode, item.statusName)}
                             </span>
@@ -506,37 +581,34 @@ export const LoanDetailPage = () => {
                 </table>
               </div>
             </TableContainer>
-          </QuerySectionCard>
-        </div>
+        </QuerySectionCard>
 
-        <div className="space-y-4">
-          {loan.insurance ? (
-            <QuerySectionCard
-              title="Seguro programado"
-              description="Resumen del seguro cobrado al desembolso y de los cargos futuros."
-              collapsible
-              defaultExpanded={false}
-            >
-              <LoanInsuranceSummaryContent
-                totalDisbursementInsurance={loan.totalDisbursementInsurance}
-                insuranceSummary={loan.insurance}
-                insuranceDefinitions={loan.insurance.definitions}
-              />
-            </QuerySectionCard>
-          ) : null}
-
+        {loan.insurance ? (
           <QuerySectionCard
-            title="Políticas informativas"
-            description="Referencias de reconocimiento asociadas al préstamo."
+            title="Seguro programado"
+            description="Seguro cobrado y cargos futuros."
             collapsible
             defaultExpanded={false}
           >
-            <RecognitionPolicyBadges
-              interestPolicyCode={loan.interestRecognitionPolicyCode}
-              feePolicyCode={loan.feeRecognitionPolicyCode}
+            <LoanInsuranceSummaryContent
+              totalDisbursementInsurance={loan.totalDisbursementInsurance}
+              insuranceSummary={loan.insurance}
+              insuranceDefinitions={loan.insurance.definitions}
             />
           </QuerySectionCard>
-        </div>
+        ) : null}
+
+        <QuerySectionCard
+          title="Políticas informativas"
+          description="Políticas de reconocimiento del préstamo."
+          collapsible
+          defaultExpanded={false}
+        >
+          <RecognitionPolicyBadges
+            interestPolicyCode={loan.interestRecognitionPolicyCode}
+            feePolicyCode={loan.feeRecognitionPolicyCode}
+          />
+        </QuerySectionCard>
       </div>
 
       {loan && eligibility ? (
@@ -579,11 +651,27 @@ export const LoanDetailPage = () => {
           detailsByPaymentId={loanPayments.detailsByPaymentId}
           detailLoadingByPaymentId={loanPayments.detailLoadingByPaymentId}
           detailErrorsByPaymentId={loanPayments.detailErrorsByPaymentId}
+          canPrintReceipts={canPrintReceipts}
+          isPrinting={receiptReport.isLoading}
           onPageChange={loanPayments.setPage}
           onLoadPaymentDetail={loanPayments.loadPaymentDetail}
+          onPrintReceipt={async (payment) => {
+            const result = await receiptReport.openReceipt(payment.id)
+            if (!result.success) notify(result.error, 'error')
+          }}
           onClose={() => setPaymentsModalOpen(false)}
         />
       ) : null}
+
+      <InstallmentDetailModal
+        open={selectedInstallmentNo !== null}
+        installmentNo={selectedInstallmentNo}
+        loanLabel={loanLabel}
+        installment={selectedInstallment}
+        isLoading={isLoadingInstallmentDetail}
+        error={installmentDetailError}
+        onClose={closeInstallmentModal}
+      />
     </div>
   )
 }
@@ -597,8 +685,8 @@ const SignalRow = ({
   label: string
   value: string
 }) => (
-  <div className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-800 dark:bg-slate-900/70">
-    <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+  <div className="flex items-start gap-2 rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900/70">
+    <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
       {icon}
     </span>
     <div className="min-w-0">

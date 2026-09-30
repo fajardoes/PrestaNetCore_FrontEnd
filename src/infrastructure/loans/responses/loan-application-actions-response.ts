@@ -25,4 +25,21 @@ export interface LoanApplicationActionsResponse {
   loanApplicationId: string
   statusCode: string
   allowedActions: string[]
+  blockedActions?: LoanApplicationBlockedAction[]
+}
+
+export interface LoanApplicationListActionsResponse {
+  items: LoanApplicationListActionItem[]
+}
+
+export interface LoanApplicationListActionItem {
+  loanApplicationId: string
+  statusCode: string
+  allowedActions: string[]
+}
+
+export interface LoanApplicationBlockedAction {
+  code: LoanApplicationAllowedAction
+  label: string
+  reason: string
 }

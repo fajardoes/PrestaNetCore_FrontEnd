@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  FileCheck2,
   FileText,
   Landmark,
   Percent,
@@ -11,6 +12,7 @@ import {
   Umbrella,
 } from 'lucide-react'
 import { useForm, useWatch, type FieldErrors } from 'react-hook-form'
+import type { ReactNode } from 'react'
 import { yupResolver } from '@hookform/resolvers/yup'
 import type { ChartAccountListItem } from '@/infrastructure/interfaces/accounting/chart-account'
 import type { LoanCatalogItemDto } from '@/infrastructure/loans/dtos/catalogs/loan-catalog-item.dto'
@@ -64,6 +66,8 @@ interface LoanProductFormProps {
   catalogs: LoanCatalogOptions
   isLoadingCatalogs?: boolean
   catalogsError?: string | null
+  showDocumentRequirements?: boolean
+  documentRequirementsPanel?: ReactNode
 }
 
 const defaultValues: LoanProductFormValues = {
@@ -123,6 +127,7 @@ type ProductFormSectionId =
   | 'fees'
   | 'insurance'
   | 'collateralRules'
+  | 'documents'
 
 const productFormSections: Array<ProductFormSectionNavItem & { id: ProductFormSectionId }> = [
   { id: 'general', title: 'Datos generales', icon: FileText },
@@ -134,6 +139,7 @@ const productFormSections: Array<ProductFormSectionNavItem & { id: ProductFormSe
   { id: 'fees', title: 'Comisiones y cargos', icon: Receipt },
   { id: 'insurance', title: 'Seguros', icon: Umbrella },
   { id: 'collateralRules', title: 'Reglas de garantías', icon: Shield },
+  { id: 'documents', title: 'Documentos', icon: FileCheck2 },
 ]
 
 const sectionErrorFields: Record<
@@ -179,6 +185,7 @@ const sectionErrorFields: Record<
   fees: ['fees', 'hasActiveDisbursementFees'],
   insurance: ['insurances', 'hasActiveDisbursementInsurances'],
   collateralRules: ['collateralRules'],
+  documents: [],
 }
 
 const getFirstSectionWithErrors = (
@@ -202,6 +209,8 @@ export const LoanProductForm = ({
   catalogs,
   isLoadingCatalogs,
   catalogsError,
+  showDocumentRequirements = false,
+  documentRequirementsPanel,
 }: LoanProductFormProps) => {
   const [activeSection, setActiveSection] = useState<ProductFormSectionId>('general')
   const {
@@ -233,6 +242,12 @@ export const LoanProductForm = ({
       reset(defaultValues)
     }
   }, [initialValues, reset])
+
+  useEffect(() => {
+    if (!showDocumentRequirements && activeSection === 'documents') {
+      setActiveSection('general')
+    }
+  }, [activeSection, showDocumentRequirements])
 
   const requiresCollateral = useWatch({ control, name: 'requiresCollateral' })
   const hasInsurance = useWatch({ control, name: 'hasInsurance' })
@@ -415,7 +430,7 @@ export const LoanProductForm = ({
 
       <div className="grid gap-4 lg:grid-cols-[minmax(220px,250px)_minmax(0,1fr)] lg:items-start">
         <ProductFormSectionNav
-          items={productFormSections}
+          items={productFormSections.filter((section) => section.id !== 'documents' || showDocumentRequirements)}
           activeSection={activeSection}
           onSelect={(sectionId) => setActiveSection(sectionId as ProductFormSectionId)}
           hasError={hasSectionError}
@@ -1218,6 +1233,17 @@ export const LoanProductForm = ({
         />
         </ProductFormSection>
       </div>
+
+      {showDocumentRequirements ? (
+        <div hidden={activeSection !== 'documents'}>
+          <ProductFormSection
+            title="Documentos"
+            description="Asocia las plantillas documentales que aplican a este producto y define obligatoriedad, momento y orden."
+          >
+            {documentRequirementsPanel}
+          </ProductFormSection>
+        </div>
+      ) : null}
 
         </div>
       </div>

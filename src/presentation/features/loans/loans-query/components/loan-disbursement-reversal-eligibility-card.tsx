@@ -18,6 +18,7 @@ interface LoanDisbursementReversalEligibilityCardProps {
   onOpenModal: () => void
   collapsible?: boolean
   defaultExpanded?: boolean
+  compact?: boolean
 }
 
 export const LoanDisbursementReversalEligibilityCard = ({
@@ -31,6 +32,7 @@ export const LoanDisbursementReversalEligibilityCard = ({
   onOpenModal,
   collapsible = false,
   defaultExpanded = true,
+  compact = false,
 }: LoanDisbursementReversalEligibilityCardProps) => {
   if (!canReadEligibility) {
     return null
@@ -51,35 +53,36 @@ export const LoanDisbursementReversalEligibilityCard = ({
   return (
     <CollapsibleSection
       title="Elegibilidad de reversión de desembolso"
-      description="Verifica si el préstamo puede regresar al estado de desembolso revertido sin romper la trazabilidad contable."
+      description="Control de reversión del desembolso y trazabilidad contable."
       aside={actionButton}
       collapsible={collapsible}
       defaultExpanded={defaultExpanded}
-      contentClassName="mt-0"
+      contentClassName={compact ? 'mt-2' : 'mt-0'}
+      compact={compact}
     >
 
       {isLoading ? (
-        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
           Consultando elegibilidad de reversión...
         </p>
       ) : null}
 
       {!isLoading && eligibilityError ? (
-        <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
           {eligibilityError}
         </div>
       ) : null}
 
       {!isLoading && !eligibility && !eligibilityError ? (
-        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+        <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-sm text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
           No hay información de elegibilidad disponible para este préstamo.
         </div>
       ) : null}
 
       {eligibility ? (
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 space-y-3">
           <div
-            className={`rounded-xl border p-3 text-sm ${
+            className={`rounded-lg border p-2.5 text-sm ${
               eligibility.isEligible
                 ? 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-100'
                 : 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200'
@@ -104,20 +107,20 @@ export const LoanDisbursementReversalEligibilityCard = ({
           </div>
 
           {!actionAvailable ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
               No hay una acción de reversión disponible para este préstamo. La UI no permite
               ejecutar la operación.
             </div>
           ) : null}
 
           {actionAvailable && !canExecute ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
               Tu usuario puede consultar elegibilidad, pero no tiene permiso para ejecutar la
               reversión.
             </div>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-4">
             <Metric label="Fecha operativa actual" value={formatDate(eligibility.businessDate)} />
             <Metric
               label="Fecha original del desembolso"
@@ -174,11 +177,11 @@ export const LoanDisbursementReversalEligibilityCard = ({
 }
 
 const Metric = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-900">
+  <div className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 dark:border-slate-700 dark:bg-slate-900">
     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
       {label}
     </p>
-    <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+    <p className="mt-0.5 text-sm font-semibold text-slate-900 dark:text-slate-100">{value}</p>
   </div>
 )
 

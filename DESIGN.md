@@ -105,6 +105,15 @@ La misma jerarquía se mantiene en escritorio y móvil, usando los iconos Lucide
 Las tablas deben conservar scroll horizontal cuando sea necesario y usar filas compactas,
 bordes visibles y acciones de fila mediante componentes o clases compartidas.
 
+En encabezados y barras de filtros de listados, las acciones Agregar/Crear y Buscar usan el
+tamaño compacto compartido (`.btn-list-action`, 28 px) y se alinean con el control al que
+pertenecen. Buscar debe quedar junto al campo y sus filtros, no separado en el extremo opuesto
+de la fila. Los botones de tamaño normal se reservan para formularios y diálogos.
+
+La barra de navegación reciente aprovecha el ancho disponible para mostrar los accesos que
+quepan. `Más recientes` solo se muestra cuando hay accesos que realmente quedan fuera de vista;
+no se debe limitar arbitrariamente el número visible en pantallas anchas.
+
 ## Componentes
 
 Antes de crear controles nuevos, reutilizar los componentes compartidos de

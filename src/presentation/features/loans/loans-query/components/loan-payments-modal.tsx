@@ -5,6 +5,7 @@ import { formatCurrency, formatDate } from '@/presentation/features/loans/applic
 import {
   formatPaymentComponentLabel,
   getPaymentStatusBadgeClass,
+  isPaymentReceiptPrintable,
   sumPaymentAllocations,
   translatePaymentApplicationStatus,
   translatePaymentFlow,
@@ -28,8 +29,11 @@ interface LoanPaymentsModalProps {
   detailsByPaymentId: Record<string, PaymentResponse>
   detailLoadingByPaymentId: Record<string, boolean>
   detailErrorsByPaymentId: Record<string, string | null>
+  canPrintReceipts: boolean
+  isPrinting?: boolean
   onPageChange: (page: number) => void
   onLoadPaymentDetail: (paymentId: string) => Promise<void>
+  onPrintReceipt?: (payment: PaymentResponse) => void | Promise<void>
   onClose: () => void
 }
 
@@ -46,8 +50,11 @@ export const LoanPaymentsModal = ({
   detailsByPaymentId,
   detailLoadingByPaymentId,
   detailErrorsByPaymentId,
+  canPrintReceipts,
+  isPrinting = false,
   onPageChange,
   onLoadPaymentDetail,
+  onPrintReceipt,
   onClose,
 }: LoanPaymentsModalProps) => {
   const [expandedPaymentId, setExpandedPaymentId] = useState<string | null>(null)
@@ -112,7 +119,7 @@ export const LoanPaymentsModal = ({
               <table className="min-w-full">
                 <thead>
                   <tr>
-                    <th>Detalle</th>
+                    <th>Acciones</th>
                     <th>Fecha</th>
                     <th>Recibo interno</th>
                     <th>Tipo / flujo</th>
@@ -148,7 +155,10 @@ export const LoanPaymentsModal = ({
                           detailError={detailError}
                           isExpanded={isExpanded}
                           isLoadingDetail={isLoadingDetail}
+                          canPrintReceipts={canPrintReceipts}
+                          isPrinting={isPrinting}
                           onToggle={() => togglePayment(payment.id)}
+                          onPrintReceipt={onPrintReceipt}
                         />
                       )
                     })
@@ -179,25 +189,42 @@ const PaymentRow = ({
   detailError,
   isExpanded,
   isLoadingDetail,
+  canPrintReceipts,
+  isPrinting,
   onToggle,
+  onPrintReceipt,
 }: {
   payment: PaymentResponse
   detail?: PaymentResponse
   detailError?: string | null
   isExpanded: boolean
   isLoadingDetail?: boolean
+  canPrintReceipts: boolean
+  isPrinting: boolean
   onToggle: () => void
+  onPrintReceipt?: (payment: PaymentResponse) => void | Promise<void>
 }) => (
   <>
     <tr className={isExpanded ? 'bg-slate-50 dark:bg-slate-900/70' : undefined}>
       <td>
-        <TableActionButton
-          icon={isExpanded ? 'collapse' : 'expand'}
-          label={`${isExpanded ? 'Ocultar' : 'Ver'} componentes del pago ${payment.internalReceiptNumber?.trim() || payment.id}`}
-          tooltip={isExpanded ? 'Ocultar componentes del pago' : 'Ver componentes del pago'}
-          onClick={onToggle}
-          aria-expanded={isExpanded}
-        />
+        <span className="inline-flex items-center gap-1">
+          <TableActionButton
+            icon={isExpanded ? 'collapse' : 'expand'}
+            label={`${isExpanded ? 'Ocultar' : 'Ver'} componentes del pago ${payment.internalReceiptNumber?.trim() || payment.id}`}
+            tooltip={isExpanded ? 'Ocultar componentes del pago' : 'Ver componentes del pago'}
+            onClick={onToggle}
+            aria-expanded={isExpanded}
+          />
+          {canPrintReceipts && isPaymentReceiptPrintable(payment) ? (
+            <TableActionButton
+              icon="print"
+              label="Imprimir recibo"
+              tooltip="Imprimir recibo"
+              onClick={() => void onPrintReceipt?.(payment)}
+              disabled={isPrinting}
+            />
+          ) : null}
+        </span>
       </td>
       <td>{formatDate(payment.paymentDate)}</td>
       <td className="font-medium text-slate-800 dark:text-slate-100">

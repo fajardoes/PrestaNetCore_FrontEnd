@@ -9,6 +9,8 @@ import type { LoanProductFormValues } from '@/presentation/features/loans/produc
 import type { LoanProductCreateDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-create.dto'
 import type { LoanProductUpdateDto } from '@/infrastructure/loans/dtos/loan-products/loan-product-update.dto'
 import { mapPercentInputToRate, mapRateToPercentValue } from '@/core/helpers/rate-percent'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
+import { LoanProductDocumentRequirementsEditor } from '@/presentation/features/loans/products/components/loan-product-document-requirements-editor'
 
 export const LoanProductFormPage = () => {
   const navigate = useNavigate()
@@ -30,6 +32,9 @@ export const LoanProductFormPage = () => {
     error: accountsError,
   } = useGlAccountsSearch()
   const catalogsCache = useLoanCatalogsCache()
+  const { hasPermission } = useUserPermissions()
+  const canReadDocumentRequirements = hasPermission('documents.product_requirements.read')
+  const canManageDocumentRequirements = hasPermission('documents.product_requirements.manage')
 
   useEffect(() => {
     if (id) {
@@ -168,6 +173,15 @@ export const LoanProductFormPage = () => {
         isSaving={isSaving}
         error={saveError}
         isEdit={isEdit}
+        showDocumentRequirements={isEdit && Boolean(id) && canReadDocumentRequirements}
+        documentRequirementsPanel={
+          isEdit && id && canReadDocumentRequirements ? (
+            <LoanProductDocumentRequirementsEditor
+              productId={id}
+              canManage={canManageDocumentRequirements}
+            />
+          ) : null
+        }
         onSearchAccounts={searchAccounts}
         onResolveAccount={getAccountById}
         isSearchingAccounts={isSearchingAccounts}

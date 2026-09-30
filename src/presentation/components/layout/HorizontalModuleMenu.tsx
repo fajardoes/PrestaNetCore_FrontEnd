@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
+import { MoreHorizontal } from 'lucide-react'
 import type { MenuItemTreeDto } from '@/infrastructure/interfaces/security/menu'
 import { MenuIcon } from '@/presentation/share/helpers/menu-icon'
 import { findBestMenuItem, sortMenuTree } from './menu-tree'
@@ -19,6 +20,21 @@ type DropdownPosition = {
   maxHeight: number
 }
 
+const collectMenuGroupIds = (items: MenuItemTreeDto[]) => {
+  const groupIds = new Set<string>()
+
+  const visit = (currentItems: MenuItemTreeDto[]) => {
+    currentItems.forEach((item) => {
+      if (!item.children.length) return
+      groupIds.add(item.id)
+      visit(item.children)
+    })
+  }
+
+  visit(items)
+  return groupIds
+}
+
 export const HorizontalModuleMenu = ({
   menus,
   isLoading = false,
@@ -27,22 +43,71 @@ export const HorizontalModuleMenu = ({
 }: HorizontalModuleMenuProps) => {
   const location = useLocation()
   const containerRef = useRef<HTMLDivElement>(null)
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-
+  const desktopNavRef = useRef<HTMLElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
+  const moreButtonRef = useRef<HTMLButtonElement>(null)
+  const morePanelRef = useRef<HTMLDivElement>(null)
   const sortedMenus = useMemo(() => sortMenuTree(menus), [menus])
+  const menuGroupIds = useMemo(() => collectMenuGroupIds(sortedMenus), [sortedMenus])
   const activeMenuItemId = useMemo(
     () => findBestMenuItem(sortedMenus, location.pathname)?.id ?? null,
     [location.pathname, sortedMenus],
   )
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const [collapsedMenuIds, setCollapsedMenuIds] = useState<Set<string>>(
+    () => new Set(menuGroupIds),
+  )
+  const initializedCollapsedMenusRef = useRef(sortedMenus.length > 0)
+  const [visibleRootCount, setVisibleRootCount] = useState(sortedMenus.length)
+  const visibleMenus = sortedMenus.slice(0, visibleRootCount)
+  const overflowMenus = sortedMenus.slice(visibleRootCount)
+  const isOverflowMenuActive = overflowMenus.some((item) =>
+    containsMenuItem(item, activeMenuItemId),
+  )
+  const toggleMenuGroup = useCallback((menuId: string) => {
+    setCollapsedMenuIds((current) => {
+      const next = new Set(current)
+      if (next.has(menuId)) {
+        next.delete(menuId)
+      } else {
+        next.add(menuId)
+      }
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!sortedMenus.length) {
+      if (initializedCollapsedMenusRef.current) {
+        initializedCollapsedMenusRef.current = false
+        setCollapsedMenuIds(new Set())
+      }
+      return
+    }
+
+    if (initializedCollapsedMenusRef.current) return
+
+    setCollapsedMenuIds(new Set(menuGroupIds))
+    initializedCollapsedMenusRef.current = true
+  }, [menuGroupIds, sortedMenus.length])
+
+  useEffect(() => {
+    if (overflowMenus.length === 0) setIsMoreOpen(false)
+    if (openMenuId && sortedMenus.slice(visibleRootCount).some((item) => item.id === openMenuId)) {
+      setOpenMenuId(null)
+    }
+  }, [openMenuId, overflowMenus.length, sortedMenus, visibleRootCount])
 
   useEffect(() => {
     setOpenMenuId(null)
     setIsMobileMenuOpen(false)
+    setIsMoreOpen(false)
   }, [location.pathname])
 
   useEffect(() => {
-    if (!openMenuId) return
+    if (!openMenuId && !isMoreOpen) return
 
     const handleMouseDown = (event: MouseEvent) => {
       const target = event.target
@@ -56,12 +121,17 @@ export const HorizontalModuleMenu = ({
         !containerRef.current.contains(event.target as Node)
       ) {
         setOpenMenuId(null)
+        setIsMoreOpen(false)
       }
     }
 
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setOpenMenuId(null)
+        if (isMoreOpen) {
+          setIsMoreOpen(false)
+          window.requestAnimationFrame(() => moreButtonRef.current?.focus())
+        }
       }
     }
 
@@ -72,12 +142,86 @@ export const HorizontalModuleMenu = ({
       document.removeEventListener('mousedown', handleMouseDown)
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [openMenuId])
+  }, [isMoreOpen, openMenuId])
+
+  useEffect(() => {
+    if (!isMoreOpen) return
+
+    const focusFrame = window.requestAnimationFrame(() => {
+      morePanelRef.current?.querySelector<HTMLElement>('[role="menuitem"]')?.focus()
+    })
+
+    return () => window.cancelAnimationFrame(focusFrame)
+  }, [isMoreOpen])
+
+  useLayoutEffect(() => {
+    const nav = desktopNavRef.current
+    const measure = measureRef.current
+    if (!nav || !measure) return
+
+    let frame = 0
+    const recalculate = () => {
+      const availableWidth = nav.getBoundingClientRect().width
+      const measuredItems = Array.from(
+        measure.querySelectorAll<HTMLElement>('[data-measured-root-item="true"]'),
+      )
+      const moreItem = measure.querySelector<HTMLElement>('[data-measured-more="true"]')
+
+      if (availableWidth <= 0 || measuredItems.length !== sortedMenus.length || !moreItem) {
+        setVisibleRootCount((current) =>
+          current === sortedMenus.length ? current : sortedMenus.length,
+        )
+        return
+      }
+
+      const itemWidths = measuredItems.map((item) => item.getBoundingClientRect().width)
+      const moreWidth = moreItem.getBoundingClientRect().width
+      const gap = 2
+      const totalWidth = itemWidths.reduce((total, width) => total + width, 0) +
+        Math.max(0, itemWidths.length - 1) * gap
+
+      let nextVisibleCount = itemWidths.length
+      if (totalWidth > availableWidth) {
+        nextVisibleCount = 0
+        let visibleWidth = 0
+
+        for (const itemWidth of itemWidths) {
+          const nextWidth = visibleWidth + (nextVisibleCount > 0 ? gap : 0) + itemWidth
+          if (nextWidth + gap + moreWidth > availableWidth) break
+          visibleWidth = nextWidth
+          nextVisibleCount += 1
+        }
+      }
+
+      setVisibleRootCount((current) =>
+        current === nextVisibleCount ? current : nextVisibleCount,
+      )
+    }
+    const scheduleRecalculation = () => {
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(recalculate)
+    }
+
+    const observer = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(scheduleRecalculation)
+    observer?.observe(nav)
+    observer?.observe(measure)
+    window.addEventListener('resize', scheduleRecalculation)
+    recalculate()
+
+    return () => {
+      window.cancelAnimationFrame(frame)
+      observer?.disconnect()
+      window.removeEventListener('resize', scheduleRecalculation)
+    }
+  }, [error, isLoading, sortedMenus])
 
   useEffect(() => {
     const handleViewportResize = () => {
       if (window.innerWidth < 1280) {
         setOpenMenuId(null)
+        setIsMoreOpen(false)
       } else {
         setIsMobileMenuOpen(false)
       }
@@ -130,22 +274,110 @@ export const HorizontalModuleMenu = ({
     <div className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
       <div ref={containerRef} className="mx-auto w-full max-w-screen-2xl px-4 lg:px-8">
         <nav
+          ref={desktopNavRef}
           aria-label="Navegación principal"
-          className="hidden min-h-11 items-center overflow-x-auto xl:flex"
+          className="relative hidden min-h-11 min-w-0 items-center xl:flex"
         >
-          <div className="mx-auto flex min-w-max items-center gap-0.5 py-1">
+          <div className="flex w-full min-w-0 items-center py-1">
+            <div className="flex min-w-0 items-center gap-0.5">
+              {visibleMenus.map((item) => (
+                <DesktopRootItem
+                  key={item.id}
+                  item={item}
+                  activeMenuItemId={activeMenuItemId}
+                  isOpen={openMenuId === item.id}
+                  onToggle={() => {
+                    setIsMoreOpen(false)
+                    setOpenMenuId((current) => (current === item.id ? null : item.id))
+                  }}
+                  onClose={() => setOpenMenuId(null)}
+                />
+              ))}
+            </div>
+            {overflowMenus.length > 0 ? (
+              <div className="relative ml-auto shrink-0 pl-0.5">
+                <button
+                  ref={moreButtonRef}
+                  type="button"
+                  onClick={() => {
+                    setOpenMenuId(null)
+                    setIsMoreOpen((open) => !open)
+                  }}
+                  className={getRootItemClasses(isOverflowMenuActive, isMoreOpen)}
+                  aria-haspopup="menu"
+                  aria-expanded={isMoreOpen}
+                  aria-controls="desktop-overflow-menu"
+                >
+                  <MoreHorizontal className="h-4 w-4" aria-hidden="true" />
+                  <span>Más</span>
+                  <ChevronDownIcon
+                    className={`h-3.5 w-3.5 transition-transform motion-reduce:transition-none ${
+                      isMoreOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+                {isMoreOpen ? (
+                  <div
+                    ref={morePanelRef}
+                    id="desktop-overflow-menu"
+                    role="menu"
+                    aria-label="Más opciones de navegación"
+                    data-top-navigation-dropdown="true"
+                    className="absolute right-0 top-full z-50 mt-1 max-h-[min(70vh,32rem)] w-80 max-w-[calc(100vw-2rem)] overflow-y-auto overscroll-contain rounded-lg border border-slate-200 bg-white p-2 shadow-lg ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-950"
+                  >
+                    {overflowMenus.map((item) => item.children.length > 0 ? (
+                      <section key={item.id} className="border-b border-slate-100 py-1 last:border-0 dark:border-slate-800">
+                        <div className="flex items-center gap-2 px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                          {item.icon ? <MenuIcon iconName={item.icon} className="h-4 w-4" /> : null}
+                          <span>{item.title}</span>
+                        </div>
+                        <DesktopMenuEntries
+                          items={item.children}
+                          activeMenuItemId={activeMenuItemId}
+                          onClose={() => setIsMoreOpen(false)}
+                          depth={0}
+                        />
+                      </section>
+                    ) : (
+                      <NavLink
+                        key={item.id}
+                        to={item.route ?? '/'}
+                        end={item.route === '/'}
+                        role="menuitem"
+                        onClick={() => setIsMoreOpen(false)}
+                        className={getMenuEntryClasses(item.id === activeMenuItemId)}
+                      >
+                        {item.icon ? <MenuIcon iconName={item.icon} className="h-4 w-4 shrink-0" /> : null}
+                        <span className="min-w-0 truncate">{item.title}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          <div
+            ref={measureRef}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-0 top-0 flex w-max items-center gap-0.5"
+            style={{ visibility: 'hidden' }}
+          >
             {sortedMenus.map((item) => (
-              <DesktopRootItem
+              <span
                 key={item.id}
-                item={item}
-                activeMenuItemId={activeMenuItemId}
-                isOpen={openMenuId === item.id}
-                onToggle={() =>
-                  setOpenMenuId((current) => (current === item.id ? null : item.id))
-                }
-                onClose={() => setOpenMenuId(null)}
-              />
+                data-measured-root-item="true"
+                className={getRootItemClasses(false)}
+              >
+                {item.icon ? <MenuIcon iconName={item.icon} className="h-4 w-4" /> : null}
+                <span>{item.title}</span>
+                {item.children.length > 0 ? <ChevronDownIcon className="h-3.5 w-3.5" /> : null}
+              </span>
             ))}
+            <span data-measured-more="true" className={getRootItemClasses(false)}>
+              <MoreHorizontal className="h-4 w-4" />
+              <span>Más</span>
+              <ChevronDownIcon className="h-3.5 w-3.5" />
+            </span>
           </div>
         </nav>
 
@@ -177,6 +409,8 @@ export const HorizontalModuleMenu = ({
                   key={item.id}
                   item={item}
                   activeMenuItemId={activeMenuItemId}
+                  collapsedMenuIds={collapsedMenuIds}
+                  onToggleGroup={toggleMenuGroup}
                   onClose={() => setIsMobileMenuOpen(false)}
                 />
               ))}
@@ -377,7 +611,7 @@ const DesktopMenuEntries = ({
             ].join(' ')}
           >
             <div
-              className="px-2 pt-1 pb-1 text-xs font-semibold normal-case text-slate-700 dark:text-slate-200"
+              className="px-2 pb-1 pt-1 text-xs font-semibold normal-case text-slate-700 dark:text-slate-200"
             >
               {item.title}
             </div>
@@ -423,10 +657,14 @@ const DesktopMenuEntries = ({
 const MobileRootItem = ({
   item,
   activeMenuItemId,
+  collapsedMenuIds,
+  onToggleGroup,
   onClose,
 }: {
   item: MenuItemTreeDto
   activeMenuItemId: string | null
+  collapsedMenuIds: Set<string>
+  onToggleGroup: (menuId: string) => void
   onClose: () => void
 }) => {
   const isActive = containsMenuItem(item, activeMenuItemId)
@@ -445,24 +683,42 @@ const MobileRootItem = ({
     )
   }
 
+  const isExpanded = !collapsedMenuIds.has(item.id)
+
   return (
     <section>
-      <div
+      <button
+        type="button"
+        onClick={() => onToggleGroup(item.id)}
         className={[
-          'px-2 pb-1 text-xs font-semibold uppercase tracking-[0.08em]',
+          'flex w-full items-center justify-between gap-2 px-2 pb-1 text-left text-xs font-semibold uppercase tracking-[0.08em]',
           isActive ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500 dark:text-slate-400',
         ].join(' ')}
+        aria-expanded={isExpanded}
+        aria-controls={`mobile-group-${item.id}`}
       >
-        {item.title}
-      </div>
-      <div className="space-y-0.5 pl-2">
-        <MobileMenuEntries
-          items={item.children}
-          activeMenuItemId={activeMenuItemId}
-          onClose={onClose}
-          depth={0}
+        <span className="flex min-w-0 items-center gap-2">
+          {item.icon ? <MenuIcon iconName={item.icon} className="h-4 w-4 shrink-0" /> : null}
+          <span className="truncate">{item.title}</span>
+        </span>
+        <ChevronDownIcon
+          className={`h-3.5 w-3.5 shrink-0 transition-transform motion-reduce:transition-none ${
+            isExpanded ? '' : '-rotate-90'
+          }`}
         />
-      </div>
+      </button>
+      {isExpanded ? (
+        <div id={`mobile-group-${item.id}`} className="space-y-0.5 pl-2">
+          <MobileMenuEntries
+            items={item.children}
+            activeMenuItemId={activeMenuItemId}
+            collapsedMenuIds={collapsedMenuIds}
+            onToggleGroup={onToggleGroup}
+            onClose={onClose}
+            depth={0}
+          />
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -470,17 +726,22 @@ const MobileRootItem = ({
 const MobileMenuEntries = ({
   items,
   activeMenuItemId,
+  collapsedMenuIds,
+  onToggleGroup,
   onClose,
   depth,
 }: {
   items: MenuItemTreeDto[]
   activeMenuItemId: string | null
+  collapsedMenuIds: Set<string>
+  onToggleGroup: (menuId: string) => void
   onClose: () => void
   depth: number
 }) => (
   <>
     {items.map((item) => {
       const isActive = item.id === activeMenuItemId
+      const isExpanded = !collapsedMenuIds.has(item.id)
 
       if (item.children.length > 0) {
         return (
@@ -488,17 +749,32 @@ const MobileMenuEntries = ({
             key={item.id}
             className={depth > 0 ? 'space-y-0.5 pt-2' : 'space-y-0.5 pt-1'}
           >
-            <div className="px-2 py-1 text-xs font-semibold normal-case text-slate-700 dark:text-slate-200">
-              {item.title}
-            </div>
-            <div className="space-y-0.5 pl-2">
-              <MobileMenuEntries
-                items={item.children}
-                activeMenuItemId={activeMenuItemId}
-                onClose={onClose}
-                depth={depth + 1}
+            <button
+              type="button"
+              onClick={() => onToggleGroup(item.id)}
+              className="flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs font-semibold normal-case text-slate-700 dark:text-slate-200"
+              aria-expanded={isExpanded}
+              aria-controls={`mobile-group-${item.id}`}
+            >
+              <span className="truncate">{item.title}</span>
+              <ChevronDownIcon
+                className={`h-3.5 w-3.5 shrink-0 transition-transform motion-reduce:transition-none ${
+                  isExpanded ? '' : '-rotate-90'
+                }`}
               />
-            </div>
+            </button>
+            {isExpanded ? (
+              <div id={`mobile-group-${item.id}`} className="space-y-0.5 pl-2">
+                <MobileMenuEntries
+                  items={item.children}
+                  activeMenuItemId={activeMenuItemId}
+                  collapsedMenuIds={collapsedMenuIds}
+                  onToggleGroup={onToggleGroup}
+                  onClose={onClose}
+                  depth={depth + 1}
+                />
+              </div>
+            ) : null}
           </section>
         )
       }

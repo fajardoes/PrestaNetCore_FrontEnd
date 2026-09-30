@@ -26,6 +26,9 @@ import { useLoanApplicationScoringHistory } from '@/presentation/features/loans/
 import { useLoanApplicationMutations } from '@/presentation/features/loans/applications/hooks/use-loan-application-mutations'
 import { useLoanApplicationOptions } from '@/presentation/features/loans/applications/hooks/use-loan-application-options'
 import { useLoanApplicationAnticipatedInstallment } from '@/presentation/features/loans/applications/hooks/use-loan-application-anticipated-installment'
+import { useGeneratedDocuments } from '@/presentation/features/documents/generated-documents/hooks/use-generated-documents'
+import { GeneratedDocumentsPanel } from '@/presentation/features/documents/generated-documents/components/generated-documents-panel'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 import { MessageModal } from '@/presentation/share/components/message-modal'
 import { FilePreviewModal } from '@/presentation/share/components/file-preview-modal'
 import type { LoanApplicationAllowedAction } from '@/infrastructure/loans/responses/loan-application-actions-response'
@@ -71,6 +74,14 @@ interface FeedbackState {
 export const LoanApplicationDetailPage = () => {
   const { id = '' } = useParams()
   const navigate = useNavigate()
+  const { hasPermission } = useUserPermissions()
+  const canReadGeneratedDocuments = hasPermission('documents.generated.read')
+  const canDownloadGeneratedDocuments = hasPermission('documents.generated.download')
+  const canRetryGeneratedDocuments = hasPermission('documents.generated.retry')
+  const generatedDocuments = useGeneratedDocuments({
+    enabled: Boolean(id) && canReadGeneratedDocuments,
+    loanApplicationId: id,
+  })
   const options = useLoanApplicationOptions()
   const { state: businessDateState } = useBusinessDate()
   const { holidays } = useHolidays()
@@ -82,6 +93,7 @@ export const LoanApplicationDetailPage = () => {
     application,
     collaterals,
     allowedActions,
+    blockedActions,
     isLoading,
     error,
     actionsError,
@@ -153,6 +165,9 @@ export const LoanApplicationDetailPage = () => {
   const [workflowInputError, setWorkflowInputError] = useState<string | null>(null)
   const workflowInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [preview, setPreview] = useState<LoanSchedulePreviewResponse | null>(null)
+  const [pendingFirstDueDate, setPendingFirstDueDate] = useState<string | null>(null)
+  const [shouldPersistPreviewFirstDueDate, setShouldPersistPreviewFirstDueDate] = useState(false)
+  const automaticFirstDueDateRequestRef = useRef<string | null>(null)
   const [autoPreviewRequestedForId, setAutoPreviewRequestedForId] = useState<string | null>(null)
   const [paymentPlanOpen, setPaymentPlanOpen] = useState(false)
   const [reportOpen, setReportOpen] = useState(false)
@@ -174,6 +189,9 @@ export const LoanApplicationDetailPage = () => {
     void loadById(id)
     void loadFeesByApplicationId(id)
     setPreview(null)
+    setPendingFirstDueDate(null)
+    setShouldPersistPreviewFirstDueDate(false)
+    automaticFirstDueDateRequestRef.current = null
     setAutoPreviewRequestedForId(null)
     setScoringTab('current')
     setScoringHistoryLoadedForKey(null)
@@ -220,6 +238,9 @@ export const LoanApplicationDetailPage = () => {
     application?.returnedToDraftOperationalDate ?? '',
   ].join(':')
   const canPreview = hasAction('preview_schedule')
+  const requiresProductConditionsReview = Boolean(
+    application?.productConditionsStale || application?.productConditionsReviewRequired,
+  )
   const canGenerateScoring = !isDraftApplication && hasAction('generate_scoring')
   const canSetFirstDueDate = hasAction('set_first_due_date')
   const canSetRate = hasAction('set_rate')
@@ -275,6 +296,8 @@ export const LoanApplicationDetailPage = () => {
 
   const generatePaymentPlan = async (values?: LoanSchedulePreviewFormValues) => {
     if (!canPreview) return
+    const usesPlanDefaultFirstDueDate = !values?.firstDueDateOverride && !application?.firstDueDate
+    setShouldPersistPreviewFirstDueDate(false)
     const result = await previewSchedule(id, {
       paymentFrequencyIdOverride: values?.paymentFrequencyIdOverride || null,
       firstDueDateOverride: values?.firstDueDateOverride || null,
@@ -287,6 +310,7 @@ export const LoanApplicationDetailPage = () => {
     })
     if (result.success) {
       setPreview(result.data)
+      setShouldPersistPreviewFirstDueDate(usesPlanDefaultFirstDueDate)
       return
     }
     setFeedback({
@@ -296,8 +320,60 @@ export const LoanApplicationDetailPage = () => {
     })
   }
 
+  const planFirstDueDate = preview?.installments[0]?.dueDateOriginal ?? null
+  const hasPendingFirstDueDateChange =
+    pendingFirstDueDate !== null && pendingFirstDueDate !== (application?.firstDueDate ?? '')
+
   useEffect(() => {
-    if (!id || !canPreview) return
+    if (
+      !id ||
+      !application ||
+      application.firstDueDate ||
+      !canSetFirstDueDate ||
+      !shouldPersistPreviewFirstDueDate ||
+      !planFirstDueDate ||
+      hasPendingFirstDueDateChange ||
+      isWorkflowRunning
+    ) {
+      return
+    }
+
+    const requestKey = `${id}:${planFirstDueDate}`
+    if (automaticFirstDueDateRequestRef.current === requestKey) return
+
+    automaticFirstDueDateRequestRef.current = requestKey
+    void (async () => {
+      const result = await setFirstDueDate(id, { firstDueDate: planFirstDueDate })
+      setShouldPersistPreviewFirstDueDate(false)
+
+      if (result.success) {
+        setPendingFirstDueDate(null)
+        setApplication(result.data)
+        await loadById(id)
+        return
+      }
+
+      setFeedback({
+        tone: 'error',
+        title: 'No se pudo registrar la primera fecha de cuota',
+        description: result.error,
+      })
+    })()
+  }, [
+    application,
+    canSetFirstDueDate,
+    hasPendingFirstDueDateChange,
+    id,
+    isWorkflowRunning,
+    loadById,
+    planFirstDueDate,
+    setApplication,
+    setFirstDueDate,
+    shouldPersistPreviewFirstDueDate,
+  ])
+
+  useEffect(() => {
+    if (!id || !application || !canPreview || requiresProductConditionsReview) return
     if (preview || isPreviewLoading) return
     if (autoPreviewRequestedForId === id) return
 
@@ -305,10 +381,12 @@ export const LoanApplicationDetailPage = () => {
     void generatePaymentPlan()
   }, [
     autoPreviewRequestedForId,
+    application?.id,
     canPreview,
     id,
     isPreviewLoading,
     preview,
+    requiresProductConditionsReview,
   ])
 
   if (isLoading) {
@@ -326,7 +404,8 @@ export const LoanApplicationDetailPage = () => {
   const canEdit = hasAction('update_draft')
   const canRefreshProductConditions = hasAction('refresh_product_conditions')
   const canSubmit = hasAction('submit')
-  const canApprove = hasAction('approve')
+  const approveBlocker = blockedActions.find((action) => action.code === 'approve')
+  const canApprove = hasAction('approve') || Boolean(approveBlocker)
   const canDisburse = hasAction('disburse')
   const canGenerateSettlement =
     applicationStatusCode === 'DISBURSED' || Boolean(application.disbursedOperationalDate)
@@ -337,9 +416,6 @@ export const LoanApplicationDetailPage = () => {
   const canPrint = hasAction('print')
   const canAddCollateral = hasAction('add_collateral')
   const canRemoveCollateral = hasAction('remove_collateral')
-  const requiresProductConditionsReview = Boolean(
-    application.productConditionsStale || application.productConditionsReviewRequired,
-  )
   const canManageAnticipatedInstallment = hasAction('manage_anticipated_installment')
   const shouldShowAnticipatedInstallment =
     canViewAnticipatedInstallment || anticipatedInstallment.data !== null
@@ -472,6 +548,11 @@ export const LoanApplicationDetailPage = () => {
         canEdit={canEdit}
         canSubmit={canSubmit}
         canApprove={canApprove}
+        approveBlockedReason={
+          hasPendingFirstDueDateChange
+            ? 'Hay una fecha de primera cuota modificada sin guardar. Guarda la nueva fecha antes de aprobar.'
+            : approveBlocker?.reason ?? null
+        }
         canDisburse={canDisburse}
         canReject={canReject}
         canCancel={canCancel}
@@ -575,13 +656,22 @@ export const LoanApplicationDetailPage = () => {
       {(isDraftApplication || applicationStatusCode === 'SUBMITTED' || Boolean(application.firstDueDate)) ? (
         <LoanApplicationFirstDueDateCard
           firstDueDate={application.firstDueDate}
+          defaultFirstDueDate={
+            application.firstDueDate ?? preview?.installments[0]?.dueDateOriginal ?? null
+          }
           businessDate={businessDateState?.businessDate}
           disabledDates={activeHolidayDates}
           canEdit={canSetFirstDueDate}
           isSaving={isWorkflowRunning}
+          onValueChange={(value) => {
+            setPendingFirstDueDate(
+              value === (application.firstDueDate ?? '') ? null : value,
+            )
+          }}
           onSave={async (firstDueDate) => {
             const result = await setFirstDueDate(id, { firstDueDate })
             if (result.success) {
+              setPendingFirstDueDate(null)
               setApplication(result.data)
               setPreview(null)
               await refreshApplicationState()
@@ -727,6 +817,14 @@ export const LoanApplicationDetailPage = () => {
         />
       )}
 
+      {canReadGeneratedDocuments ? (
+        <GeneratedDocumentsPanel
+          state={generatedDocuments}
+          canDownload={canDownloadGeneratedDocuments}
+          canRetry={canRetryGeneratedDocuments}
+        />
+      ) : null}
+
       <LoanApplicationCollateralsCard
         collaterals={collaterals}
         canAddCollateral={canAddCollateral}
@@ -801,7 +899,8 @@ export const LoanApplicationDetailPage = () => {
             application.requestedRateOverride == null
               ? null
               : mapRateToPercentValue(application.requestedRateOverride),
-          firstDueDateOverride: application.firstDueDate ?? null,
+          firstDueDateOverride:
+            application.firstDueDate ?? preview?.installments[0]?.dueDateOriginal ?? null,
         }}
         termUnitName={application.requestedTermUnitName}
         applicationLabel={application.applicationNo || application.id.slice(0, 8)}

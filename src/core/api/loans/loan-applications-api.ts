@@ -1,4 +1,5 @@
 import { httpClient } from '@/infrastructure/api/httpClient'
+import type { AxiosRequestConfig } from 'axios'
 import type { LoanApplicationApproveRequest } from '@/infrastructure/loans/requests/loan-application-approve-request'
 import type { LoanApplicationCancelRequest } from '@/infrastructure/loans/requests/loan-application-cancel-request'
 import type { LoanApplicationCollateralAddRequest } from '@/infrastructure/loans/requests/loan-application-collateral-add-request'
@@ -21,7 +22,10 @@ import type {
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
 import type { LoanApplicationCreditScoreHistoryItemResponse } from '@/infrastructure/loans/responses/loan-application-credit-score-history-item.response'
 import type { LoanApplicationCreditScoreResponse } from '@/infrastructure/loans/responses/loan-application-credit-score.response'
-import type { LoanApplicationActionsResponse } from '@/infrastructure/loans/responses/loan-application-actions-response'
+import type {
+  LoanApplicationActionsResponse,
+  LoanApplicationListActionsResponse,
+} from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationReportResponse } from '@/infrastructure/loans/responses/loan-application-report-response'
 import type { LoanApplicationFeeResponse } from '@/infrastructure/loans/responses/loan-application-fee-response'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
@@ -206,9 +210,23 @@ export const returnLoanApplicationToDraft = async (
 
 export const getLoanApplicationActions = async (
   id: string,
+  requestConfig?: AxiosRequestConfig,
 ): Promise<LoanApplicationActionsResponse> => {
   const { data } = await httpClient.get<LoanApplicationActionsResponse>(
     `${basePath}/${id}/actions`,
+    requestConfig,
+  )
+  return data
+}
+
+export const getLoanApplicationListActions = async (
+  ids: string[],
+  requestConfig?: AxiosRequestConfig,
+): Promise<LoanApplicationListActionsResponse> => {
+  const { data } = await httpClient.post<LoanApplicationListActionsResponse>(
+    `${basePath}/actions/batch`,
+    { loanApplicationIds: ids },
+    requestConfig,
   )
   return data
 }

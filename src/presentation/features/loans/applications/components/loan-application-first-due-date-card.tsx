@@ -5,26 +5,30 @@ import { formatDate } from '@/presentation/features/loans/applications/component
 
 interface LoanApplicationFirstDueDateCardProps {
   firstDueDate?: string | null
+  defaultFirstDueDate?: string | null
   businessDate?: string | null
   disabledDates?: string[]
   canEdit: boolean
   isSaving?: boolean
+  onValueChange?: (value: string) => void
   onSave: (firstDueDate: string) => Promise<void> | void
 }
 
 export const LoanApplicationFirstDueDateCard = ({
   firstDueDate,
+  defaultFirstDueDate,
   businessDate,
   disabledDates = [],
   canEdit,
   isSaving = false,
+  onValueChange,
   onSave,
 }: LoanApplicationFirstDueDateCardProps) => {
-  const [value, setValue] = useState(firstDueDate ?? '')
+  const [value, setValue] = useState(firstDueDate ?? defaultFirstDueDate ?? '')
 
   useEffect(() => {
-    setValue(firstDueDate ?? '')
-  }, [firstDueDate])
+    setValue(firstDueDate ?? defaultFirstDueDate ?? '')
+  }, [defaultFirstDueDate, firstDueDate])
 
   const hasChanged = value !== (firstDueDate ?? '')
 
@@ -40,9 +44,9 @@ export const LoanApplicationFirstDueDateCard = ({
             El sistema ajustará el cobro si coincide con un día no hábil.
           </p>
         </div>
-        {!canEdit && firstDueDate ? (
+        {firstDueDate ? (
           <span className="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-200">
-            Definida: {formatDate(firstDueDate)}
+            Registrada: {formatDate(firstDueDate)}
           </span>
         ) : null}
       </div>
@@ -54,13 +58,22 @@ export const LoanApplicationFirstDueDateCard = ({
           </label>
           <DatePicker
             value={value}
-            onChange={setValue}
+            onChange={(nextValue) => {
+              setValue(nextValue)
+              onValueChange?.(nextValue)
+            }}
             allowFutureDates
             referenceDate={businessDate}
             disableSundays
             disabledDates={disabledDates}
             disabled={!canEdit || isSaving || !businessDate}
           />
+          {!firstDueDate && defaultFirstDueDate ? (
+            <p className="text-xs text-sky-700 dark:text-sky-300">
+              Sugerida por el plan de pagos: {formatDate(defaultFirstDueDate)}. Confírmala y
+              guárdala para utilizarla en el flujo de aprobación.
+            </p>
+          ) : null}
         </div>
         {canEdit ? (
           <button

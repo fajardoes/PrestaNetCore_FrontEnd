@@ -45,7 +45,7 @@ const eventLabel = (event: GeneratedDocumentEventDto) => {
     case 'CREATED_PENDING': return 'Intención creada'
     case 'RENDER_STARTED': return 'Generación iniciada'
     case 'GENERATED': return 'PDF generado y almacenado'
-    case 'RETRY_REQUESTED': return 'Retry técnico solicitado'
+    case 'RETRY_REQUESTED': return 'Reintento técnico solicitado'
     case 'FAILED': return 'Generación fallida'
     case 'DOWNLOADED': return 'PDF oficial consultado/descargado'
     case 'VOIDED': return 'Documento anulado'
@@ -93,9 +93,22 @@ export const GeneratedDocumentsPanel = ({
       {state.error ? <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-200">{state.error}</p> : null}
       {state.actionError ? <p role="status" className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-200">{state.actionError}</p> : null}
 
-      <TableContainer mode="legacy-compact" variant="strong">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[850px] text-left">
+      {state.items.length === 0 ? (
+        state.isLoading ? (
+          <p role="status" className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+            Cargando historial documental…
+          </p>
+        ) : state.error ? null : (
+          <p role="status" className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+            {state.status === 'ALL'
+              ? 'No hay documentos oficiales para este expediente.'
+              : `No hay documentos oficiales con estado “${statusLabels[state.status]}”. Puedes actualizar el historial o elegir otro estado.`}
+          </p>
+        )
+      ) : (
+        <TableContainer mode="legacy-compact" variant="strong">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[850px] text-left">
             <thead>
               <tr className="text-slate-700 dark:text-slate-200">
                 <th scope="col">Documento</th>
@@ -108,11 +121,7 @@ export const GeneratedDocumentsPanel = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-              {state.isLoading && state.items.length === 0 ? (
-                <tr><td colSpan={7} className="px-3 py-8 text-center text-sm text-slate-500 dark:text-slate-400">Cargando historial documental…</td></tr>
-              ) : state.items.length === 0 ? (
-                <tr><td colSpan={7} className="px-3 py-8 text-center text-sm text-slate-500 dark:text-slate-400">No hay documentos oficiales para este expediente.</td></tr>
-              ) : state.items.map((item) => (
+              {state.items.map((item) => (
                 <tr key={item.id} className="text-slate-800 dark:text-slate-200">
                   <td>
                     <div className="font-medium">{item.documentTypeName}</div>
@@ -156,18 +165,19 @@ export const GeneratedDocumentsPanel = ({
               ))}
             </tbody>
           </table>
-        </div>
-        <TablePagination
-          page={state.page}
-          totalPages={totalPages}
-          onPageChange={state.setPage}
-          label={`${state.totalCount} documentos · página`}
-          pageSize={state.pageSize}
-          pageSizeOptions={[10, 25, 50]}
-          onPageSizeChange={state.setPageSize}
-          pageSizeLabel="Filas:"
-        />
-      </TableContainer>
+          </div>
+          <TablePagination
+            page={state.page}
+            totalPages={totalPages}
+            onPageChange={state.setPage}
+            label={`${state.totalCount} documentos · página`}
+            pageSize={state.pageSize}
+            pageSizeOptions={[10, 25, 50]}
+            onPageSizeChange={state.setPageSize}
+            pageSizeLabel="Filas:"
+          />
+        </TableContainer>
+      )}
 
       {state.selectedDocument ? (
         <DocumentHistoryDialog
@@ -239,7 +249,7 @@ const DocumentHistoryDialog = ({
           Los datos utilizados por esta generación eran insuficientes. Requiere una nueva generación después de corregir la información.
         </p>
       ) : document.canRetry && canRetryPermission ? (
-        <p className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-200">Reintento técnico disponible. Se reutilizarán los snapshots congelados.</p>
+        <p className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-200">Reintento técnico disponible. Se reutilizarán los datos congelados de esta generación.</p>
       ) : null}
 
       <div className="mt-5">

@@ -35,7 +35,7 @@ export const LoanApplicationScoringScoreCard = ({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            Score principal
+            Puntaje general
           </p>
           <p className="mt-2 text-4xl font-bold leading-none text-slate-950 dark:text-white">
             {formatLoanApplicationScore(scoreValue)}

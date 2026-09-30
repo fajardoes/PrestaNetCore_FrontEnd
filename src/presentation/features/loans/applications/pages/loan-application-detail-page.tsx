@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { LoanApplicationReport } from '@/presentation/components/reports/loans/loan-application-report'
 import { PdfViewerDialog } from '@/presentation/components/reports/pdf-viewer-dialog'
 import { ConfirmModal } from '@/presentation/features/loans/products/components/confirm-modal'
@@ -8,6 +9,8 @@ import { LoanApplicationCollateralsCard } from '@/presentation/features/loans/ap
 import { LoanApplicationScoringModal } from '@/presentation/features/loans/applications/components/loan-application-scoring-modal'
 import { LoanApplicationFeesCard } from '@/presentation/features/loans/applications/components/loan-application-fees-card'
 import { LoanApplicationHeaderCard } from '@/presentation/features/loans/applications/components/loan-application-header-card'
+import { LoanApplicationFinancialSummary } from '@/presentation/features/loans/applications/components/loan-application-financial-summary'
+import { LoanApplicationReviewPanel } from '@/presentation/features/loans/applications/components/loan-application-review-panel'
 import { LoanApplicationPaymentPlanModal } from '@/presentation/features/loans/applications/components/loan-application-payment-plan-modal'
 import { LoanApplicationRequestedDataCard } from '@/presentation/features/loans/applications/components/loan-application-requested-data-card'
 import { LoanApplicationFirstDueDateCard } from '@/presentation/features/loans/applications/components/loan-application-first-due-date-card'
@@ -166,6 +169,7 @@ export const LoanApplicationDetailPage = () => {
   const workflowInputRef = useRef<HTMLTextAreaElement | null>(null)
   const [preview, setPreview] = useState<LoanSchedulePreviewResponse | null>(null)
   const [pendingFirstDueDate, setPendingFirstDueDate] = useState<string | null>(null)
+  const [hasPendingRateChange, setHasPendingRateChange] = useState(false)
   const [shouldPersistPreviewFirstDueDate, setShouldPersistPreviewFirstDueDate] = useState(false)
   const automaticFirstDueDateRequestRef = useRef<string | null>(null)
   const [autoPreviewRequestedForId, setAutoPreviewRequestedForId] = useState<string | null>(null)
@@ -183,6 +187,9 @@ export const LoanApplicationDetailPage = () => {
     minNominalRate: number
     maxNominalRate: number
   } | null>(null)
+  const handleRateDirtyChange = useCallback((isDirty: boolean) => {
+    setHasPendingRateChange(isDirty)
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -190,6 +197,7 @@ export const LoanApplicationDetailPage = () => {
     void loadFeesByApplicationId(id)
     setPreview(null)
     setPendingFirstDueDate(null)
+    setHasPendingRateChange(false)
     setShouldPersistPreviewFirstDueDate(false)
     automaticFirstDueDateRequestRef.current = null
     setAutoPreviewRequestedForId(null)
@@ -231,6 +239,13 @@ export const LoanApplicationDetailPage = () => {
   const hasAction = (action: LoanApplicationAllowedAction) => allowedActions.includes(action)
   const applicationStatusCode = (application?.statusCode ?? '').trim().toUpperCase()
   const isDraftApplication = applicationStatusCode === 'DRAFT'
+
+  useEffect(() => {
+    if (applicationStatusCode !== 'SUBMITTED') {
+      setHasPendingRateChange(false)
+    }
+  }, [applicationStatusCode])
+
   const scoringRefreshKey = [
     id,
     applicationStatusCode,
@@ -406,6 +421,24 @@ export const LoanApplicationDetailPage = () => {
   const canSubmit = hasAction('submit')
   const approveBlocker = blockedActions.find((action) => action.code === 'approve')
   const canApprove = hasAction('approve') || Boolean(approveBlocker)
+  const approvalBlockers = [
+    hasPendingFirstDueDateChange
+      ? {
+          message: 'La primera fecha de cuota se modificó y todavía no se ha guardado.',
+          field: 'date' as const,
+        }
+      : null,
+    hasPendingRateChange
+      ? {
+          message: 'La tasa nominal se modificó y todavía no se ha guardado.',
+          field: 'rate' as const,
+        }
+      : null,
+    approveBlocker?.reason || approveBlocker?.label
+      ? { message: approveBlocker.reason || approveBlocker.label }
+      : null,
+  ].filter((blocker): blocker is { message: string; field?: 'rate' | 'date' } => Boolean(blocker))
+  const approveBlockedReason = approvalBlockers.map((blocker) => blocker.message).join(' ')
   const canDisburse = hasAction('disburse')
   const canGenerateSettlement =
     applicationStatusCode === 'DISBURSED' || Boolean(application.disbursedOperationalDate)
@@ -453,6 +486,16 @@ export const LoanApplicationDetailPage = () => {
   const openScoringModal = (tab: ScoringTab) => {
     setScoringTab(tab)
     setScoringModalOpen(true)
+  }
+
+  const focusPendingField = (field: 'rate' | 'date') => {
+    const target = document.getElementById(
+      field === 'rate'
+        ? 'loan-application-rate-input'
+        : 'loan-application-first-due-date-input',
+    )
+    target?.scrollIntoView({ behavior: 'auto', block: 'center' })
+    target?.focus({ preventScroll: true })
   }
 
   const openPrintPreview = async () => {
@@ -543,16 +586,21 @@ export const LoanApplicationDetailPage = () => {
 
   return (
     <div className="space-y-3">
+      <button
+        type="button"
+        className="inline-flex min-h-8 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium text-slate-600 transition hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-600 dark:text-slate-300 dark:hover:text-slate-100"
+        onClick={() => navigate('/loans/applications')}
+      >
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Volver al listado
+      </button>
+
       <LoanApplicationHeaderCard
         application={application}
         canEdit={canEdit}
         canSubmit={canSubmit}
         canApprove={canApprove}
-        approveBlockedReason={
-          hasPendingFirstDueDateChange
-            ? 'Hay una fecha de primera cuota modificada sin guardar. Guarda la nueva fecha antes de aprobar.'
-            : approveBlocker?.reason ?? null
-        }
+        approveBlockedReason={approveBlockedReason || null}
         canDisburse={canDisburse}
         canReject={canReject}
         canCancel={canCancel}
@@ -564,11 +612,6 @@ export const LoanApplicationDetailPage = () => {
         isProcessingWorkflow={isWorkflowRunning}
         isPrinting={isReportLoading}
         isSettlementLoading={settlementReport.isLoading}
-        onOpenFinancialProfile={() =>
-          navigate(`/loans/applications/${application.id}/financial-profile`, {
-            state: { returnTo: `/loans/applications/${application.id}` },
-          })
-        }
         onOpenPaymentPlan={() => {
           setPaymentPlanOpen(true)
           void generatePaymentPlan()
@@ -594,254 +637,284 @@ export const LoanApplicationDetailPage = () => {
         </div>
       ) : null}
 
-      <LoanApplicationRequestedDataCard application={application} />
+      <LoanApplicationFinancialSummary
+        application={application}
+        productNominalRate={productRateRange?.nominalRate}
+      />
 
-      {applicationStatusCode === 'SUBMITTED' ? (
-        <LoanApplicationRateCard
-          currentRate={application.requestedRateOverride}
-          productNominalRate={productRateRange?.nominalRate}
-          minRate={productRateRange?.minNominalRate}
-          maxRate={productRateRange?.maxNominalRate}
-          canEdit={canSetRate}
-          isSaving={isWorkflowRunning}
-          onSave={async (rate) => {
-            const result = await setRate(id, { requestedRateOverride: rate })
-            if (result.success) {
-              setApplication(result.data)
-              setPreview(null)
-              if (canPreview) {
-                await generatePaymentPlan()
-              }
-              setFeedback({
-                tone: 'success',
-                title: 'Tasa nominal guardada',
-                description: rate == null
-                  ? 'La solicitud volverá a utilizar la tasa nominal del producto.'
-                  : 'La tasa nominal manual quedó registrada y será utilizada en el plan de pagos y el préstamo.',
+      <div className="grid min-w-0 grid-cols-1 gap-3 xl:grid-cols-[minmax(0,2fr)_minmax(16rem,1fr)]">
+        <aside className="order-1 min-w-0 xl:order-2 xl:col-start-2 xl:row-start-1">
+          <LoanApplicationReviewPanel
+            application={application}
+            canApprove={canApprove}
+            isApprovalAllowed={hasAction('approve')}
+            blockers={approvalBlockers}
+            onOpenFinancialProfile={() =>
+              navigate(`/loans/applications/${application.id}/financial-profile`, {
+                state: { returnTo: `/loans/applications/${application.id}` },
               })
-              return
             }
-            setFeedback({
-              tone: 'error',
-              title: 'No se pudo guardar la tasa nominal',
-              description: result.error,
-            })
-          }}
-        />
-      ) : null}
+            onFocusPendingField={focusPendingField}
+          />
+        </aside>
 
-      {requiresProductConditionsReview && applicationStatusCode !== 'DISBURSED' ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
-          <p>
-            {application.productConditionsReviewRequired
-              ? 'Esta solicitud fue registrada antes de activar el control de condiciones del producto.'
-              : 'El producto fue actualizado después de registrar esta solicitud. Sus condiciones comerciales permanecen congeladas para conservar la trazabilidad.'}
-            {isDraftApplication
-              ? ' Revisa y refresca las condiciones antes de enviarla.'
-              : ' Devuélvela a borrador para revisarlas y volver a enviarla.'}
-          </p>
-          {isDraftApplication && canRefreshProductConditions ? (
-            <button
-              type="button"
-              className="btn-secondary px-2.5 py-1 text-xs"
-              disabled={isWorkflowRunning || isSaving}
-              onClick={() => openConfirmModal('refresh_product_conditions')}
-            >
-              Refrescar condiciones
-            </button>
+        <div className="order-2 min-w-0 space-y-3 xl:order-1 xl:col-start-1 xl:row-start-1">
+          <LoanApplicationRequestedDataCard application={application} />
+
+          {requiresProductConditionsReview && applicationStatusCode !== 'DISBURSED' ? (
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+              <p className="min-w-0 flex-1">
+                {application.productConditionsReviewRequired
+                  ? 'Esta solicitud fue registrada antes de activar el control de condiciones del producto.'
+                  : 'El producto cambió después del registro; la solicitud conserva las condiciones registradas.'}
+                {isDraftApplication
+                  ? ' Revisa y refresca las condiciones antes de enviarla.'
+                  : ' Devuélvela a borrador para revisarlas y volver a enviarla.'}
+              </p>
+              {isDraftApplication && canRefreshProductConditions ? (
+                <button
+                  type="button"
+                  className="btn-secondary shrink-0 px-2.5 py-1 text-xs"
+                  disabled={isWorkflowRunning || isSaving}
+                  onClick={() => openConfirmModal('refresh_product_conditions')}
+                >
+                  Refrescar condiciones
+                </button>
+              ) : null}
+            </div>
           ) : null}
-        </div>
-      ) : null}
 
-      {(isDraftApplication || applicationStatusCode === 'SUBMITTED' || Boolean(application.firstDueDate)) ? (
-        <LoanApplicationFirstDueDateCard
-          firstDueDate={application.firstDueDate}
-          defaultFirstDueDate={
-            application.firstDueDate ?? preview?.installments[0]?.dueDateOriginal ?? null
-          }
-          businessDate={businessDateState?.businessDate}
-          disabledDates={activeHolidayDates}
-          canEdit={canSetFirstDueDate}
-          isSaving={isWorkflowRunning}
-          onValueChange={(value) => {
-            setPendingFirstDueDate(
-              value === (application.firstDueDate ?? '') ? null : value,
-            )
-          }}
-          onSave={async (firstDueDate) => {
-            const result = await setFirstDueDate(id, { firstDueDate })
-            if (result.success) {
-              setPendingFirstDueDate(null)
-              setApplication(result.data)
-              setPreview(null)
-              await refreshApplicationState()
-              if (canPreview) {
-                await generatePaymentPlan()
-              }
-              setFeedback({
-                tone: 'success',
-                title: 'Primera fecha de cuota guardada',
-                description: 'La fecha quedó registrada y será utilizada al aprobar y desembolsar.',
-              })
-              return
-            }
-            setFeedback({
-              tone: 'error',
-              title: 'No se pudo guardar la primera fecha de cuota',
-              description: result.error,
-            })
-          }}
-        />
-      ) : null}
+          {(applicationStatusCode === 'SUBMITTED' || isDraftApplication || Boolean(application.firstDueDate)) ? (
+            <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                Condiciones contractuales
+              </h2>
+              <div className="mt-2 grid min-w-0 gap-2 xl:grid-cols-2">
+                {applicationStatusCode === 'SUBMITTED' ? (
+                  <LoanApplicationRateCard
+                    currentRate={application.requestedRateOverride}
+                    productNominalRate={productRateRange?.nominalRate}
+                    minRate={productRateRange?.minNominalRate}
+                    maxRate={productRateRange?.maxNominalRate}
+                    canEdit={canSetRate}
+                    isSaving={isWorkflowRunning}
+                    embedded
+                    onDirtyChange={handleRateDirtyChange}
+                    onSave={async (rate) => {
+                      const result = await setRate(id, { requestedRateOverride: rate })
+                      if (result.success) {
+                        setApplication(result.data)
+                        setPreview(null)
+                        if (canPreview) {
+                          await generatePaymentPlan()
+                        }
+                        setFeedback({
+                          tone: 'success',
+                          title: 'Tasa nominal guardada',
+                          description: rate == null
+                            ? 'La solicitud volverá a utilizar la tasa nominal del producto.'
+                            : 'La tasa nominal manual quedó registrada y será utilizada en el plan de pagos y el préstamo.',
+                        })
+                        return
+                      }
+                      setFeedback({
+                        tone: 'error',
+                        title: 'No se pudo guardar la tasa nominal',
+                        description: result.error,
+                      })
+                    }}
+                  />
+                ) : null}
 
-      {shouldShowAnticipatedInstallment ? (
-        <LoanApplicationAnticipatedInstallmentSection
-          data={anticipatedInstallment.data}
-          history={anticipatedInstallment.history}
-          isLoading={anticipatedInstallment.isLoading}
-          isSaving={anticipatedInstallment.isSaving}
-          error={anticipatedInstallment.error}
-          canManage={canManageAnticipatedInstallment}
-          suggestedAmount={firstInstallmentSuggestedAmount}
-          onPreview={anticipatedInstallment.previewLimit}
-          onSave={anticipatedInstallment.save}
-          onCancel={anticipatedInstallment.cancel}
-          onRefreshActions={async () => {
-            await loadById(id)
-            await refreshDisbursementPreview()
-          }}
-        />
-      ) : null}
-
-      {(canViewScoring || canViewScoringHistory) ? (
-        <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                  Scoring crediticio
-                </h2>
-                {scoring ? (
-                  <span
-                    className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${resolveLoanApplicationScoringVariantClasses(
-                      scoring.uiVariant,
-                    )}`}
-                  >
-                    {resolveLoanApplicationScoringLabel(
-                      scoring.riskLevelDisplayName,
-                      scoring.riskLevelName,
-                    )}
-                  </span>
+                {(isDraftApplication || applicationStatusCode === 'SUBMITTED' || Boolean(application.firstDueDate)) ? (
+                  <LoanApplicationFirstDueDateCard
+                    firstDueDate={application.firstDueDate}
+                    defaultFirstDueDate={
+                      application.firstDueDate ?? preview?.installments[0]?.dueDateOriginal ?? null
+                    }
+                    businessDate={businessDateState?.businessDate}
+                    disabledDates={activeHolidayDates}
+                    canEdit={canSetFirstDueDate}
+                    isSaving={isWorkflowRunning}
+                    embedded
+                    onValueChange={(value) => {
+                      setPendingFirstDueDate(
+                        value === (application.firstDueDate ?? '') ? null : value,
+                      )
+                    }}
+                    onSave={async (firstDueDate) => {
+                      const result = await setFirstDueDate(id, { firstDueDate })
+                      if (result.success) {
+                        setPendingFirstDueDate(null)
+                        setApplication(result.data)
+                        setPreview(null)
+                        await refreshApplicationState()
+                        if (canPreview) {
+                          await generatePaymentPlan()
+                        }
+                        setFeedback({
+                          tone: 'success',
+                          title: 'Primera fecha de cuota guardada',
+                          description: 'La fecha quedó registrada y será utilizada al aprobar y desembolsar.',
+                        })
+                        return
+                      }
+                      setFeedback({
+                        tone: 'error',
+                        title: 'No se pudo guardar la primera fecha de cuota',
+                        description: result.error,
+                      })
+                    }}
+                  />
                 ) : null}
               </div>
-              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                {isScoringLoading
-                  ? 'Consultando scoring vigente...'
-                  : scoring
-                    ? `Score ${formatLoanApplicationScore(scoring.scoreValue)} · ${
-                        scoring.recommendationDisplayName || scoring.recommendationName
-                      } · ${formatLoanApplicationScoringDateTime(scoring.generatedAt)}`
-                    : scoringError || 'Disponible para consulta en ventana modal.'}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {canViewScoring ? (
-                <button
-                  type="button"
-                  className="btn-secondary px-2.5 py-1 text-xs"
-                  onClick={() => openScoringModal('current')}
-                >
-                  Ver scoring
-                </button>
-              ) : null}
-              {canViewScoringHistory ? (
-                <button
-                  type="button"
-                  className="btn-secondary px-2.5 py-1 text-xs"
-                  onClick={() => openScoringModal('history')}
-                >
-                  Ver historial
-                </button>
-              ) : null}
-            </div>
-          </div>
-        </section>
-      ) : null}
+            </section>
+          ) : null}
 
-      <LoanApplicationFeesCard
-        fees={fees}
-        charges={
-          preview?.disbursement?.charges ??
-          loanDetail?.disbursementCharges ??
-          application.disbursementCharges
-        }
-        canEdit={canEditFees}
-        isLoading={isFeesLoading}
-        isSaving={isFeeSaving}
-        error={feesError}
-        onRefresh={() => {
-          void loadFeesByApplicationId(id)
-        }}
-        onSaveOverride={async (fee, values) => {
-          const payload = buildFeeOverridePayload(fees, fee, values)
-          const result = await saveFeeOverrides(id, payload)
-          if (result.success) {
-            setFees(result.data)
-            setPreview(null)
-            await refreshApplicationState()
-            if (canPreview) {
-              await generatePaymentPlan()
+          {shouldShowAnticipatedInstallment ? (
+            <LoanApplicationAnticipatedInstallmentSection
+              data={anticipatedInstallment.data}
+              history={anticipatedInstallment.history}
+              isLoading={anticipatedInstallment.isLoading}
+              isSaving={anticipatedInstallment.isSaving}
+              error={anticipatedInstallment.error}
+              canManage={canManageAnticipatedInstallment}
+              suggestedAmount={firstInstallmentSuggestedAmount}
+              onPreview={anticipatedInstallment.previewLimit}
+              onSave={anticipatedInstallment.save}
+              onCancel={anticipatedInstallment.cancel}
+              onRefreshActions={async () => {
+                await loadById(id)
+                await refreshDisbursementPreview()
+              }}
+            />
+          ) : null}
+
+          {(canViewScoring || canViewScoringHistory) ? (
+            <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                      Análisis crediticio
+                    </h2>
+                    {scoring ? (
+                      <span
+                        className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold ${resolveLoanApplicationScoringVariantClasses(
+                          scoring.uiVariant,
+                        )}`}
+                      >
+                        {resolveLoanApplicationScoringLabel(
+                          scoring.riskLevelDisplayName,
+                          scoring.riskLevelName,
+                        )}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+                    {isScoringLoading
+                      ? 'Consultando evaluación vigente...'
+                      : scoring
+                        ? `Puntaje ${formatLoanApplicationScore(scoring.scoreValue)} · ${
+                            resolveLoanApplicationScoringLabel(
+                              scoring.recommendationDisplayName || scoring.recommendationName,
+                            )
+                          } · ${formatLoanApplicationScoringDateTime(scoring.generatedAt)}`
+                        : scoringError
+                          ? resolveLoanApplicationScoringLabel(scoringError)
+                          : 'Consulta el análisis y su historial desde aquí.'}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {canViewScoring ? (
+                    <button
+                      type="button"
+                      className="btn-secondary px-2.5 py-1 text-xs"
+                      onClick={() => openScoringModal('current')}
+                    >
+                      Ver evaluación
+                    </button>
+                  ) : null}
+                  {canViewScoringHistory ? (
+                    <button
+                      type="button"
+                      className="btn-secondary px-2.5 py-1 text-xs"
+                      onClick={() => openScoringModal('history')}
+                    >
+                      Ver historial de evaluaciones
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          <LoanApplicationFeesCard
+            fees={fees}
+            charges={
+              preview?.disbursement?.charges ??
+              loanDetail?.disbursementCharges ??
+              application.disbursementCharges
             }
-            setFeedback({
-              tone: 'success',
-              title: 'Comisiones actualizadas',
-              description: 'Los cambios de comisiones se guardaron correctamente.',
-            })
-            return true
-          }
+            canEdit={canEditFees}
+            isLoading={isFeesLoading}
+            isSaving={isFeeSaving}
+            error={feesError}
+            onRefresh={() => {
+              void loadFeesByApplicationId(id)
+            }}
+            onSaveOverride={async (fee, values) => {
+              const payload = buildFeeOverridePayload(fees, fee, values)
+              const result = await saveFeeOverrides(id, payload)
+              if (result.success) {
+                setFees(result.data)
+                setPreview(null)
+                await refreshApplicationState()
+                if (canPreview) {
+                  await generatePaymentPlan()
+                }
+                setFeedback({
+                  tone: 'success',
+                  title: 'Comisiones actualizadas',
+                  description: 'Los cambios de comisiones se guardaron correctamente.',
+                })
+                return true
+              }
 
-          setFeedback({
-            tone: 'error',
-            title: 'No se pudieron guardar las comisiones',
-            description: result.error,
-          })
-          return false
-        }}
-      />
+              setFeedback({
+                tone: 'error',
+                title: 'No se pudieron guardar las comisiones',
+                description: result.error,
+              })
+              return false
+            }}
+          />
 
-      {(canDisburse || application.disbursedOperationalDate) && (
-        <DisbursementSummaryCard
-          title="Resumen de desembolso"
-          emptyMessage="Aún no hay datos detallados del desembolso para esta solicitud."
-          data={preview?.disbursement ?? disbursementDetail}
-        />
-      )}
+          {(canDisburse || application.disbursedOperationalDate) && (
+            <DisbursementSummaryCard
+              title="Resumen de desembolso"
+              emptyMessage="Aún no hay datos detallados del desembolso para esta solicitud."
+              data={preview?.disbursement ?? disbursementDetail}
+            />
+          )}
 
-      {canReadGeneratedDocuments ? (
-        <GeneratedDocumentsPanel
-          state={generatedDocuments}
-          canDownload={canDownloadGeneratedDocuments}
-          canRetry={canRetryGeneratedDocuments}
-        />
-      ) : null}
+          {canReadGeneratedDocuments ? (
+            <GeneratedDocumentsPanel
+              state={generatedDocuments}
+              canDownload={canDownloadGeneratedDocuments}
+              canRetry={canRetryGeneratedDocuments}
+            />
+          ) : null}
 
-      <LoanApplicationCollateralsCard
-        collaterals={collaterals}
-        canAddCollateral={canAddCollateral}
-        canRemoveCollateral={canRemoveCollateral}
-        isProcessing={isCollateralSaving}
-        onAdd={() => setAddCollateralOpen(true)}
-        onRemove={(item) => setPendingCollateral(item)}
-      />
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="btn-secondary btn-list-action"
-          onClick={() => navigate('/loans/applications')}
-        >
-          Volver al listado
-        </button>
+          <LoanApplicationCollateralsCard
+            collaterals={collaterals}
+            canAddCollateral={canAddCollateral}
+            canRemoveCollateral={canRemoveCollateral}
+            isProcessing={isCollateralSaving}
+            onAdd={() => setAddCollateralOpen(true)}
+            onRemove={(item) => setPendingCollateral(item)}
+          />
+        </div>
       </div>
 
       <LoanApplicationAddCollateralModal
@@ -926,7 +999,7 @@ export const LoanApplicationDetailPage = () => {
         open={Boolean(confirmAction) && confirmAction !== 'disburse'}
         title={
           confirmAction === 'generate_scoring'
-            ? 'Generar scoring crediticio'
+            ? 'Generar análisis crediticio'
             : confirmAction === 'refresh_product_conditions'
               ? 'Refrescar condiciones del producto'
               : confirmAction === 'submit'
@@ -943,7 +1016,7 @@ export const LoanApplicationDetailPage = () => {
           confirmAction === 'generate_scoring'
             ? 'Se generará una nueva evaluación crediticia y quedará registrada en el historial de la solicitud'
             : confirmAction === 'refresh_product_conditions'
-              ? 'Se reemplazará el snapshot de condiciones de la solicitud por la versión vigente del producto y se recalculará la información financiera visible.'
+              ? 'Se reemplazarán las condiciones registradas por la versión vigente del producto y se recalculará la información financiera visible.'
               : confirmAction === 'return_to_draft'
                 ? 'Esta acción regresará la solicitud a borrador y requiere motivo.'
                 : confirmAction === 'reject' || confirmAction === 'cancel'
@@ -980,7 +1053,7 @@ export const LoanApplicationDetailPage = () => {
               setScoringTab(canViewScoring ? 'current' : 'history')
               setFeedback({
                 tone: 'success',
-                title: 'Scoring generado',
+                title: 'Análisis generado',
                 description: 'La evaluación crediticia se generó correctamente.',
               })
               return
@@ -988,8 +1061,8 @@ export const LoanApplicationDetailPage = () => {
 
             setFeedback({
               tone: 'error',
-              title: 'No se pudo generar el scoring crediticio',
-              description: result.error,
+              title: 'No se pudo generar el análisis crediticio',
+              description: resolveLoanApplicationScoringLabel(result.error),
             })
             return
           }

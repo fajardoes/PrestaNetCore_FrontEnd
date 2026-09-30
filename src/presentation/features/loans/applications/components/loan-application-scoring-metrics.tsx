@@ -17,16 +17,19 @@ export const LoanApplicationScoringMetrics = ({
   })
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-        Métricas capturadas
-      </h3>
+    <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">
+          Indicadores considerados
+        </h3>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{orderedMetrics.length}</span>
+      </div>
       {orderedMetrics.length ? (
-        <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
           {orderedMetrics.map((metric) => (
             <article
               key={metric.id}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 dark:border-slate-700 dark:bg-slate-900"
+              className="min-h-16 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900"
             >
               <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 {resolveLoanApplicationScoringLabel(metric.metricName)}
@@ -43,7 +46,7 @@ export const LoanApplicationScoringMetrics = ({
         </div>
       ) : (
         <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          No hay métricas registradas para este scoring.
+          No hay indicadores registrados para esta evaluación.
         </p>
       )}
     </section>

@@ -8,6 +8,8 @@ import {
 } from 'react'
 
 interface DatePickerProps {
+  id?: string
+  ariaLabel?: string
   value?: string
   onChange: (value: string) => void
   onBlur?: () => void
@@ -80,6 +82,8 @@ const formatISODate = (value: Date) => {
 }
 
 export const DatePicker = ({
+  id,
+  ariaLabel,
   value,
   onChange,
   onBlur,
@@ -354,7 +358,9 @@ export const DatePicker = ({
   return (
     <div className="relative" ref={containerRef}>
       <button
+        id={id}
         type="button"
+        aria-label={ariaLabel}
         onClick={toggleOpen}
         onBlur={onBlur}
         disabled={disabled}

@@ -125,13 +125,25 @@ export const LoanApplicationFeesCard = ({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
-        <Metric label="Descuentos estimados" value={formatCurrency(chargesSummary.total)} />
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <Metric label="Total de descuentos" value={formatCurrency(chargesSummary.total)} emphasis />
         <Metric label="Comisiones" value={formatCurrency(chargesSummary.fees)} />
         <Metric label="Seguros" value={formatCurrency(chargesSummary.insurance)} />
-        <Metric label="Comisiones ajustadas" value={String(summary.modifiedCount)} />
-        <Metric label="Comisiones removidas" value={String(summary.removedCount)} />
       </div>
+      {(summary.modifiedCount > 0 || summary.removedCount > 0) ? (
+        <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
+          {summary.modifiedCount > 0 ? (
+            <span className="rounded-full bg-amber-50 px-2 py-1 font-medium text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+              {summary.modifiedCount} {summary.modifiedCount === 1 ? 'comisión ajustada' : 'comisiones ajustadas'}
+            </span>
+          ) : null}
+          {summary.removedCount > 0 ? (
+            <span className="rounded-full bg-slate-100 px-2 py-1 font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              {summary.removedCount} {summary.removedCount === 1 ? 'comisión removida' : 'comisiones removidas'}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
@@ -273,11 +285,11 @@ export const LoanApplicationFeesCard = ({
   )
 }
 
-const Metric = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 dark:border-slate-700 dark:bg-slate-900">
+const Metric = ({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }) => (
+  <div className={`rounded-lg p-2.5 ${emphasis ? 'border border-sky-200 bg-sky-50 dark:border-sky-800 dark:bg-sky-950/40' : 'bg-slate-50 dark:bg-slate-900'}`}>
     <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
       {label}
     </p>
-    <p className="mt-0.5 text-xs font-semibold text-slate-900 dark:text-slate-100">{value}</p>
+    <p className={`mt-0.5 font-semibold tabular-nums text-slate-900 dark:text-slate-100 ${emphasis ? 'text-lg' : 'text-sm'}`}>{value}</p>
   </div>
 )

@@ -5,7 +5,7 @@ import type { LoanApplicationCreditScoreResponse } from '@/infrastructure/loans/
 
 const mapGenerateError = (result: ApiResult<unknown>) => {
   if (result.success) return null
-  if (result.status === 403) return 'No autorizado para generar scoring crediticio.'
+  if (result.status === 403) return 'No tienes permiso para generar el análisis crediticio.'
   if (result.status === 409) return result.error
   if (result.status === 422) return result.error
   return result.error

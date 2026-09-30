@@ -207,6 +207,15 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
 - Tiptap usa una extensión de chip para tokens del catálogo y una estructura
   controlada de tabla de cuotas. No habilitar tokens escritos libremente,
   helpers, links, imágenes, scripts ni recursos remotos.
+- El editor admite alineación izquierda, centrada y derecha en párrafos y
+  títulos mediante el atributo HTML permitido `align`; no agregar dependencias
+  solo para alineación.
+- Las casillas de variables requeridas indican que el código debe usarse en
+  cuerpo/encabezado/pie y que su valor debe existir al renderizar; no confundir
+  con la obligatoriedad del requisito documental asociado al producto.
+- La lista de variables requeridas se agrupa por `category`, igual que el
+  selector de inserción; conserva el nombre visible y el código en una etiqueta
+  legible para reconocer el chip correspondiente.
 - Márgenes y contrato HTTP usan `marginTopMm`, `marginRightMm`, `marginBottomMm`
   y `marginLeftMm`. Preview HTML/PDF siempre es sintético y temporal; el Blob
   PDF se revoca al cerrar/desmontar y nunca representa un documento oficial.

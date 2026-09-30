@@ -1,8 +1,11 @@
-import { Node } from '@tiptap/core'
+import { Extension, Node } from '@tiptap/core'
 import { NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
+    documentTextAlign: {
+      setDocumentTextAlign: (alignment: 'left' | 'center' | 'right') => ReturnType
+    }
     documentVariable: {
       insertDocumentVariable: (expression: string) => ReturnType
     }
@@ -11,6 +14,45 @@ declare module '@tiptap/core' {
     }
   }
 }
+
+const allowedTextAlignments = ['left', 'center', 'right'] as const
+
+export const DocumentTextAlignExtension = Extension.create({
+  name: 'documentTextAlign',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph', 'heading'],
+        attributes: {
+          textAlign: {
+            default: null,
+            parseHTML: (element) => {
+              const alignment = element.getAttribute('align')
+              return allowedTextAlignments.includes(alignment as (typeof allowedTextAlignments)[number])
+                ? alignment
+                : null
+            },
+            renderHTML: (attributes) =>
+              allowedTextAlignments.includes(attributes.textAlign as (typeof allowedTextAlignments)[number])
+                ? { align: attributes.textAlign }
+                : {},
+          },
+        },
+      },
+    ]
+  },
+  addCommands() {
+    return {
+      setDocumentTextAlign:
+        (alignment) =>
+        ({ commands }) => {
+          const attributes = { textAlign: alignment }
+          return commands.updateAttributes('paragraph', attributes)
+            || commands.updateAttributes('heading', attributes)
+        },
+    }
+  },
+})
 
 const readExpression = (element: HTMLElement) => {
   const match = /^\{\{\s*([^{}]+?)\s*\}\}$/.exec(element.textContent?.trim() ?? '')

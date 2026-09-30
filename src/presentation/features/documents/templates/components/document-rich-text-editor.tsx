@@ -1,15 +1,19 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import StarterKit from '@tiptap/starter-kit'
 import { EditorContent, useEditor } from '@tiptap/react'
+import type { Editor as TiptapEditor } from '@tiptap/core'
+import { AlignCenter, AlignLeft, AlignRight } from 'lucide-react'
 import type { DocumentVariableCatalogItemDto } from '@/infrastructure/documents/dtos/document-template-admin.dto'
 import {
   DocumentInstallmentsExtension,
+  DocumentTextAlignExtension,
   DocumentVariableExtension,
 } from '@/presentation/features/documents/templates/components/document-template-editor-extensions'
 import '@/presentation/features/documents/templates/components/document-template-editor.css'
 
 const editorExtensions = [
   StarterKit.configure({ link: false }),
+  DocumentTextAlignExtension,
   DocumentVariableExtension,
   DocumentInstallmentsExtension,
 ]
@@ -38,7 +42,7 @@ export const DocumentRichTextEditor = ({
     editable: !disabled,
     editorProps: {
       attributes: {
-        class: 'document-template-prosemirror min-h-64 focus:outline-none',
+        class: 'document-template-prosemirror min-h-full focus:outline-none',
         'aria-label': label,
       },
     },
@@ -62,7 +66,7 @@ export const DocumentRichTextEditor = ({
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-950">
-      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center gap-1 border-b border-slate-200 bg-slate-50 p-1.5 dark:border-slate-800 dark:bg-slate-900">
         <ToolbarButton label="Negrita" disabled={disabled} active={Boolean(editor?.isActive('bold'))} onClick={() => editor?.chain().focus().toggleBold().run()}>
           <strong>B</strong>
         </ToolbarButton>
@@ -77,6 +81,16 @@ export const DocumentRichTextEditor = ({
         </ToolbarButton>
         <ToolbarButton label="Lista numerada" disabled={disabled} active={Boolean(editor?.isActive('orderedList'))} onClick={() => editor?.chain().focus().toggleOrderedList().run()}>
           1. Lista
+        </ToolbarButton>
+        <span className="mx-1 hidden h-6 w-px bg-slate-300 dark:bg-slate-700 sm:inline-block" />
+        <ToolbarButton label="Alinear a la izquierda" disabled={disabled} active={isTextAlignmentActive(editor, 'left')} onClick={() => editor?.chain().focus().setDocumentTextAlign('left').run()}>
+          <AlignLeft aria-hidden="true" className="h-3.5 w-3.5" />
+        </ToolbarButton>
+        <ToolbarButton label="Centrar" disabled={disabled} active={isTextAlignmentActive(editor, 'center')} onClick={() => editor?.chain().focus().setDocumentTextAlign('center').run()}>
+          <AlignCenter aria-hidden="true" className="h-3.5 w-3.5" />
+        </ToolbarButton>
+        <ToolbarButton label="Alinear a la derecha" disabled={disabled} active={isTextAlignmentActive(editor, 'right')} onClick={() => editor?.chain().focus().setDocumentTextAlign('right').run()}>
+          <AlignRight aria-hidden="true" className="h-3.5 w-3.5" />
         </ToolbarButton>
         <span className="mx-1 hidden h-6 w-px bg-slate-300 dark:bg-slate-700 sm:inline-block" />
         <label className="sr-only" htmlFor={`variable-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>Seleccionar variable</label>
@@ -118,9 +132,11 @@ export const DocumentRichTextEditor = ({
           </button>
         ) : null}
       </div>
-      <EditorContent editor={editor} />
-      <div className="border-t border-slate-200 px-3 py-2 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
-        Las variables se insertan como chips y se validan contra el contexto {rootContextLabel(rootContext)}.
+      <div className="h-48 min-h-48 max-h-[70vh] resize-y overflow-auto border-b border-slate-200 dark:border-slate-800">
+        <EditorContent editor={editor} />
+      </div>
+      <div className="border-t border-slate-200 px-3 py-1.5 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
+        Arrastra la esquina inferior para ajustar el alto. Las variables se insertan como chips y se validan contra el contexto {rootContextLabel(rootContext)}.
       </div>
     </div>
   )
@@ -131,6 +147,14 @@ const rootContextLabel = (rootContext: string) => ({
   LOAN: 'préstamo',
   DISBURSEMENT: 'desembolso',
 }[rootContext] ?? rootContext)
+
+const isTextAlignmentActive = (
+  editor: TiptapEditor | null,
+  alignment: 'left' | 'center' | 'right',
+) => Boolean(
+  editor?.isActive('paragraph', { textAlign: alignment })
+  || editor?.isActive('heading', { textAlign: alignment }),
+)
 
 interface ToolbarButtonProps {
   label: string
@@ -144,6 +168,7 @@ const ToolbarButton = ({ label, active, disabled, onClick, children }: ToolbarBu
   <button
     type="button"
     aria-label={label}
+    title={label}
     aria-pressed={active}
     disabled={disabled}
     onClick={onClick}

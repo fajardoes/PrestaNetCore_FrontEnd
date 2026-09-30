@@ -13,6 +13,18 @@
   margin-top: 0.75rem;
 }
 
+.document-template-prosemirror [align="left"] {
+  text-align: left;
+}
+
+.document-template-prosemirror [align="center"] {
+  text-align: center;
+}
+
+.document-template-prosemirror [align="right"] {
+  text-align: right;
+}
+
 .document-template-prosemirror h1,
 .document-template-prosemirror h2,
 .document-template-prosemirror h3 {

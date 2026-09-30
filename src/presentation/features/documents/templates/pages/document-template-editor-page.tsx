@@ -158,14 +158,14 @@ export const DocumentTemplateEditorPage = () => {
   const isProcessing = Boolean(editor.busyAction)
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <Link to="/documents/templates" className="text-xs font-medium text-sky-700 hover:underline dark:text-sky-300">← Plantillas documentales</Link>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-900 dark:text-slate-50">{editor.template.name}</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{contextLabel(editor.template.context)} · {editor.template.documentTypeName}</p>
+          <h1 className="mt-0.5 text-xl font-semibold text-slate-900 dark:text-slate-50">{editor.template.name}</h1>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{contextLabel(editor.template.context)} · {editor.template.documentTypeName}</p>
         </div>
-        {canCreateDraft ? <button type="button" onClick={() => void handleCreateDraft()} disabled={isProcessing} className="btn-primary px-4 py-2 text-sm disabled:opacity-50">Crear versión borrador</button> : null}
+        {canCreateDraft ? <button type="button" onClick={() => void handleCreateDraft()} disabled={isProcessing} className="btn-primary px-3 py-1.5 text-sm disabled:opacity-50">Crear versión borrador</button> : null}
       </div>
 
       {editor.error ? <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">{editor.error}</div> : null}

@@ -29,10 +29,12 @@ export const DocumentTemplateMetadataForm = ({ template, canManage, isSaving, on
   }, [reset, template])
 
   return (
-    <form onSubmit={handleSubmit(onSave)} className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:grid-cols-2">
+    <form onSubmit={handleSubmit(onSave)} className="grid gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950 md:grid-cols-2">
       <div className="md:col-span-2">
-        <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Datos de la plantilla</h2>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Código: <span className="font-mono">{template.code}</span> · {template.documentTypeName}</p>
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Datos de la plantilla</h2>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">Código: <span className="font-mono">{template.code}</span> · {template.documentTypeName}</p>
+        </div>
       </div>
       <label className="space-y-1 text-sm font-medium text-slate-700 dark:text-slate-200">
         Nombre
@@ -49,8 +51,8 @@ export const DocumentTemplateMetadataForm = ({ template, canManage, isSaving, on
         Plantilla activa
       </label>
       {canManage ? (
-        <div className="flex justify-end md:col-span-2">
-          <button type="submit" disabled={!isDirty || isSaving} className="btn-primary px-4 py-2 text-sm disabled:opacity-50">
+        <div className="flex justify-end">
+          <button type="submit" disabled={!isDirty || isSaving} className="btn-primary px-3 py-1.5 text-sm disabled:opacity-50">
             {isSaving ? 'Guardando…' : 'Guardar datos'}
           </button>
         </div>

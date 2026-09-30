@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, useLocation } from 'react-router-dom'
 import { MoreHorizontal } from 'lucide-react'
@@ -20,6 +20,21 @@ type DropdownPosition = {
   maxHeight: number
 }
 
+const collectMenuGroupIds = (items: MenuItemTreeDto[]) => {
+  const groupIds = new Set<string>()
+
+  const visit = (currentItems: MenuItemTreeDto[]) => {
+    currentItems.forEach((item) => {
+      if (!item.children.length) return
+      groupIds.add(item.id)
+      visit(item.children)
+    })
+  }
+
+  visit(items)
+  return groupIds
+}
+
 export const HorizontalModuleMenu = ({
   menus,
   isLoading = false,
@@ -33,6 +48,7 @@ export const HorizontalModuleMenu = ({
   const moreButtonRef = useRef<HTMLButtonElement>(null)
   const morePanelRef = useRef<HTMLDivElement>(null)
   const sortedMenus = useMemo(() => sortMenuTree(menus), [menus])
+  const menuGroupIds = useMemo(() => collectMenuGroupIds(sortedMenus), [sortedMenus])
   const activeMenuItemId = useMemo(
     () => findBestMenuItem(sortedMenus, location.pathname)?.id ?? null,
     [location.pathname, sortedMenus],
@@ -40,12 +56,42 @@ export const HorizontalModuleMenu = ({
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const [collapsedMenuIds, setCollapsedMenuIds] = useState<Set<string>>(
+    () => new Set(menuGroupIds),
+  )
+  const initializedCollapsedMenusRef = useRef(sortedMenus.length > 0)
   const [visibleRootCount, setVisibleRootCount] = useState(sortedMenus.length)
   const visibleMenus = sortedMenus.slice(0, visibleRootCount)
   const overflowMenus = sortedMenus.slice(visibleRootCount)
   const isOverflowMenuActive = overflowMenus.some((item) =>
     containsMenuItem(item, activeMenuItemId),
   )
+  const toggleMenuGroup = useCallback((menuId: string) => {
+    setCollapsedMenuIds((current) => {
+      const next = new Set(current)
+      if (next.has(menuId)) {
+        next.delete(menuId)
+      } else {
+        next.add(menuId)
+      }
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!sortedMenus.length) {
+      if (initializedCollapsedMenusRef.current) {
+        initializedCollapsedMenusRef.current = false
+        setCollapsedMenuIds(new Set())
+      }
+      return
+    }
+
+    if (initializedCollapsedMenusRef.current) return
+
+    setCollapsedMenuIds(new Set(menuGroupIds))
+    initializedCollapsedMenusRef.current = true
+  }, [menuGroupIds, sortedMenus.length])
 
   useEffect(() => {
     if (overflowMenus.length === 0) setIsMoreOpen(false)
@@ -363,6 +409,8 @@ export const HorizontalModuleMenu = ({
                   key={item.id}
                   item={item}
                   activeMenuItemId={activeMenuItemId}
+                  collapsedMenuIds={collapsedMenuIds}
+                  onToggleGroup={toggleMenuGroup}
                   onClose={() => setIsMobileMenuOpen(false)}
                 />
               ))}
@@ -563,7 +611,7 @@ const DesktopMenuEntries = ({
             ].join(' ')}
           >
             <div
-              className="px-2 pt-1 pb-1 text-xs font-semibold normal-case text-slate-700 dark:text-slate-200"
+              className="px-2 pb-1 pt-1 text-xs font-semibold normal-case text-slate-700 dark:text-slate-200"
             >
               {item.title}
             </div>
@@ -609,10 +657,14 @@ const DesktopMenuEntries = ({
 const MobileRootItem = ({
   item,
   activeMenuItemId,
+  collapsedMenuIds,
+  onToggleGroup,
   onClose,
 }: {
   item: MenuItemTreeDto
   activeMenuItemId: string | null
+  collapsedMenuIds: Set<string>
+  onToggleGroup: (menuId: string) => void
   onClose: () => void
 }) => {
   const isActive = containsMenuItem(item, activeMenuItemId)
@@ -631,24 +683,42 @@ const MobileRootItem = ({
     )
   }
 
+  const isExpanded = !collapsedMenuIds.has(item.id)
+
   return (
     <section>
-      <div
+      <button
+        type="button"
+        onClick={() => onToggleGroup(item.id)}
         className={[
-          'px-2 pb-1 text-xs font-semibold uppercase tracking-[0.08em]',
+          'flex w-full items-center justify-between gap-2 px-2 pb-1 text-left text-xs font-semibold uppercase tracking-[0.08em]',
           isActive ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500 dark:text-slate-400',
         ].join(' ')}
+        aria-expanded={isExpanded}
+        aria-controls={`mobile-group-${item.id}`}
       >
-        {item.title}
-      </div>
-      <div className="space-y-0.5 pl-2">
-        <MobileMenuEntries
-          items={item.children}
-          activeMenuItemId={activeMenuItemId}
-          onClose={onClose}
-          depth={0}
+        <span className="flex min-w-0 items-center gap-2">
+          {item.icon ? <MenuIcon iconName={item.icon} className="h-4 w-4 shrink-0" /> : null}
+          <span className="truncate">{item.title}</span>
+        </span>
+        <ChevronDownIcon
+          className={`h-3.5 w-3.5 shrink-0 transition-transform motion-reduce:transition-none ${
+            isExpanded ? '' : '-rotate-90'
+          }`}
         />
-      </div>
+      </button>
+      {isExpanded ? (
+        <div id={`mobile-group-${item.id}`} className="space-y-0.5 pl-2">
+          <MobileMenuEntries
+            items={item.children}
+            activeMenuItemId={activeMenuItemId}
+            collapsedMenuIds={collapsedMenuIds}
+            onToggleGroup={onToggleGroup}
+            onClose={onClose}
+            depth={0}
+          />
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -656,17 +726,22 @@ const MobileRootItem = ({
 const MobileMenuEntries = ({
   items,
   activeMenuItemId,
+  collapsedMenuIds,
+  onToggleGroup,
   onClose,
   depth,
 }: {
   items: MenuItemTreeDto[]
   activeMenuItemId: string | null
+  collapsedMenuIds: Set<string>
+  onToggleGroup: (menuId: string) => void
   onClose: () => void
   depth: number
 }) => (
   <>
     {items.map((item) => {
       const isActive = item.id === activeMenuItemId
+      const isExpanded = !collapsedMenuIds.has(item.id)
 
       if (item.children.length > 0) {
         return (
@@ -674,17 +749,32 @@ const MobileMenuEntries = ({
             key={item.id}
             className={depth > 0 ? 'space-y-0.5 pt-2' : 'space-y-0.5 pt-1'}
           >
-            <div className="px-2 py-1 text-xs font-semibold normal-case text-slate-700 dark:text-slate-200">
-              {item.title}
-            </div>
-            <div className="space-y-0.5 pl-2">
-              <MobileMenuEntries
-                items={item.children}
-                activeMenuItemId={activeMenuItemId}
-                onClose={onClose}
-                depth={depth + 1}
+            <button
+              type="button"
+              onClick={() => onToggleGroup(item.id)}
+              className="flex w-full items-center justify-between gap-2 px-2 py-1 text-left text-xs font-semibold normal-case text-slate-700 dark:text-slate-200"
+              aria-expanded={isExpanded}
+              aria-controls={`mobile-group-${item.id}`}
+            >
+              <span className="truncate">{item.title}</span>
+              <ChevronDownIcon
+                className={`h-3.5 w-3.5 shrink-0 transition-transform motion-reduce:transition-none ${
+                  isExpanded ? '' : '-rotate-90'
+                }`}
               />
-            </div>
+            </button>
+            {isExpanded ? (
+              <div id={`mobile-group-${item.id}`} className="space-y-0.5 pl-2">
+                <MobileMenuEntries
+                  items={item.children}
+                  activeMenuItemId={activeMenuItemId}
+                  collapsedMenuIds={collapsedMenuIds}
+                  onToggleGroup={onToggleGroup}
+                  onClose={onClose}
+                  depth={depth + 1}
+                />
+              </div>
+            ) : null}
           </section>
         )
       }

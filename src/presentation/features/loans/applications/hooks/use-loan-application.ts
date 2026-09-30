@@ -2,7 +2,10 @@ import { useCallback, useState } from 'react'
 import { GetLoanApplicationActionsAction } from '@/core/actions/loan-applications/get-loan-application-actions.action'
 import { GetLoanApplicationAction } from '@/core/actions/loan-applications/get-loan-application.action'
 import { ListLoanApplicationCollateralsAction } from '@/core/actions/loan-applications/list-loan-application-collaterals.action'
-import type { LoanApplicationAllowedAction } from '@/infrastructure/loans/responses/loan-application-actions-response'
+import type {
+  LoanApplicationAllowedAction,
+  LoanApplicationBlockedAction,
+} from '@/infrastructure/loans/responses/loan-application-actions-response'
 import type { LoanApplicationCollateralResponse } from '@/infrastructure/loans/responses/loan-application-collateral-response'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
 
@@ -10,6 +13,7 @@ interface LoanApplicationDetailState {
   application: LoanApplicationResponse | null
   collaterals: LoanApplicationCollateralResponse[]
   allowedActions: LoanApplicationAllowedAction[]
+  blockedActions: LoanApplicationBlockedAction[]
   isLoading: boolean
   error: string | null
   actionsError: string | null
@@ -20,6 +24,7 @@ export const useLoanApplication = () => {
     application: null,
     collaterals: [],
     allowedActions: [],
+    blockedActions: [],
     isLoading: false,
     error: null,
     actionsError: null,
@@ -38,6 +43,7 @@ export const useLoanApplication = () => {
         application: null,
         collaterals: [],
         allowedActions: [],
+        blockedActions: [],
         isLoading: false,
         error: applicationResult.error,
         actionsError: null,
@@ -51,6 +57,7 @@ export const useLoanApplication = () => {
       allowedActions: actionsResult.success
         ? (actionsResult.data.allowedActions as LoanApplicationAllowedAction[])
         : [],
+      blockedActions: actionsResult.success ? actionsResult.data.blockedActions ?? [] : [],
       isLoading: false,
       error: collateralsResult.success ? null : collateralsResult.error,
       actionsError: actionsResult.success ? null : actionsResult.error,

@@ -73,6 +73,16 @@ export const DocumentTemplateVersionForm = ({
     () => variables.filter((item) => !item.isCollection),
     [variables],
   )
+  const requiredVariableGroups = useMemo(() => {
+    const groups = new Map<string, DocumentVariableCatalogItemDto[]>()
+    for (const variable of requiredVariables) {
+      const group = groups.get(variable.category) ?? []
+      group.push(variable)
+      groups.set(variable.category, group)
+    }
+
+    return Array.from(groups, ([category, items]) => ({ category, items }))
+  }, [requiredVariables])
   const submit = (action: (payload: DocumentTemplateVersionDraftRequestDto) => Promise<void>) =>
     handleSubmit(async (values) => action(toDraftRequest(values)))
   const hasBodyContent = hasRenderableContent(watch('bodyHtml'))
@@ -87,8 +97,8 @@ export const DocumentTemplateVersionForm = ({
     () => { void submit(action)() }
 
   return (
-    <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+    <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Versión {version.versionNumber}</h2>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -111,9 +121,9 @@ export const DocumentTemplateVersionForm = ({
         </div>
       </div>
 
-      {operationMessage ? <p role="status" className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm text-sky-900 dark:border-sky-900/70 dark:bg-sky-950/50 dark:text-sky-100">{operationMessage}</p> : null}
+      {operationMessage ? <p role="status" className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-sky-900 dark:border-sky-900/70 dark:bg-sky-950/50 dark:text-sky-100">{operationMessage}</p> : null}
 
-      <form className="space-y-4" onSubmit={submit(onSave)}>
+      <form className="space-y-3" onSubmit={submit(onSave)}>
         <div className="flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist" aria-label="Fragmentos de plantilla">
           {fragmentTabs.map((tab) => (
             <button
@@ -122,7 +132,7 @@ export const DocumentTemplateVersionForm = ({
               role="tab"
               aria-selected={activeFragment === tab.key}
               onClick={() => setActiveFragment(tab.key)}
-              className={`rounded-t-lg border-b-2 px-4 py-2 text-sm font-medium ${activeFragment === tab.key
+              className={`rounded-t-lg border-b-2 px-3 py-1.5 text-sm font-medium ${activeFragment === tab.key
                 ? 'border-sky-600 text-sky-800 dark:text-sky-200'
                 : 'border-transparent text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'}`}
             >
@@ -152,17 +162,17 @@ export const DocumentTemplateVersionForm = ({
           </div>
         ))}
 
-        <div className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
-          <div className="space-y-3">
+        <div className="grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/60 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]">
+          <div className="space-y-2">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Página y márgenes</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               <label className="space-y-1 text-xs font-medium text-slate-700 dark:text-slate-300">Tamaño
-                <select {...register('pageSize')} disabled={!editable} className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-950">
+                <select {...register('pageSize')} disabled={!editable} className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950">
                   <option value="LETTER">Carta (LETTER)</option><option value="LEGAL">Oficio (LEGAL)</option><option value="A4">A4</option>
                 </select>
               </label>
               <label className="space-y-1 text-xs font-medium text-slate-700 dark:text-slate-300">Orientación
-                <select {...register('orientation')} disabled={!editable} className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm dark:border-slate-700 dark:bg-slate-950">
+                <select {...register('orientation')} disabled={!editable} className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-950">
                   <option value="PORTRAIT">Vertical</option><option value="LANDSCAPE">Horizontal</option>
                 </select>
               </label>
@@ -171,7 +181,7 @@ export const DocumentTemplateVersionForm = ({
                   <input
                     {...register(field.name, { valueAsNumber: true })}
                     type="number" min="0" step="0.1" disabled={!editable}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm tabular-nums dark:border-slate-700 dark:bg-slate-950"
+                    className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm tabular-nums dark:border-slate-700 dark:bg-slate-950"
                   />
                   {errors[field.name] ? <span className="block text-xs text-red-600 dark:text-red-300">{errors[field.name]?.message}</span> : null}
                 </label>
@@ -182,14 +192,35 @@ export const DocumentTemplateVersionForm = ({
 
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Variables requeridas</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">La validación confirma que cada variable marcada aparece en el contenido.</p>
-            <div className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-950">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Marca solo los datos indispensables. Cada variable marcada debe aparecer en el contenido, encabezado o pie y tener un valor al generar el documento.
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Si falta ese valor, la generación falla; si el documento es un requisito PRE obligatorio, también puede bloquear el desembolso. Una variable no marcada no bloquea la generación y, si falta, normalmente se verá vacía.
+            </p>
+            <p className="text-xs text-sky-700 dark:text-sky-300">
+              Esta casilla no inserta la variable: agrega su chip desde «Insertar variable…» en el editor.
+            </p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              La lista está agrupada con las mismas categorías del selector de variables.
+            </p>
+            <div className="max-h-40 overflow-y-auto rounded-lg border border-slate-200 bg-white p-2 dark:border-slate-800 dark:bg-slate-950">
               {requiredVariables.length === 0 ? <p className="p-2 text-xs text-slate-500 dark:text-slate-400">No hay variables disponibles para este contexto.</p> : null}
-              {requiredVariables.map((item) => (
-                <label key={item.code} className="flex items-start gap-2 rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900">
-                  <input type="checkbox" checked={requiredCodes.includes(item.code)} disabled={!editable} onChange={(event) => toggleRequiredCode(item.code, event.target.checked)} className="mt-0.5 rounded border-slate-300 text-sky-600 dark:border-slate-700 dark:bg-slate-900" />
-                  <span><span className="font-medium">{item.displayName}</span><span className="ml-2 font-mono text-[10px] text-slate-500">{item.code}</span></span>
-                </label>
+              {requiredVariableGroups.map((group) => (
+                <section key={group.category} className="mb-2 last:mb-0">
+                  <h4 className="sticky top-0 border-b border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
+                    {group.category}
+                  </h4>
+                  {group.items.map((item) => (
+                    <label key={item.code} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900">
+                      <input type="checkbox" checked={requiredCodes.includes(item.code)} disabled={!editable} onChange={(event) => toggleRequiredCode(item.code, event.target.checked)} className="rounded border-slate-300 text-sky-600 dark:border-slate-700 dark:bg-slate-900" />
+                      <span className="min-w-0 flex-1 font-medium">{item.displayName}</span>
+                      <span className="inline-flex max-w-[55%] truncate rounded-md border border-sky-200 bg-sky-50 px-1.5 py-0.5 font-mono text-[10px] text-sky-800 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-200">
+                        {item.code}
+                      </span>
+                    </label>
+                  ))}
+                </section>
               ))}
             </div>
           </div>
@@ -200,7 +231,7 @@ export const DocumentTemplateVersionForm = ({
         ) : null}
         {!hasBodyContent ? <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">Agrega texto, un chip de variable o la tabla controlada antes de validar, previsualizar o publicar.</p> : null}
 
-        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-4 dark:border-slate-800">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-3 dark:border-slate-800">
           <p className="max-w-2xl text-xs text-slate-500 dark:text-slate-400">Las vistas previa HTML y PDF usan datos sintéticos y son temporales; no crean documentos oficiales.</p>
           <div className="flex flex-wrap justify-end gap-2">
             {editable ? <button type="submit" disabled={isProcessing || !isDirty} className="btn-primary px-3 py-2 text-sm disabled:opacity-50">{isProcessing ? 'Procesando…' : 'Guardar borrador'}</button> : null}

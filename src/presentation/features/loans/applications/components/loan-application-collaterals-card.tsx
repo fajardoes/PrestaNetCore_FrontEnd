@@ -35,8 +35,9 @@ export const LoanApplicationCollateralsCard = ({
         ) : null}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-xs">
+      {collaterals.length ? (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-xs">
           <thead>
             <tr className="border-b border-slate-200 text-left text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <th className="px-2 py-1.5">Referencia</th>
@@ -48,14 +49,7 @@ export const LoanApplicationCollateralsCard = ({
             </tr>
           </thead>
           <tbody>
-            {!collaterals.length ? (
-              <tr>
-                <td colSpan={6} className="px-2 py-3 text-center text-slate-500 dark:text-slate-400">
-                  No hay garantías vinculadas.
-                </td>
-              </tr>
-            ) : (
-              collaterals.map((item) => (
+              {collaterals.map((item) => (
                 <tr
                   key={item.linkId}
                   className="border-b border-slate-200/70 text-slate-700 dark:border-slate-800 dark:text-slate-200"
@@ -76,11 +70,15 @@ export const LoanApplicationCollateralsCard = ({
                     ) : null}
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p role="status" className="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600 dark:bg-slate-900 dark:text-slate-300">
+          No hay garantías vinculadas a esta solicitud.
+        </p>
+      )}
     </section>
   )
 }

@@ -38,12 +38,23 @@ export const LoanApplicationScoringSubscores = ({
           key={item.key}
           className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-950"
         >
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            {item.label}
-          </p>
-          <p className="mt-1 text-xl font-bold text-slate-900 dark:text-slate-50">
-            {formatLoanApplicationScore(values[item.key])}
-          </p>
+          <div className="flex min-h-11 items-start justify-between gap-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              {item.label}
+            </p>
+            <p className="shrink-0 text-lg font-bold leading-none text-slate-900 dark:text-slate-50">
+              {formatLoanApplicationScore(values[item.key])}
+            </p>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden="true">
+            {values[item.key] != null ? (
+              <div
+                className="h-full rounded-full bg-sky-600 transition-[width] dark:bg-sky-400"
+                style={{ width: `${Math.min(100, Math.max(0, values[item.key] ?? 0))}%` }}
+              />
+            ) : null}
+          </div>
+          <p className="mt-1.5 text-[10px] text-slate-500 dark:text-slate-400">de 100</p>
         </article>
       ))}
     </div>

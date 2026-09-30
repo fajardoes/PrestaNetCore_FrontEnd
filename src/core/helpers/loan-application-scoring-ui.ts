@@ -26,6 +26,7 @@ const factorVariantClasses: Record<ScoringUiVariant, string> = {
 
 const unitLabels: Record<string, string> = {
   percent: '%',
+  ratio: 'veces',
 }
 
 const normalizeVariant = (value?: string | null): ScoringUiVariant => {
@@ -67,6 +68,17 @@ const compactNumberFormatter = new Intl.NumberFormat('es-HN', {
 export const formatLoanApplicationScore = (value?: number | null) => {
   if (value == null) return '—'
   return numberFormatter.format(value)
+}
+
+export const formatLoanApplicationScoringNumber = (value?: number | null) => {
+  if (value == null) return '—'
+  return compactNumberFormatter.format(value)
+}
+
+export const formatLoanApplicationScoringPoints = (value?: number | null) => {
+  if (value == null) return '—'
+  const points = compactNumberFormatter.format(value)
+  return `${points} ${value === 1 ? 'punto' : 'puntos'}`
 }
 
 export const formatLoanApplicationScoringDateTime = (value?: string | null) => {
@@ -127,11 +139,15 @@ export const formatLoanApplicationScoringMetricValue = (
   if (metricValue != null) {
     const normalizedUnit = (unit ?? '').trim().toLowerCase()
     const value = compactNumberFormatter.format(metricValue)
+    if (normalizedUnit === 'count') return value
+    if (normalizedUnit === 'month' || normalizedUnit === 'months') {
+      return `${value} ${metricValue === 1 ? 'mes' : 'meses'}`
+    }
     const unitLabel = unitLabels[normalizedUnit] ?? unit?.trim()
     return unitLabel ? `${value} ${unitLabel}` : value
   }
 
-  if (metricText?.trim()) return metricText.trim()
+  if (metricText?.trim()) return resolveLoanApplicationScoringLabel(metricText)
 
   return '—'
 }
@@ -139,4 +155,22 @@ export const formatLoanApplicationScoringMetricValue = (
 export const resolveLoanApplicationScoringLabel = (
   value?: string | null,
   fallback?: string | null,
-) => value?.trim() || fallback?.trim() || '—'
+) => {
+  const label = value?.trim() || fallback?.trim()
+  if (!label) return '—'
+
+  return label
+    .replace(/calculada\s+por\s+(?:el\s+)?backend/gi, 'calculada automáticamente')
+    .replace(/\bbackend\b/gi, 'sistema')
+    .replace(/\bNO_AVAILABLE\b/gi, 'No disponible')
+    .replace(/\bscoring\b/gi, 'evaluación crediticia')
+    .replace(/\bscore\b/gi, 'puntaje')
+}
+
+export const formatLoanApplicationScoringUser = (value?: string | null) => {
+  const username = value?.trim().split('@')[0]?.replace(/[._-]+/g, ' ').trim()
+  if (!username) return '—'
+  return username.replace(/(^|\s)(\S)/g, (_, space: string, letter: string) =>
+    `${space}${letter.toLocaleUpperCase('es-HN')}`,
+  )
+}

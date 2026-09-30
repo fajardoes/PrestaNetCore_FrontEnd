@@ -1,15 +1,8 @@
-import type { ReactNode } from 'react'
-import { HnIdentityText } from '@/presentation/share/components/hn-identity-text'
 import type { LoanApplicationResponse } from '@/infrastructure/loans/responses/loan-application-response'
 import {
   formatDate,
   formatDateTime,
-  formatMoney,
-  formatRatio,
-  financialProfileBadgeClass,
-  financialProfileCompletenessBadgeClass,
 } from '@/presentation/features/loans/applications/components/loan-application-ui-utils'
-import { formatRateAsPercent } from '@/core/helpers/rate-percent'
 
 interface LoanApplicationRequestedDataCardProps {
   application: LoanApplicationResponse
@@ -18,119 +11,73 @@ interface LoanApplicationRequestedDataCardProps {
 export const LoanApplicationRequestedDataCard = ({
   application,
 }: LoanApplicationRequestedDataCardProps) => {
-  const isDraft = (application.statusCode ?? '').toUpperCase() === 'DRAFT'
-  const returnedToDraftReason = (
-    application.returnedToDraftReason ?? application.returnToDraftReason ?? ''
-  ).trim()
-  const returnedToDraftOperationalDate = (
-    application.returnedToDraftOperationalDate ?? ''
-  ).trim()
-  const workflowCommentsRaw = [
+  const isDraft = (application.statusCode ?? '').trim().toUpperCase() === 'DRAFT'
+  const workflowComments = [
     {
-      label: 'Motivo de devolucion a borrador',
-      value: isDraft ? returnedToDraftReason : null,
+      label: 'Motivo de devolución a borrador',
+      value: isDraft
+        ? application.returnedToDraftReason ?? application.returnToDraftReason
+        : null,
     },
     {
       label: 'Fecha de devolución',
-      value: isDraft && returnedToDraftOperationalDate
-        ? formatDate(returnedToDraftOperationalDate)
-        : null,
+      value:
+        isDraft && application.returnedToDraftOperationalDate
+          ? formatDate(application.returnedToDraftOperationalDate)
+          : null,
     },
-    { label: 'Motivo de rechazo', value: application.rejectedReason ?? null },
-    { label: 'Motivo de cancelacion', value: application.cancelledReason ?? null },
+    { label: 'Motivo de rechazo', value: application.rejectedReason },
+    { label: 'Motivo de cancelación', value: application.cancelledReason },
     {
       label: 'Comentario de flujo',
-      value: application.workflowReason ?? application.lastWorkflowReason ?? null,
+      value: application.workflowReason ?? application.lastWorkflowReason,
     },
-  ]
-  const workflowComments = workflowCommentsRaw
-    .map((item) => ({
-      label: item.label,
-      value: (item.value ?? '').trim(),
-    }))
-    .filter((item) => item.value.length > 0)
-  const hasFinancialProfile = Boolean(application.hasFinancialProfile)
-  const isFinancialProfileComplete = Boolean(application.isFinancialProfileComplete)
+  ].filter((item) => Boolean(item.value?.trim()))
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Datos solicitados</h2>
-      <div className="mt-2 grid grid-cols-1 gap-2 text-xs md:grid-cols-2 lg:grid-cols-3">
-        <Info label="Cliente" value={application.clientFullName} />
-        <Info
-          label="Identidad"
-          value={<HnIdentityText value={application.clientIdentityNo} fallback="—" />}
-        />
-        <Info label="Producto" value={`${application.loanProductCode} - ${application.loanProductName}`} />
-        <Info label="Promotor" value={application.promoterClientFullName} />
-        <Info label="Capital" value={formatMoney(application.requestedPrincipal)} />
-        <Info
-          label="Duración solicitada"
-          value={`${application.requestedTerm} ${application.requestedTermUnitName}`}
-        />
-        <Info label="Frecuencia negociada" value={application.requestedPaymentFrequencyName} />
-        <Info label="Préstamo desembolsado" value={application.approvedLoanNo || '—'} />
-        <Info
-          label="Frecuencia predeterminada del producto"
-          value={application.suggestedPaymentFrequencyName || '—'}
-        />
-        <Info
-          label="Tasa nominal manual"
-          value={formatRateAsPercent(application.requestedRateOverride)}
-        />
-      </div>
-      {application.notes ? (
-        <div className="mt-2 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-          {application.notes}
+      <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+        Información de la solicitud
+      </h2>
+      <dl className="mt-2 grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+        <Info label="Frecuencia sugerida por el producto" value={application.suggestedPaymentFrequencyName || '—'} />
+        <Info label="Fecha operativa de registro" value={formatDate(application.createdOperationalDate)} />
+        <Info label="Condiciones capturadas" value={formatDateTime(application.productConditionsCapturedAt)} />
+      </dl>
+      {application.notes?.trim() ? (
+        <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-900">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Observaciones
+          </p>
+          <p className="mt-0.5 whitespace-pre-wrap break-words text-sm text-slate-800 dark:text-slate-200">
+            {application.notes}
+          </p>
         </div>
       ) : null}
-      <div className="mt-2 grid w-full grid-cols-1 items-stretch gap-2 md:max-w-5xl md:grid-cols-2">
-        <div className="h-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 dark:border-slate-700 dark:bg-slate-900">
-          <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            Ficha financiera
-          </p>
-          <div className="mt-1 flex flex-wrap gap-1.5">
-            <span
-              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${financialProfileBadgeClass(hasFinancialProfile)}`}
-            >
-              {hasFinancialProfile ? 'Registrada' : 'Sin ficha'}
-            </span>
-            <span
-              className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${financialProfileCompletenessBadgeClass(isFinancialProfileComplete)}`}
-            >
-              {isFinancialProfileComplete ? 'Completa' : 'Incompleta'}
-            </span>
-          </div>
-          <div className="mt-2 space-y-0.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <p>Actualizacion: {formatDateTime(application.financialProfileUpdatedAt)}</p>
-            <p>Ratio pasivos / activos: {formatRatio(application.financialDebtRatio)}</p>
-            <p>
-              Ratio pasivos / patrimonio:{' '}
-              {formatRatio(application.financialDebtToEquityRatio)}
-            </p>
-          </div>
-        </div>
-        {workflowComments.length ? (
-          <div className="h-full space-y-1.5 rounded-md border border-slate-200 bg-slate-50 p-2.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
-            <p className="text-xs font-semibold uppercase tracking-wide">
-              Comentarios del flujo
-            </p>
+      {workflowComments.length ? (
+        <div className="mt-3 border-t border-slate-100 pt-2 dark:border-slate-800">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Comentarios del flujo
+          </h3>
+          <dl className="mt-1.5 space-y-2">
             {workflowComments.map((item) => (
               <div key={item.label}>
-                <p className="text-[11px] uppercase tracking-wide opacity-80">{item.label}</p>
-                <p>{item.value}</p>
+                <dt className="text-[11px] text-slate-500 dark:text-slate-400">{item.label}</dt>
+                <dd className="break-words text-sm text-slate-800 dark:text-slate-200">{item.value}</dd>
               </div>
             ))}
-          </div>
-        ) : null}
-      </div>
+          </dl>
+        </div>
+      ) : null}
     </section>
   )
 }
 
-const Info = ({ label, value }: { label: string; value: ReactNode }) => (
-  <div>
-    <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
-    <p className="text-xs font-medium text-slate-800 dark:text-slate-100">{value}</p>
+const Info = ({ label, value }: { label: string; value: string }) => (
+  <div className="min-w-0">
+    <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+      {label}
+    </dt>
+    <dd className="break-words font-medium text-slate-800 dark:text-slate-100">{value}</dd>
   </div>
 )

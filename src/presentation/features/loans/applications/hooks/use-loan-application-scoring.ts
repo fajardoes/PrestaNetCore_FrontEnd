@@ -11,8 +11,8 @@ interface LoanApplicationScoringState {
 
 const mapLoadError = (result: ApiResult<unknown>) => {
   if (result.success) return null
-  if (result.status === 404) return 'La solicitud no tiene scoring vigente.'
-  if (result.status === 403) return 'No autorizado para consultar el scoring de la solicitud.'
+  if (result.status === 404) return 'No hay una evaluación vigente para esta solicitud.'
+  if (result.status === 403) return 'No tienes permiso para consultar el análisis crediticio.'
   return result.error
 }
 

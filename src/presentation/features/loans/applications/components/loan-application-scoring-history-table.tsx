@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   formatLoanApplicationScore,
   formatLoanApplicationScoringDateTime,
+  formatLoanApplicationScoringUser,
+  resolveLoanApplicationScoringLabel,
   resolveLoanApplicationScoringVariantClasses,
 } from '@/core/helpers/loan-application-scoring-ui'
 import type { LoanApplicationCreditScoreHistoryItemResponse } from '@/infrastructure/loans/responses/loan-application-credit-score-history-item.response'
@@ -42,7 +44,7 @@ export const LoanApplicationScoringHistoryTable = ({
       <div className="flex items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-            Historial de scorings
+            Historial de evaluaciones
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Evaluaciones registradas para la solicitud.
@@ -52,7 +54,7 @@ export const LoanApplicationScoringHistoryTable = ({
 
       {error ? (
         <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
-          {error}
+            {resolveLoanApplicationScoringLabel(error)}
         </div>
       ) : null}
 
@@ -62,18 +64,17 @@ export const LoanApplicationScoringHistoryTable = ({
             <tr className="text-left text-slate-700 dark:text-slate-200">
               <th>Fecha</th>
               <th>Usuario</th>
-              <th>Score</th>
+              <th>Puntaje</th>
               <th>Riesgo</th>
               <th>Recomendación</th>
-              <th>Versión</th>
-              <th>Vigente</th>
+              <th>Estado</th>
             </tr>
           </thead>
           <tbody>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, index) => (
                 <tr key={index}>
-                  <td colSpan={7}>
+                  <td colSpan={6}>
                     <div className="h-8 animate-pulse rounded bg-slate-100 dark:bg-slate-900" />
                   </td>
                 </tr>
@@ -82,7 +83,11 @@ export const LoanApplicationScoringHistoryTable = ({
               pagedItems.map((item) => (
                 <tr key={item.id} className="text-slate-700 dark:text-slate-200">
                   <td>{formatLoanApplicationScoringDateTime(item.generatedAt)}</td>
-                  <td>{item.generatedBy || '—'}</td>
+                  <td>
+                    <span title={item.generatedBy || undefined}>
+                      {formatLoanApplicationScoringUser(item.generatedBy)}
+                    </span>
+                  </td>
                   <td className="font-semibold">{formatLoanApplicationScore(item.scoreValue)}</td>
                   <td>
                     <span
@@ -96,21 +101,26 @@ export const LoanApplicationScoringHistoryTable = ({
                               : 'neutral',
                       )}`}
                     >
-                      {item.riskLevelName}
+                      {resolveLoanApplicationScoringLabel(item.riskLevelName)}
                     </span>
                   </td>
-                  <td>{item.recommendationName}</td>
-                  <td>v{item.scoreVersion}</td>
-                  <td>{item.isCurrent ? 'Sí' : 'No'}</td>
+                  <td>{resolveLoanApplicationScoringLabel(item.recommendationName)}</td>
+                  <td>
+                    <span className={item.isCurrent
+                      ? 'inline-flex rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200'
+                      : 'inline-flex rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300'}>
+                      {item.isCurrent ? 'Vigente' : 'Anterior'}
+                    </span>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={6}
                   className="px-3 py-6 text-center text-sm text-slate-500 dark:text-slate-400"
                 >
-                  No hay generaciones registradas en el historial.
+                  No hay evaluaciones registradas en el historial.
                 </td>
               </tr>
             )}

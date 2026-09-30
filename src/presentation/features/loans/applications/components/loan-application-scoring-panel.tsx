@@ -1,7 +1,7 @@
 import {
   formatLoanApplicationScoringDate,
   formatLoanApplicationScoringDateTime,
-  resolveLoanApplicationScoringLabel,
+  formatLoanApplicationScoringUser,
 } from '@/core/helpers/loan-application-scoring-ui'
 import type { ReactNode } from 'react'
 import type { LoanApplicationCreditScoreResponse } from '@/infrastructure/loans/responses/loan-application-credit-score.response'
@@ -18,31 +18,31 @@ export const LoanApplicationScoringPanel = ({
   scoring,
 }: LoanApplicationScoringPanelProps) => {
   return (
-    <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-            Scoring crediticio
-          </h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Evaluación ejecutiva generada por el motor de scoring.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 gap-2 text-xs text-slate-600 dark:text-slate-300 sm:grid-cols-2">
-          <Info label="Generado">
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2 text-xs text-slate-600 dark:text-slate-300">
+          <Info label="Generada">
             {formatLoanApplicationScoringDateTime(scoring.generatedAt)}
           </Info>
-          <Info label="Usuario">{resolveLoanApplicationScoringLabel(scoring.generatedBy)}</Info>
           <Info label="Fecha operativa">
             {formatLoanApplicationScoringDate(scoring.businessDate)}
           </Info>
-          <Info label="Motor">
-            v{scoring.scoreVersion} · {resolveLoanApplicationScoringLabel(scoring.engineVersion)}
-          </Info>
+          {scoring.generatedBy ? (
+            <Info label="Registrada por">
+              <span title={scoring.generatedBy}>
+                {formatLoanApplicationScoringUser(scoring.generatedBy)}
+              </span>
+            </Info>
+          ) : null}
         </div>
+        {scoring.isCurrent ? (
+          <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-600/20 dark:bg-emerald-500/10 dark:text-emerald-200 dark:ring-emerald-500/30">
+            Evaluación vigente
+          </span>
+        ) : null}
       </div>
 
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,280px)_minmax(0,1fr)]">
+      <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-[minmax(17rem,0.9fr)_minmax(0,2.1fr)]">
         <LoanApplicationScoringScoreCard
           scoreValue={scoring.scoreValue}
           colorHex={scoring.colorHex}
@@ -54,24 +54,25 @@ export const LoanApplicationScoringPanel = ({
           }
           decisionSummary={scoring.decisionSummary}
         />
-        <div className="space-y-3">
-          <LoanApplicationScoringSubscores
-            capacityScore={scoring.capacityScore}
-            financialScore={scoring.financialScore}
-            collateralScore={scoring.collateralScore}
-            behaviorScore={scoring.behaviorScore}
-            productFitScore={scoring.productFitScore}
-          />
-          <LoanApplicationScoringMetrics metrics={scoring.metrics} />
-        </div>
+        <LoanApplicationScoringSubscores
+          capacityScore={scoring.capacityScore}
+          financialScore={scoring.financialScore}
+          collateralScore={scoring.collateralScore}
+          behaviorScore={scoring.behaviorScore}
+          productFitScore={scoring.productFitScore}
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 xl:grid-cols-3">
+      <LoanApplicationScoringMetrics metrics={scoring.metrics} />
+
+      <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-3">
         <LoanApplicationScoringFactorList
           title="Fortalezas"
           items={scoring.positiveFactors}
           uiVariant="success"
           emptyMessage="No hay fortalezas registradas."
+          initialVisibleCount={4}
+          sortByImpact
         />
         <LoanApplicationScoringFactorList
           title="Alertas"
@@ -84,6 +85,7 @@ export const LoanApplicationScoringPanel = ({
           items={scoring.infoFactors}
           uiVariant="neutral"
           emptyMessage="No hay observaciones registradas."
+          initialVisibleCount={4}
         />
       </div>
     </section>

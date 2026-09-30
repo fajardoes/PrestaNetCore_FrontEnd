@@ -182,7 +182,7 @@ export const MenusPage = () => {
     setExpandedIds((prev) => {
       if (!hasInitializedExpand.current) {
         hasInitializedExpand.current = true
-        return new Set(available)
+        return new Set<string>()
       }
       const next = new Set<string>()
       prev.forEach((id) => {

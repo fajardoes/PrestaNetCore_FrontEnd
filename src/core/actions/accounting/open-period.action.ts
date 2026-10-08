@@ -14,7 +14,7 @@ export const openPeriodAction = async (
     if (status === 409) {
       return toApiError(
         error,
-        'Ya existe un período abierto. Para continuar, cierre el período vigente.',
+        'No se puede habilitar ese período. Selecciona el período operativo o el mes siguiente y verifica que no esté bloqueado.',
       )
     }
     return toApiError(error, 'No fue posible abrir el período. Verifica los datos ingresados.')

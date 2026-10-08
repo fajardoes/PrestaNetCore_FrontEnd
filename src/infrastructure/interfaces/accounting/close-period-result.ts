@@ -2,6 +2,6 @@ import type { AccountingPeriodDto } from '@/infrastructure/interfaces/accounting
 
 export interface ClosePeriodResult {
   closedPeriod: AccountingPeriodDto
-  openedPeriod: AccountingPeriodDto
+  openedPeriod?: AccountingPeriodDto | null
 }
 

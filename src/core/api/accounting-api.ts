@@ -158,6 +158,14 @@ export const accountingApi = {
     return data
   },
 
+  async unlockPeriod(periodId: string, reason: string): Promise<AccountingPeriodDto> {
+    const { data } = await httpClient.post<AccountingPeriodDto>(
+      `/accounting/periods/${periodId}/unlock`,
+      { reason },
+    )
+    return data
+  },
+
   async enableAutomaticPosting(periodId: string): Promise<AccountingPeriodDto> {
     const { data } = await httpClient.post<AccountingPeriodDto>(
       `/accounting/periods/${periodId}/enable-automatic-posting`,

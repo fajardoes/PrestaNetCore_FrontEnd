@@ -23,6 +23,23 @@ interface PendingPeriodAction {
   operation: PeriodPostingOperation
 }
 
+interface PeriodMonth {
+  fiscalYear: number
+  month: number
+}
+
+const isWithinNormalPostingWindow = (period: PeriodMonth, businessDate?: string | null) => {
+  if (!businessDate) return false
+  const [year, month] = businessDate.split('-').map(Number)
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+    return false
+  }
+
+  const next = month === 12 ? { fiscalYear: year + 1, month: 1 } : { fiscalYear: year, month: month + 1 }
+  return (period.fiscalYear === year && period.month === month) ||
+    (period.fiscalYear === next.fiscalYear && period.month === next.month)
+}
+
 export const PeriodsPage = () => {
   const { user } = useAuth()
   const { notify } = useNotifications()
@@ -49,6 +66,7 @@ export const PeriodsPage = () => {
   const [openModal, setOpenModal] = useState(false)
   const [closingPeriod, setClosingPeriod] = useState<AccountingPeriodDto | null>(null)
   const [pendingAction, setPendingAction] = useState<PendingPeriodAction | null>(null)
+  const [unlockReason, setUnlockReason] = useState('')
   const openHook = useOpenPeriod({
     onCompleted: async () => {
       setOpenModal(false)
@@ -103,9 +121,17 @@ export const PeriodsPage = () => {
   const operationalPeriod =
     postingContextHook.postingContext?.operationalPeriodResolvedFromBusinessDate ?? null
   const automaticPostingBlockReason =
-    postingMessages[0] || 'El backend reporta que el posteo automatico no esta habilitado.'
+    postingMessages[0] || 'El sistema reporta que el posteo automático no está habilitado.'
   const closeBlockedByContext =
     postingContextHook.postingContext?.automaticPostingAllowed === false
+  const closingPeriodNextPreview = getNextPeriodPreview(closingPeriod)
+  const canEnableClosingPeriodNext = Boolean(
+    closingPeriodNextPreview &&
+    isWithinNormalPostingWindow(
+      closingPeriodNextPreview,
+      postingContextHook.postingContext?.businessDate,
+    ),
+  )
 
   const actionCopy: Record<
     PeriodPostingOperation,
@@ -113,96 +139,125 @@ export const PeriodsPage = () => {
   > = {
     'enable-adjustments': {
       title: 'Habilitar ajustes',
-      description: 'Este periodo quedara disponible para asientos de ajuste manual.',
+      description: 'Este período quedará disponible para asientos de ajuste manual.',
       confirmLabel: 'Habilitar ajustes',
       success: 'Ajustes habilitados correctamente.',
     },
     'disable-adjustments': {
       title: 'Deshabilitar ajustes',
-      description: 'El periodo dejara de aceptar asientos de ajuste manual.',
+      description: 'El período dejará de aceptar asientos de ajuste manual.',
       confirmLabel: 'Deshabilitar ajustes',
       success: 'Ajustes deshabilitados correctamente.',
     },
     lock: {
-      title: 'Bloquear periodo',
-      description: 'El periodo quedara bloqueado para acciones administrativas posteriores.',
-      confirmLabel: 'Bloquear periodo',
-      success: 'Periodo bloqueado correctamente.',
+      title: 'Bloquear período',
+      description: 'El período quedará bloqueado y sin posteo. Se podrá retirar el bloqueo después indicando un motivo; al desbloquearlo permanecerá cerrado hasta habilitarlo de forma explícita.',
+      confirmLabel: 'Bloquear período',
+      success: 'Período bloqueado correctamente.',
+    },
+    unlock: {
+      title: 'Desbloquear período',
+      description: 'El período quedará cerrado y sin capacidades de posteo. Para volver a habilitar operaciones, usa después la acción correspondiente; se aplicarán las reglas de secuencia contable.',
+      confirmLabel: 'Desbloquear período',
+      success: 'Período desbloqueado y dejado cerrado.',
     },
     'enable-automatic-posting': {
-      title: 'Habilitar posteo automatico',
-      description: 'Las operaciones automaticas podran contabilizarse en este periodo.',
+      title: 'Habilitar posteo automático',
+      description: 'Las operaciones automáticas podrán contabilizarse en este período.',
       confirmLabel: 'Habilitar posteo',
-      success: 'Posteo automatico habilitado correctamente.',
+      success: 'Posteo automático habilitado correctamente.',
     },
     'disable-automatic-posting': {
-      title: 'Deshabilitar posteo automatico',
-      description: 'Las operaciones automaticas dejaran de contabilizarse en este periodo.',
+      title: 'Deshabilitar posteo automático',
+      description: 'Las operaciones automáticas dejarán de contabilizarse en este período.',
       confirmLabel: 'Deshabilitar posteo',
-      success: 'Posteo automatico deshabilitado correctamente.',
+      success: 'Posteo automático deshabilitado correctamente.',
     },
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-50">
-          Contabilidad - Períodos
+    <div className="space-y-5">
+      <div className="flex flex-col gap-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">
+          Contabilidad
+        </p>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
+          Períodos contables
         </h1>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Supervisa el periodo operativo resuelto desde la fecha de negocio y administra ajustes o posteo automatico por periodo.
+        <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-400">
+          Consulta el período operativo y administra las capacidades de posteo de cada mes.
         </p>
       </div>
 
-      {postingContextHook.isLoading ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
-          Cargando contexto operativo contable...
-        </div>
-      ) : operationalPeriod ? (
-        <OpenPeriodCard
-          period={operationalPeriod}
-          businessDate={postingContextHook.postingContext?.businessDate}
-          automaticPostingAllowed={postingContextHook.postingContext?.automaticPostingAllowed}
-          onClose={() => {
-            setClosingPeriod(operationalPeriod)
-          }}
-          isClosing={closeHook.isLoading}
-          disableClose={closeBlockedByContext}
-          disableCloseReason={closeBlockedByContext ? automaticPostingBlockReason : undefined}
-        />
-      ) : postingContextHook.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 shadow-sm dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
-          {postingContextHook.error}
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
-          No fue posible resolver un periodo operativo desde la fecha de negocio actual.
-        </div>
-      )}
-
-      {postingContextHook.postingContext ? (
-        <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm text-sky-900 shadow-sm dark:border-sky-900/50 dark:bg-sky-500/10 dark:text-sky-100">
-          <div className="flex flex-col gap-1">
-            <p className="font-semibold">
-              Fecha de negocio: {formatAccountingDate(postingContextHook.postingContext.businessDate)}
-            </p>
-            <p>
-              Periodo operativo resuelto: {getPeriodLabel(operationalPeriod)}
-            </p>
-            <p>
-              Posteo automatico:{' '}
-              {postingContextHook.postingContext.automaticPostingAllowed ? 'habilitado' : 'bloqueado'}
-            </p>
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(18rem,0.9fr)]">
+        {postingContextHook.isLoading ? (
+          <div className="flex min-h-28 items-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300">
+            Cargando contexto operativo contable...
           </div>
-          {postingMessages.length ? (
-            <div className="mt-3 space-y-1 border-t border-sky-200 pt-3 text-sm dark:border-sky-800/60">
-              {postingMessages.map((message) => (
-                <p key={message}>{message}</p>
-              ))}
+        ) : operationalPeriod ? (
+          <OpenPeriodCard
+            period={operationalPeriod}
+            businessDate={postingContextHook.postingContext?.businessDate}
+            automaticPostingAllowed={postingContextHook.postingContext?.automaticPostingAllowed}
+            onClose={() => {
+              setClosingPeriod(operationalPeriod)
+            }}
+            isClosing={closeHook.isLoading}
+            disableClose={closeBlockedByContext}
+            disableCloseReason={closeBlockedByContext ? automaticPostingBlockReason : undefined}
+          />
+        ) : postingContextHook.error ? (
+          <div className="flex min-h-28 items-center rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+            {postingContextHook.error}
+          </div>
+        ) : (
+          <div className="flex min-h-28 items-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
+            No fue posible resolver un período operativo desde la fecha de negocio actual.
+          </div>
+        )}
+
+        {postingContextHook.postingContext ? (
+          <div className="flex flex-col justify-center rounded-xl border border-sky-200 bg-sky-50 p-4 shadow-sm dark:border-sky-900/50 dark:bg-sky-500/10">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-3 xl:grid-cols-1 2xl:grid-cols-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-200">
+                  Fecha de negocio
+                </p>
+                <p className="mt-0.5 text-sm font-semibold text-sky-950 dark:text-sky-50">
+                  {formatAccountingDate(postingContextHook.postingContext.businessDate)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-200">
+                  Período operativo
+                </p>
+                <p className="mt-0.5 text-sm font-semibold text-sky-950 dark:text-sky-50">
+                  {getPeriodLabel(operationalPeriod)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-200">
+                  Posteo automático
+                </p>
+                <span className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${
+                  postingContextHook.postingContext.automaticPostingAllowed
+                    ? 'bg-sky-100 text-sky-800 ring-sky-200 dark:bg-sky-500/15 dark:text-sky-100 dark:ring-sky-500/40'
+                    : 'bg-amber-100 text-amber-800 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-100 dark:ring-amber-500/40'
+                }`}>
+                  {postingContextHook.postingContext.automaticPostingAllowed ? 'Habilitado' : 'Bloqueado'}
+                </span>
+              </div>
             </div>
-          ) : null}
-        </div>
-      ) : null}
+            {postingMessages.length ? (
+              <div className="mt-3 space-y-1 border-t border-sky-200 pt-3 text-xs leading-5 text-sky-900 dark:border-sky-800/60 dark:text-sky-100">
+                {postingMessages.map((message) => (
+                  <p key={message}>{message}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
 
       <ListFiltersBar
         search={year?.toString() ?? ''}
@@ -267,10 +322,12 @@ export const PeriodsPage = () => {
         }}
         onRowAction={(period, operation) => {
           setPendingAction({ period, operation })
+          setUnlockReason('')
           periodSettingsHook.setError(null)
         }}
         isApplyingAction={periodSettingsHook.isLoading}
         operationalPeriodId={operationalPeriod?.id}
+        businessDate={postingContextHook.postingContext?.businessDate}
         automaticPostingBlocked={closeBlockedByContext}
         automaticPostingBlockedReason={automaticPostingBlockReason}
       />
@@ -281,6 +338,9 @@ export const PeriodsPage = () => {
         onSubmit={async (values) => {
           await openHook.openPeriod(values)
         }}
+        businessDate={postingContextHook.postingContext?.businessDate}
+        businessDateLoading={postingContextHook.isLoading}
+        businessDateError={postingContextHook.error}
         isSubmitting={openHook.isLoading}
         error={openHook.error}
       />
@@ -288,16 +348,18 @@ export const PeriodsPage = () => {
       <ClosePeriodModal
         open={Boolean(closingPeriod)}
         period={closingPeriod}
-        nextPeriodPreview={getNextPeriodPreview(closingPeriod)}
+        nextPeriodPreview={closingPeriodNextPreview}
+        canEnableNextPeriod={canEnableClosingPeriodNext}
         onClose={() => setClosingPeriod(null)}
         onSubmit={async (values) => {
           if (!closingPeriod) return
           const result = await closeHook.mutate(closingPeriod.id, values.notes ?? undefined)
           if (result.success) {
-            notify(
-              `Período cerrado: ${result.data.closedPeriod.month}/${result.data.closedPeriod.fiscalYear} | Período abierto: ${result.data.openedPeriod.month}/${result.data.openedPeriod.fiscalYear}`,
-              'success',
-            )
+            const closedLabel = `${result.data.closedPeriod.fiscalYear}-${String(result.data.closedPeriod.month).padStart(2, '0')}`
+            const openedLabel = result.data.openedPeriod
+              ? ` Se habilitó ${result.data.openedPeriod.fiscalYear}-${String(result.data.openedPeriod.month).padStart(2, '0')}.`
+              : ''
+            notify(`Período ${closedLabel} cerrado.${openedLabel}`, 'success')
             setClosingPeriod(null)
             await Promise.all([refresh(), postingContextHook.refresh()])
           }
@@ -312,8 +374,10 @@ export const PeriodsPage = () => {
         description={pendingAction ? actionCopy[pendingAction.operation].description : ''}
         confirmLabel={pendingAction ? actionCopy[pendingAction.operation].confirmLabel : 'Confirmar'}
         isProcessing={periodSettingsHook.isLoading}
+        confirmDisabled={pendingAction?.operation === 'unlock' && !unlockReason.trim()}
         onCancel={() => {
           setPendingAction(null)
+          setUnlockReason('')
           periodSettingsHook.setError(null)
         }}
         onConfirm={async () => {
@@ -321,16 +385,34 @@ export const PeriodsPage = () => {
           const result = await periodSettingsHook.mutate(
             pendingAction.period.id,
             pendingAction.operation,
+            pendingAction.operation === 'unlock' ? unlockReason.trim() : undefined,
           )
           if (result.success) {
             notify(actionCopy[pendingAction.operation].success, 'success')
             setPendingAction(null)
+            setUnlockReason('')
             await Promise.all([refresh(), postingContextHook.refresh()])
             return
           }
-          notify(result.error ?? 'No fue posible completar la accion.', 'error')
+          notify(result.error ?? 'No fue posible completar la acción.', 'error')
         }}
       >
+        {pendingAction?.operation === 'unlock' ? (
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              Motivo del desbloqueo <span className="text-red-600">*</span>
+            </span>
+            <textarea
+              value={unlockReason}
+              onChange={(event) => setUnlockReason(event.target.value)}
+              maxLength={488}
+              rows={3}
+              required
+              placeholder="Explica por qué se debe retirar el bloqueo."
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+          </label>
+        ) : null}
         {periodSettingsHook.error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
             {periodSettingsHook.error}

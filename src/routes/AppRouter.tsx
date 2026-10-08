@@ -11,6 +11,7 @@ import { PaymentsRoutes } from './payments-routes'
 import { SystemRoutes } from './system-routes'
 import { SalesRoutes } from './sales-routes'
 import { DocumentRoutes } from './document-routes'
+import { AuditRoutes } from './audit-routes'
 import { ProtectedRoute } from './ProtectedRoute'
 
 const HomePage = lazy(() =>
@@ -63,6 +64,7 @@ export const AppRouter = () => {
               {PaymentsRoutes()}
               {SalesRoutes()}
               {DocumentRoutes()}
+              {AuditRoutes()}
               {SystemRoutes()}
             </Route>
           </Route>

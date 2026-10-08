@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
+import SelectField, { type SelectOption } from '@/presentation/share/components/select'
 import {
   openPeriodSchema,
   type OpenPeriodFormValues,
@@ -12,7 +13,20 @@ interface OpenPeriodModalProps {
   onSubmit: (values: OpenPeriodFormValues) => Promise<void> | void
   isSubmitting: boolean
   error?: string | null
+  businessDate?: string | null
+  businessDateLoading?: boolean
+  businessDateError?: string | null
 }
+
+interface PeriodChoice {
+  fiscalYear: number
+  month: number
+}
+
+const monthNames = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+]
 
 export const OpenPeriodModal = ({
   open,
@@ -20,30 +34,69 @@ export const OpenPeriodModal = ({
   onSubmit,
   isSubmitting,
   error,
+  businessDate,
+  businessDateLoading = false,
+  businessDateError,
 }: OpenPeriodModalProps) => {
+  const periodOptions = useMemo<SelectOption<PeriodChoice>[]>(() => {
+    if (!businessDate) return []
+
+    const [fiscalYear, month] = businessDate.split('-').map(Number)
+    if (
+      !Number.isInteger(fiscalYear) ||
+      !Number.isInteger(month) ||
+      fiscalYear < 2000 ||
+      month < 1 ||
+      month > 12
+    ) {
+      return []
+    }
+
+    const nextPeriod = month === 12
+      ? { fiscalYear: fiscalYear + 1, month: 1 }
+      : { fiscalYear, month: month + 1 }
+
+    return [
+      { fiscalYear, month },
+      nextPeriod,
+    ].map((period) => ({
+      value: `${period.fiscalYear}-${String(period.month).padStart(2, '0')}`,
+      label: `${period.fiscalYear}-${String(period.month).padStart(2, '0')} · ${monthNames[period.month - 1] ?? `Mes ${period.month}`}`,
+      meta: period,
+    }))
+  }, [businessDate])
+
   const {
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<OpenPeriodFormValues>({
     resolver: yupResolver(openPeriodSchema),
     defaultValues: {
-      fiscalYear: new Date().getFullYear(),
-      month: new Date().getMonth() + 1,
+      fiscalYear: periodOptions[0]?.meta?.fiscalYear ?? 2000,
+      month: periodOptions[0]?.meta?.month ?? 1,
       notes: '',
     },
   })
 
+  const fiscalYear = watch('fiscalYear')
+  const month = watch('month')
+  const selectedPeriod = periodOptions.find(
+    (option) => option.meta?.fiscalYear === fiscalYear && option.meta?.month === month,
+  ) ?? null
+
   useEffect(() => {
     if (open) {
       reset({
-        fiscalYear: new Date().getFullYear(),
-        month: new Date().getMonth() + 1,
+        fiscalYear: periodOptions[0]?.meta?.fiscalYear ?? 2000,
+        month: periodOptions[0]?.meta?.month ?? 1,
         notes: '',
       })
     }
-  }, [open, reset])
+  }, [open, periodOptions, reset])
 
   if (!open) return null
 
@@ -56,7 +109,7 @@ export const OpenPeriodModal = ({
               Abrir período contable
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Selecciona año y mes a abrir. Si ya existe, el backend responderá con el estado actual.
+              Solo puedes habilitar el período operativo o el mes inmediatamente siguiente. Los períodos anteriores se gestionan como ajustes.
             </p>
           </div>
           <button
@@ -72,50 +125,51 @@ export const OpenPeriodModal = ({
         <form
           className="space-y-4"
           onSubmit={handleSubmit(async (values) => {
+            if (!periodOptions.some(
+              (option) => option.meta?.fiscalYear === values.fiscalYear && option.meta?.month === values.month,
+            )) {
+              return
+            }
             await onSubmit(values)
           })}
           noValidate
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <label
-                htmlFor="fiscalYear"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-200"
-              >
-                Año fiscal
-              </label>
-              <input
-                id="fiscalYear"
-                type="number"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('fiscalYear', { valueAsNumber: true })}
-                disabled={isSubmitting}
-              />
-              {errors.fiscalYear ? (
-                <p className="text-xs text-red-500">{errors.fiscalYear.message}</p>
-              ) : null}
-            </div>
-
-            <div className="space-y-2">
-              <label
-                htmlFor="month"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-200"
-              >
-                Mes
-              </label>
-              <input
-                id="month"
-                type="number"
-                min={1}
-                max={12}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-primary dark:focus:ring-primary/40"
-                {...register('month', { valueAsNumber: true })}
-                disabled={isSubmitting}
-              />
-              {errors.month ? (
-                <p className="text-xs text-red-500">{errors.month.message}</p>
-              ) : null}
-            </div>
+          <input type="hidden" {...register('fiscalYear', { valueAsNumber: true })} />
+          <input type="hidden" {...register('month', { valueAsNumber: true })} />
+          <div className="space-y-2">
+            <label
+              htmlFor="accounting-period-to-open"
+              className="block text-sm font-medium text-slate-700 dark:text-slate-200"
+            >
+              Período a habilitar
+            </label>
+            <SelectField<PeriodChoice>
+              value={selectedPeriod}
+              onChange={(option) => {
+                if (!option?.meta) return
+                setValue('fiscalYear', option.meta.fiscalYear, { shouldValidate: true })
+                setValue('month', option.meta.month, { shouldValidate: true })
+              }}
+              options={periodOptions}
+              inputId="accounting-period-to-open"
+              instanceId="accounting-period-to-open"
+              placeholder={businessDateLoading ? 'Cargando fecha operativa...' : 'Selecciona un período'}
+              isClearable={false}
+              isDisabled={isSubmitting || periodOptions.length === 0}
+              noOptionsMessage="No hay períodos habilitados para apertura"
+            />
+            {!periodOptions.length ? (
+              <p className="text-xs text-amber-700 dark:text-amber-200" role="status">
+                {businessDateLoading
+                  ? 'Cargando la fecha operativa para determinar el período permitido.'
+                  : businessDateError ?? 'No se pudo resolver la fecha operativa. No es posible abrir un período.'}
+              </p>
+            ) : null}
+            {errors.fiscalYear || errors.month ? (
+              <p className="text-xs text-red-500">
+                {errors.fiscalYear?.message ?? errors.month?.message}
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -155,7 +209,7 @@ export const OpenPeriodModal = ({
             <button
               type="submit"
               className="btn-primary px-6 py-2 text-sm shadow-lg shadow-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isSubmitting}
+              disabled={isSubmitting || periodOptions.length === 0}
             >
               {isSubmitting ? 'Abriendo...' : 'Abrir período'}
             </button>

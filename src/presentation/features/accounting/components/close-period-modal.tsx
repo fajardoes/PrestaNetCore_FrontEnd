@@ -11,6 +11,7 @@ interface ClosePeriodModalProps {
   open: boolean
   period?: AccountingPeriodDto | null
   nextPeriodPreview?: { month: number; fiscalYear: number } | null
+  canEnableNextPeriod?: boolean
   onClose: () => void
   onSubmit: (values: ClosePeriodFormValues) => Promise<void> | void
   isSubmitting: boolean
@@ -21,6 +22,7 @@ export const ClosePeriodModal = ({
   open,
   period,
   nextPeriodPreview,
+  canEnableNextPeriod = false,
   onClose,
   onSubmit,
   isSubmitting,
@@ -74,15 +76,18 @@ export const ClosePeriodModal = ({
               Cerrar período {period.fiscalYear}-{String(period.month).padStart(2, '0')}
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              Al cerrar <span className="font-semibold">{currentMonthLabel} {period.fiscalYear}</span>, el sistema abrirá automáticamente{' '}
-              {nextPeriodPreview && nextMonthLabel ? (
-                <span className="font-semibold">
-                  {nextMonthLabel} {nextPeriodPreview.fiscalYear}
-                </span>
+              Al cerrar <span className="font-semibold">{currentMonthLabel} {period.fiscalYear}</span>,{' '}
+              {canEnableNextPeriod && nextPeriodPreview && nextMonthLabel ? (
+                <>
+                  el sistema habilitará automáticamente{' '}
+                  <span className="font-semibold">
+                    {nextMonthLabel} {nextPeriodPreview.fiscalYear}
+                  </span>{' '}
+                  si el período no está bloqueado.
+                </>
               ) : (
-                <span className="font-semibold">el siguiente mes</span>
+                'el período siguiente no se habilitará automáticamente porque está fuera de la secuencia permitida.'
               )}
-              .
             </p>
           </div>
           <button

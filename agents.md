@@ -178,6 +178,19 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
 - En UI de frontend, evitar mostrar textos funcionales en ingles al usuario final. Si backend envia nombres/descripciones de permisos o estados en ingles (ej. `DRAFT`, `SUBMITTED`, `APPROVED`, `REJECTED`, `CANCELLED`), mostrar su equivalente en espanol en la interfaz.
 - En `security/role-permissions`, mantener visible el `permission.code` como dato tecnico, pero el `name/description` y labels de agrupacion deben presentarse en espanol.
 
+## Apertura ordenada de períodos contables
+
+- El modal de apertura ofrece únicamente el mes de `business_date` y el mes
+  siguiente, tomando la fecha del contexto contable del backend. La validación
+  autoritativa está en Services y ninguna acción administrativa puede saltar
+  meses.
+- Los períodos anteriores se habilitan mediante ajustes, no reactivando posteo
+  automático/manual regular. El backend valida también el período al registrar
+  o postear asientos; no confíes únicamente en la selección de la interfaz.
+- Desbloquear un período exige un motivo, lo deja cerrado y sin capacidades de
+  posteo; la habilitación posterior usa las acciones existentes y las reglas
+  secuenciales del backend.
+
 ## Historial de menús recientes
 
 - La navegación autenticada integra una barra secundaria de menús recientes debajo del menú horizontal.
@@ -268,3 +281,24 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
   asset editable aquí es el logo para PDF/reportes; permite solo PNG/JPEG por
   el endpoint dedicado. No expongas URL, rutas, base64, favicon ni branding del
   frontend.
+
+## Consulta de auditoría central
+
+- La pantalla vive en `/audit/entries`; `src/routes/audit-routes.tsx` registra
+  la ruta y el menú dinámico se define en
+  `PrestaNetCore-BackEnd/seeds/security/menu_items.json` junto con su
+  asignación inicial en `menu_item_roles.json`.
+- Consume `GET /api/audit/catalog` para categorías, módulos, acciones y
+  resultados; no fijes esas opciones en el frontend. La búsqueda usa
+  `GET /api/audit/entries`, permiso backend `audit.entries.read` y sus filtros
+  paginados.
+- Mantén filtros dependientes categoría → módulo → acción. Las fechas elegidas
+  en el calendario representan días de Honduras y se convierten a UTC para la
+  consulta técnica. Actor y agencia se filtran por UUID porque el contrato de
+  lectura actual no expone nombres. El módulo acepta código manual con
+  sugerencias del catálogo, ya que los módulos de rutas HTTP no se enumeran en
+  ese catálogo.
+- Los detalles JSON y valores anteriores/nuevos se presentan como texto; no
+  renderices HTML ni interpretes contenido del evento.
+- La consulta no implementa exportación ni alcance por agencia/oficina. No
+  simules esas capacidades en la interfaz.

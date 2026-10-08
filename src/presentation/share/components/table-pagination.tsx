@@ -9,6 +9,7 @@ interface TablePaginationProps {
   pageSizeOptions?: number[]
   onPageSizeChange?: (size: number) => void
   pageSizeLabel?: string
+  disabled?: boolean
 }
 
 export const TablePagination = ({
@@ -20,6 +21,7 @@ export const TablePagination = ({
   pageSizeOptions,
   onPageSizeChange,
   pageSizeLabel = 'Tamaño página:',
+  disabled = false,
 }: TablePaginationProps) => {
   const showPageSize =
     typeof pageSize === 'number' &&
@@ -34,9 +36,10 @@ export const TablePagination = ({
           <label className="flex items-center gap-2 text-sm">
             <span>{pageSizeLabel}</span>
             <select
-              className="rounded-md border border-slate-300 bg-white px-2 py-1 dark:border-slate-700 dark:bg-slate-900"
               value={pageSize}
+              disabled={disabled}
               onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              className="rounded-md border border-slate-300 bg-white px-2 py-1 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900"
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -54,24 +57,24 @@ export const TablePagination = ({
         <button
           type="button"
           onClick={() => onPageChange(page - 1)}
+          disabled={disabled || page === 1}
           className={`btn-icon-label border px-3 py-2 ${
-            page === 1
+            disabled || page === 1
               ? 'cursor-not-allowed opacity-50'
               : 'border-slate-300 dark:border-slate-700'
           }`}
-          disabled={page === 1}
         >
           Anterior
         </button>
         <button
           type="button"
           onClick={() => onPageChange(page + 1)}
+          disabled={disabled || page === totalPages}
           className={`btn-icon-label border px-3 py-2 ${
-            page === totalPages
+            disabled || page === totalPages
               ? 'cursor-not-allowed opacity-50'
               : 'border-slate-300 dark:border-slate-700'
           }`}
-          disabled={page === totalPages}
         >
           Siguiente
         </button>

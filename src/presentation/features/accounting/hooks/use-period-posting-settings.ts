@@ -9,10 +9,10 @@ export const usePeriodPostingSettings = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const mutate = useCallback(async (periodId: string, operation: PeriodPostingOperation) => {
+  const mutate = useCallback(async (periodId: string, operation: PeriodPostingOperation, reason?: string) => {
     setIsLoading(true)
     setError(null)
-    const result = await updatePeriodPostingSettingsAction(periodId, operation)
+    const result = await updatePeriodPostingSettingsAction(periodId, operation, reason)
     if (result.success) {
       setIsLoading(false)
       return result as { success: true; data: AccountingPeriodDto }

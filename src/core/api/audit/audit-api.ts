@@ -2,10 +2,11 @@ import { httpClient } from '@/infrastructure/api/httpClient'
 import type {
   AuditCatalog,
   AuditEntryPage,
+  AuditEntrySummary,
   AuditSearchFilters,
 } from '@/infrastructure/interfaces/audit/audit-entry'
 
-const toQueryParams = (filters: AuditSearchFilters): URLSearchParams => {
+const toQueryParams = (filters: AuditSearchFilters, includePagination = true): URLSearchParams => {
   const params = new URLSearchParams()
 
   for (const categoryCode of filters.categoryCodes ?? []) {
@@ -27,8 +28,6 @@ const toQueryParams = (filters: AuditSearchFilters): URLSearchParams => {
     ['subjectId', filters.subjectId],
     ['fromUtc', filters.fromUtc],
     ['toUtc', filters.toUtc],
-    ['pageNumber', filters.pageNumber],
-    ['pageSize', filters.pageSize],
   ]
 
   for (const [key, value] of scalarFilters) {
@@ -37,19 +36,99 @@ const toQueryParams = (filters: AuditSearchFilters): URLSearchParams => {
     }
   }
 
+  if (includePagination) {
+    params.append('pageNumber', String(filters.pageNumber))
+    params.append('pageSize', String(filters.pageSize))
+  }
+
   return params
 }
 
+export interface AuditCsvExportResponse {
+  blob: Blob
+  fileName: string
+  rowCount: number | null
+  watermarkUtc: string | null
+}
+
+const inFlightAuditGetRequests = new Map<string, Promise<unknown>>()
+
+const shareInFlightAuditGet = <T>(key: string, request: () => Promise<T>): Promise<T> => {
+  const existingRequest = inFlightAuditGetRequests.get(key)
+  if (existingRequest) {
+    return existingRequest as Promise<T>
+  }
+
+  const pendingRequest = request()
+  inFlightAuditGetRequests.set(key, pendingRequest)
+  void pendingRequest.then(
+    () => {
+      if (inFlightAuditGetRequests.get(key) === pendingRequest) {
+        inFlightAuditGetRequests.delete(key)
+      }
+    },
+    () => {
+      if (inFlightAuditGetRequests.get(key) === pendingRequest) {
+        inFlightAuditGetRequests.delete(key)
+      }
+    },
+  )
+
+  return pendingRequest
+}
+
 export const auditApi = {
-  async getCatalog(): Promise<AuditCatalog> {
-    const { data } = await httpClient.get<AuditCatalog>('/audit/catalog')
-    return data
+  getCatalog(): Promise<AuditCatalog> {
+    return shareInFlightAuditGet('catalog', async () => {
+      const { data } = await httpClient.get<AuditCatalog>('/audit/catalog')
+      return data
+    })
   },
 
-  async searchEntries(filters: AuditSearchFilters): Promise<AuditEntryPage> {
-    const { data } = await httpClient.get<AuditEntryPage>('/audit/entries', {
-      params: toQueryParams(filters),
+  searchEntries(filters: AuditSearchFilters): Promise<AuditEntryPage> {
+    const params = toQueryParams(filters)
+    return shareInFlightAuditGet(`entries?${params.toString()}`, async () => {
+      const { data } = await httpClient.get<AuditEntryPage>('/audit/entries', { params })
+      return data
     })
-    return data
+  },
+
+  getSummary(filters: AuditSearchFilters): Promise<AuditEntrySummary> {
+    const params = toQueryParams(filters, false)
+    return shareInFlightAuditGet(`summary?${params.toString()}`, async () => {
+      const { data } = await httpClient.get<AuditEntrySummary>('/audit/entries/summary', { params })
+      return data
+    })
+  },
+
+  async exportEntries(filters: AuditSearchFilters): Promise<AuditCsvExportResponse> {
+    const response = await httpClient.get<Blob>('/audit/entries/export', {
+      params: toQueryParams(filters, false),
+      responseType: 'blob',
+    })
+    const disposition = response.headers['content-disposition'] as string | undefined
+    const encodedFileName = disposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
+    const plainFileName = disposition?.match(/filename="?([^";]+)"?/i)?.[1]
+    let fileName = encodedFileName ?? plainFileName ?? ''
+    if (encodedFileName) {
+      try {
+        fileName = decodeURIComponent(encodedFileName)
+      } catch {
+        fileName = encodedFileName
+      }
+    }
+    if (!/^[a-zA-Z0-9._-]+\.csv$/i.test(fileName)) {
+      fileName = 'auditoria.csv'
+    }
+
+    const rowCountHeader = response.headers['x-prestanet-audit-row-count']
+    const parsedRowCount = rowCountHeader === undefined ? Number.NaN : Number(String(rowCountHeader))
+    const watermarkHeader = response.headers['x-prestanet-audit-watermark-utc']
+    return {
+      blob: response.data,
+      fileName,
+      rowCount: Number.isSafeInteger(parsedRowCount) && parsedRowCount >= 0 ? parsedRowCount : null,
+      watermarkUtc: typeof watermarkHeader === 'string' ? watermarkHeader : null,
+    }
   },
 }

@@ -139,7 +139,11 @@ export const AuditEntriesTable = ({
                       </td>
                       <td className="max-w-48 break-all">
                         <div>{ACTOR_LABELS[entry.actorType] ?? entry.actorType}</div>
-                        {entry.actorUserId ? <code className="text-[10px] text-slate-500 dark:text-slate-400">{entry.actorUserId}</code> : null}
+                        {entry.actorUserId ? (
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                            {entry.actorEmail ?? entry.actorUserId}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="max-w-48 break-all">
                         {entry.subjectType || entry.subjectId ? (
@@ -210,7 +214,7 @@ const AuditEntryDetails = ({ entry }: { entry: AuditEntry }) => (
         <dl className="mt-2 grid gap-x-4 gap-y-2 text-xs sm:grid-cols-2">
           <DetailField label="Ruta" value={entry.routeTemplate} />
           <DetailField label="Correlación" value={entry.correlationId} mono />
-          <DetailField label="Agencia" value={entry.agencyId} mono />
+          <DetailField label="Agencia" value={entry.agencyName} />
           <DetailField label="Origen" value={entry.sourceCode} />
           <DetailField label="Versión del payload" value={String(entry.payloadVersion)} />
           <DetailField label="Identificador del evento" value={entry.id} mono />

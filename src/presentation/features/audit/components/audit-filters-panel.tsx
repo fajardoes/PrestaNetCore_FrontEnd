@@ -12,9 +12,12 @@ interface AuditFiltersPanelProps {
   referenceDate: string
   isLoading: boolean
   isCatalogLoading: boolean
+  canExport: boolean
+  isExporting: boolean
   validationError: string | null
   onChange: (field: keyof AuditSearchFormValues, value: string) => void
   onSubmit: FormEventHandler<HTMLFormElement>
+  onExport: () => void
 }
 
 const inputClassName =
@@ -32,9 +35,12 @@ export const AuditFiltersPanel = ({
   referenceDate,
   isLoading,
   isCatalogLoading,
+  canExport,
+  isExporting,
   validationError,
   onChange,
   onSubmit,
+  onExport,
 }: AuditFiltersPanelProps) => {
   const categoryValue = categories.find((option) => option.value === values.categoryCode) ?? null
   const actionValue = actions.find((option) => option.value === values.actionCode) ?? null
@@ -181,7 +187,17 @@ export const AuditFiltersPanel = ({
         </p>
       ) : null}
 
-      <div className="mt-4 flex justify-end">
+      <div className="mt-4 flex flex-wrap justify-end gap-2">
+        {canExport ? (
+          <button
+            type="button"
+            disabled={isExporting || isLoading || isCatalogLoading}
+            className="btn-secondary btn-list-action disabled:cursor-not-allowed disabled:opacity-60"
+            onClick={onExport}
+          >
+            {isExporting ? 'Generando CSV…' : 'Exportar CSV'}
+          </button>
+        ) : null}
         <button
           type="submit"
           disabled={isLoading || isCatalogLoading}

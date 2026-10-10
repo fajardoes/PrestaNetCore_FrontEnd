@@ -9,10 +9,14 @@ import {
 import { auditSearchFormSchema } from '@/infrastructure/validations/audit/audit-search-form.schema'
 import { AuditEntriesTable } from '@/presentation/features/audit/components/audit-entries-table'
 import { AuditFiltersPanel } from '@/presentation/features/audit/components/audit-filters-panel'
+import { AuditSummaryPanel } from '@/presentation/features/audit/components/audit-summary-panel'
 import { useAuditReport } from '@/presentation/features/audit/hooks/use-audit-report'
+import { useUserPermissions } from '@/presentation/features/security/hooks/use-user-permissions'
 
 export const AuditEntriesPage = () => {
   const report = useAuditReport()
+  const { hasPermission } = useUserPermissions()
+  const canExport = hasPermission('audit.reports.export')
   const [initialFilters] = useState(createDefaultAuditSearchForm)
   const form = useForm<AuditSearchFormValues>({
     resolver: yupResolver(auditSearchFormSchema),
@@ -27,18 +31,27 @@ export const AuditEntriesPage = () => {
     .find((message): message is string => typeof message === 'string') ?? null
 
   const runSearch = useCallback(
-    async (nextFilters: AuditSearchFormValues, nextPage: number, nextPageSize: number) => {
+    async (
+      nextFilters: AuditSearchFormValues,
+      nextPage: number,
+      nextPageSize: number,
+      includeSummary = true,
+    ) => {
       setAppliedFilters(nextFilters)
       setPage(nextPage)
       setPageSize(nextPageSize)
-      await report.loadEntries(toAuditSearchFilters(nextFilters, nextPage, nextPageSize))
+      const searchFilters = toAuditSearchFilters(nextFilters, nextPage, nextPageSize)
+      await Promise.all([
+        report.loadEntries(searchFilters),
+        ...(includeSummary ? [report.loadSummary(toAuditSearchFilters(nextFilters, 1, 1))] : []),
+      ])
     },
-    [report.loadEntries],
+    [report.loadEntries, report.loadSummary],
   )
 
   useEffect(() => {
-    void report.loadEntries(toAuditSearchFilters(initialFilters, 1, 50))
-  }, [initialFilters, report.loadEntries])
+    void runSearch(initialFilters, 1, 50)
+  }, [initialFilters, runSearch])
 
   const categories = useMemo(
     () => report.catalog?.categories.map((category) => ({ value: category.code, label: category.name })) ?? [],
@@ -105,10 +118,35 @@ export const AuditEntriesPage = () => {
         referenceDate={initialFilters.toDate}
         isLoading={report.isLoading}
         isCatalogLoading={report.isCatalogLoading}
+        canExport={canExport}
+        isExporting={report.isExporting}
         validationError={validationError}
         onChange={handleFilterChange}
         onSubmit={form.handleSubmit((values) => runSearch(values, 1, pageSize))}
+        onExport={() => {
+          void form.handleSubmit((values) => {
+            void report.exportEntries(toAuditSearchFilters(values, 1, pageSize))
+          })()
+        }}
       />
+
+      <AuditSummaryPanel
+        summary={report.summary}
+        catalog={report.catalog}
+        isLoading={report.isSummaryLoading}
+        error={report.summaryError}
+      />
+
+      {report.exportError ? (
+        <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900/60 dark:bg-red-500/10 dark:text-red-200">
+          {report.exportError}
+        </div>
+      ) : null}
+      {report.exportMessage ? (
+        <p role="status" className="text-sm text-slate-600 dark:text-slate-400">
+          {report.exportMessage}
+        </p>
+      ) : null}
 
       <AuditEntriesTable
         items={report.entries?.items ?? []}
@@ -119,8 +157,8 @@ export const AuditEntriesPage = () => {
         catalog={report.catalog}
         isLoading={report.isLoading}
         error={report.error}
-        onPageChange={(nextPage) => void runSearch(appliedFilters, nextPage, pageSize)}
-        onPageSizeChange={(nextSize) => void runSearch(appliedFilters, 1, nextSize)}
+        onPageChange={(nextPage) => void runSearch(appliedFilters, nextPage, pageSize, false)}
+        onPageSizeChange={(nextSize) => void runSearch(appliedFilters, 1, nextSize, false)}
       />
     </div>
   )

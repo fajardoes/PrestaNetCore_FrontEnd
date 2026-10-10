@@ -61,6 +61,8 @@ export const LoanDetailPage = () => {
     mutationError,
     setMutationError,
     loadLoan,
+    loadEligibility,
+    clearEligibility,
     reverseDisbursement,
   } = useLoan()
   const {
@@ -102,10 +104,19 @@ export const LoanDetailPage = () => {
   useEffect(() => {
     if (!id) return
     void Promise.all([
-      loadLoan(id, { includeEligibility: canReadEligibility }),
+      loadLoan(id),
       loadInstallments(id),
     ])
-  }, [id, canReadEligibility, loadInstallments, loadLoan])
+  }, [id, loadInstallments, loadLoan])
+
+  useEffect(() => {
+    if (!id || !canReadEligibility) {
+      clearEligibility()
+      return
+    }
+
+    void loadEligibility(id)
+  }, [id, canReadEligibility, clearEligibility, loadEligibility])
 
   useEffect(() => {
     if (!id || selectedInstallmentNo === null) return
@@ -425,8 +436,9 @@ export const LoanDetailPage = () => {
           defaultExpanded={false}
           onRefreshActions={async () => {
             await Promise.all([
-              loadLoan(id, { includeEligibility: canReadEligibility }),
+              loadLoan(id),
               loadInstallments(id),
+              canReadEligibility ? loadEligibility(id) : Promise.resolve(),
             ])
           }}
         />
@@ -630,8 +642,9 @@ export const LoanDetailPage = () => {
 
             setReversalModalOpen(false)
             await Promise.all([
-              loadLoan(id, { includeEligibility: canReadEligibility }),
+              loadLoan(id),
               loadInstallments(id),
+              canReadEligibility ? loadEligibility(id) : Promise.resolve(),
             ])
           }}
         />

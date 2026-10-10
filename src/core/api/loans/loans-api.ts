@@ -24,10 +24,37 @@ import type {
 
 const basePath = '/loans'
 
-export const getLoan = async (id: string): Promise<LoanResponse> => {
-  const { data } = await httpClient.get<LoanResponse>(`${basePath}/${id}`)
-  return data
+const inFlightLoanGetRequests = new Map<string, Promise<unknown>>()
+
+const shareInFlightLoanGet = <T>(key: string, request: () => Promise<T>): Promise<T> => {
+  const existingRequest = inFlightLoanGetRequests.get(key)
+  if (existingRequest) {
+    return existingRequest as Promise<T>
+  }
+
+  const pendingRequest = request()
+  inFlightLoanGetRequests.set(key, pendingRequest)
+  void pendingRequest.then(
+    () => {
+      if (inFlightLoanGetRequests.get(key) === pendingRequest) {
+        inFlightLoanGetRequests.delete(key)
+      }
+    },
+    () => {
+      if (inFlightLoanGetRequests.get(key) === pendingRequest) {
+        inFlightLoanGetRequests.delete(key)
+      }
+    },
+  )
+
+  return pendingRequest
 }
+
+export const getLoan = (id: string): Promise<LoanResponse> =>
+  shareInFlightLoanGet(`detail:${id}`, async () => {
+    const { data } = await httpClient.get<LoanResponse>(`${basePath}/${id}`)
+    return data
+  })
 
 export const getLoanByCode = async (loanCode: string): Promise<LoanResponse> => {
   const { data } = await httpClient.get<LoanResponse>(
@@ -55,14 +82,15 @@ export const getLoanActions = async (id: string): Promise<LoanActionsResponse> =
   return data
 }
 
-export const getLoanDisbursementReversalEligibility = async (
+export const getLoanDisbursementReversalEligibility = (
   id: string,
-): Promise<LoanDisbursementReversalEligibilityResponse> => {
-  const { data } = await httpClient.get<LoanDisbursementReversalEligibilityResponse>(
-    `${basePath}/${id}/disbursement-reversal/eligibility`,
-  )
-  return data
-}
+): Promise<LoanDisbursementReversalEligibilityResponse> =>
+  shareInFlightLoanGet(`reversal-eligibility:${id}`, async () => {
+    const { data } = await httpClient.get<LoanDisbursementReversalEligibilityResponse>(
+      `${basePath}/${id}/disbursement-reversal/eligibility`,
+    )
+    return data
+  })
 
 export const reverseLoanDisbursement = async (
   id: string,

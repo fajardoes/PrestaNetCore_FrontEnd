@@ -9,10 +9,6 @@ import type { LoanDisbursementReversalEligibilityResponse } from '@/infrastructu
 import type { LoanDisbursementReversalResponse } from '@/infrastructure/loans/responses/loan-disbursement-reversal-response'
 import type { LoanResponse } from '@/infrastructure/loans/responses/loan-response'
 
-interface LoadLoanOptions {
-  includeEligibility?: boolean
-}
-
 const mapMutationError = (result: {
   success: boolean
   status?: number
@@ -43,26 +39,18 @@ export const useLoan = () => {
   const [error, setError] = useState<string | null>(null)
   const [mutationError, setMutationError] = useState<string | null>(null)
 
-  const loadLoan = useCallback(async (loanId: string, options?: LoadLoanOptions) => {
-    const includeEligibility = options?.includeEligibility ?? false
+  const loadLoan = useCallback(async (loanId: string) => {
     setIsLoading(true)
     setError(null)
     setActionsError(null)
     setMutationError(null)
-    if (!includeEligibility) {
-      setEligibility(null)
-      setEligibilityError(null)
-      setIsLoadingEligibility(false)
-    } else {
-      setIsLoadingEligibility(true)
-    }
+    setEligibility(null)
+    setEligibilityError(null)
+    setIsLoadingEligibility(false)
 
-    const [loanResult, actionsResult, eligibilityResult] = await Promise.all([
+    const [loanResult, actionsResult] = await Promise.all([
       new GetLoanAction().execute(loanId),
       new GetLoanActionsAction().execute(loanId),
-      includeEligibility
-        ? new GetLoanDisbursementReversalEligibilityAction().execute(loanId)
-        : Promise.resolve(null),
     ])
 
     if (loanResult.success) {
@@ -82,18 +70,27 @@ export const useLoan = () => {
       setActionsError(actionsResult.error)
     }
 
-    if (includeEligibility) {
-      if (eligibilityResult?.success) {
-        setEligibility(eligibilityResult.data)
-        setEligibilityError(null)
-      } else {
-        setEligibility(null)
-        setEligibilityError(eligibilityResult?.error ?? null)
-      }
-      setIsLoadingEligibility(false)
-    }
-
     setIsLoading(false)
+  }, [])
+
+  const loadEligibility = useCallback(async (loanId: string) => {
+    setIsLoadingEligibility(true)
+    setEligibilityError(null)
+    const result = await new GetLoanDisbursementReversalEligibilityAction().execute(loanId)
+    if (result.success) {
+      setEligibility(result.data)
+      setEligibilityError(null)
+    } else {
+      setEligibility(null)
+      setEligibilityError(result.error)
+    }
+    setIsLoadingEligibility(false)
+  }, [])
+
+  const clearEligibility = useCallback(() => {
+    setEligibility(null)
+    setEligibilityError(null)
+    setIsLoadingEligibility(false)
   }, [])
 
   const reverseDisbursement = useCallback(
@@ -127,6 +124,8 @@ export const useLoan = () => {
     mutationError,
     setMutationError,
     loadLoan,
+    loadEligibility,
+    clearEligibility,
     reverseDisbursement,
   }
 }

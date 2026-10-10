@@ -294,11 +294,26 @@ Cuando agregues nuevas funcionalidades replica esta arquitectura: define contrat
   paginados.
 - Mantén filtros dependientes categoría → módulo → acción. Las fechas elegidas
   en el calendario representan días de Honduras y se convierten a UTC para la
-  consulta técnica. Actor y agencia se filtran por UUID porque el contrato de
-  lectura actual no expone nombres. El módulo acepta código manual con
-  sugerencias del catálogo, ya que los módulos de rutas HTTP no se enumeran en
-  ese catálogo.
+  consulta técnica. Los filtros de actor y agencia siguen usando UUID; en el
+  detalle se muestra el correo actual del actor y el nombre actual de la agencia
+  cuando están disponibles. Para eventos sin agencia registrada, muestra `—`;
+  no infieras datos históricos. El módulo acepta código manual con sugerencias
+  del catálogo, ya que los módulos de rutas HTTP no se enumeran en ese catálogo.
 - Los detalles JSON y valores anteriores/nuevos se presentan como texto; no
   renderices HTML ni interpretes contenido del evento.
-- La consulta no implementa exportación ni alcance por agencia/oficina. No
-  simules esas capacidades en la interfaz.
+- `GET /api/audit/entries/summary` ofrece agregados bajo `audit.entries.read`;
+  presenta el total y hasta cinco conteos principales por categoría, acción,
+  resultado y código de error para el conjunto completo filtrado.
+- La exportación usa `GET /api/audit/entries/export` y solo se ofrece con el
+  permiso independiente `audit.reports.export`. Envía los filtros visibles,
+  excluye paginación, muestra el watermark UTC y respeta el máximo backend de
+  10,000 filas; el CSV muestra el correo actual del actor y el nombre actual de
+  la agencia en lugar de sus GUID, con celda vacía si no hay valor resuelto.
+  Conserva los mensajes de validación del endpoint.
+- Tanto la consulta como la exportación tienen alcance global según sus
+  permisos. `agencyId` es únicamente un filtro de resultados, no una restricción
+  de autorización.
+- Catálogo, búsqueda y resumen comparten solicitudes GET idénticas mientras
+  están en curso. Esto evita dobles llamadas de los efectos de
+  `React.StrictMode` en Vite; no conserva resultados entre consultas. La
+  exportación sigue siendo una acción explícita y no se deduplica.

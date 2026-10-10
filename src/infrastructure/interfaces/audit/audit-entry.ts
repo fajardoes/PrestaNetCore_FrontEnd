@@ -14,7 +14,9 @@ export interface AuditEntry {
   outcomeCode: string
   actorType: string
   actorUserId: string | null
+  actorEmail: string | null
   agencyId: string | null
+  agencyName: string | null
   sourceCode: string
   correlationId: string | null
   requestMethod: string | null
@@ -33,6 +35,19 @@ export interface AuditEntryPage {
   pageNumber: number
   pageSize: number
   totalCount: number
+}
+
+export interface AuditSummaryCount {
+  code: string
+  count: number
+}
+
+export interface AuditEntrySummary {
+  totalCount: number
+  categories: AuditSummaryCount[]
+  actions: AuditSummaryCount[]
+  outcomes: AuditSummaryCount[]
+  errors: AuditSummaryCount[]
 }
 
 export interface AuditCategoryDescriptor {
